@@ -10,15 +10,18 @@ const mockDealerProfile = dealerProfileSchema.parse({
 });
 
 export function DealerProfileSummary() {
+  const approvalStatusLabel =
+    mockDealerProfile.approvalStatus === "active" ? "운영 가능" : "승인 대기";
+
   return (
     <SectionCard
       title="딜러 계정 개요"
-      description="entity schema를 통해 profile 경계를 먼저 고정해둔 상태입니다."
+      description="기본 계정 정보와 승인 상태를 확인하세요."
     >
       <dl className="grid gap-4 md:grid-cols-2">
         <ProfileRow label="상호명" value={mockDealerProfile.companyName} />
         <ProfileRow label="대표자" value={mockDealerProfile.ownerName} />
-        <ProfileRow label="승인 상태" value={mockDealerProfile.approvalStatus} />
+        <ProfileRow label="승인 상태" value={approvalStatusLabel} />
         <ProfileRow label="지점 수" value={`${mockDealerProfile.branchCount}개`} />
       </dl>
     </SectionCard>

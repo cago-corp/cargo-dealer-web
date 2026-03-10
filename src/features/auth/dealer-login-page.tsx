@@ -10,28 +10,24 @@ export function DealerLoginPage() {
             Cargo Dealer
           </p>
           <h1 className="mt-6 max-w-xl text-4xl font-semibold leading-tight">
-            Flutter dealer 앱 기능을 웹 워크플로우 기준으로 다시 조립하는 시작점
+            경매부터 거래까지 한 화면에서 관리하는 딜러 센터
           </h1>
           <p className="mt-4 max-w-2xl text-base text-slate-300">
-            로그인 이후 대시보드, 견적, 채팅, 마이페이지 흐름을 App Router 기준으로
-            분리해 확장할 수 있도록 최소 골격을 먼저 준비했습니다.
+            로그인 후 경매장 홈, 찜한 차, 내 입찰, 내 거래, 마이 페이지로 바로 이동할 수 있습니다.
           </p>
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            <FeatureMarker label="Home" description="전체/찜한 차" />
-            <FeatureMarker label="MY견적" description="입찰/거래 흐름" />
-            <FeatureMarker label="Chat" description="페이지 또는 도크 확장" />
+            <FeatureMarker label="경매장 홈" description="실시간 경매 확인" />
+            <FeatureMarker label="내 거래" description="상태별 진행 관리" />
+            <FeatureMarker label="채팅" description="우측 고정 레일 운영" />
           </div>
         </div>
         <div className="rounded-[32px] border border-white/70 bg-white/90 p-8 shadow-panel backdrop-blur">
           <p className="text-sm font-medium text-slate-500">Dealer Sign In</p>
           <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-            초기 로그인 연동
+            로그인
           </h2>
           <p className="mt-3 text-sm text-slate-600">
-            현재 로그인은 `shared/auth`의 backend adapter 뒤에서 동작합니다.
-            Flutter dealer 앱의 Supabase 연결 정보를 재사용하되, 이후 Spring 전환 시
-            feature UI와 route shell은 그대로 두고 adapter만 교체할 수 있게
-            분리했습니다.
+            등록된 딜러 계정으로 로그인하고 현재 진행 중인 경매와 거래를 확인하세요.
           </p>
           <div className="mt-8">
             <DealerLoginForm />

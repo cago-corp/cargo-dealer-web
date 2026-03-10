@@ -30,15 +30,15 @@ const modeCopy = {
     eyebrow: "Auction Home",
     title: "경매장 홈",
     description:
-      "Flutter dealer의 전체 경매 탭을 웹 작업대에 맞게 확장했습니다. 검색, 차종 전환, 낙관적 찜 토글을 한 화면에서 정리합니다.",
-    operationsLabel: "10초마다 자동으로 경매 목록을 다시 확인합니다.",
+      "실시간 경매를 확인하고 원하는 차량을 빠르게 비교할 수 있습니다.",
+    operationsLabel: "목록은 10초마다 자동으로 새로고침됩니다.",
   },
   favorites: {
     eyebrow: "Favorites",
     title: "찜한 차",
     description:
-      "모바일의 찜 탭을 별도 메뉴로 분리했습니다. 해제 즉시 목록에서 빠지고, 다시 홈으로 돌아가도 같은 즐겨찾기 상태가 유지됩니다.",
-    operationsLabel: "찜 해제는 낙관적으로 반영하고 전체 홈 목록도 함께 갱신합니다.",
+      "관심 있는 차량만 따로 모아 보고 거래 가능성을 빠르게 점검할 수 있습니다.",
+    operationsLabel: "찜 상태는 즉시 반영되고 전체 목록에도 함께 적용됩니다.",
   },
 } as const;
 
@@ -177,9 +177,9 @@ export function DealerHomeWorkspace({
         </div>
         <div className="rounded-[32px] border border-slate-200 bg-slate-950 px-6 py-6 text-white shadow-sm">
           <p className="text-xs uppercase tracking-[0.24em] text-teal-300">
-            Operations
+            Overview
           </p>
-          <p className="mt-4 text-lg font-semibold">Flutter 의미를 그대로 유지</p>
+          <p className="mt-4 text-lg font-semibold">오늘 확인할 경매 흐름</p>
           <p className="mt-3 text-sm leading-6 text-slate-300">
             {copy.operationsLabel}
           </p>
@@ -212,7 +212,7 @@ export function DealerHomeWorkspace({
         visibleCount={queryData?.summary.visibleCount ?? 0}
         onFavoriteToggle={(auctionId) => favoriteMutation.mutate(auctionId)}
         onFilterChipClick={(label) => {
-          setPendingMessage(`${label} 상세 필터는 API 계약 이후 연결합니다.`);
+          setPendingMessage(`${label} 상세 필터는 준비 중입니다.`);
         }}
         onImportFilterChange={(importFilter) => {
           replaceFilters({

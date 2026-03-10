@@ -60,7 +60,7 @@ export function HomeAuctionListSection({
   return (
     <SectionCard
       title={mode === "favorites" ? "찜한 차량 목록" : "실시간 경매 목록"}
-      description="모바일의 search + filter + 국산/수입 전환 흐름을 한 작업대에 모으고, 웹에서는 목록 밀도를 높여 빠르게 비교할 수 있게 재배치했습니다."
+      description="검색과 기본 필터를 이용해 원하는 차량을 빠르게 찾아볼 수 있습니다."
     >
       <form className="rounded-[28px] bg-slate-50 px-4 py-4" onSubmit={onSearchSubmit}>
         <div className="flex flex-col gap-3 xl:flex-row">

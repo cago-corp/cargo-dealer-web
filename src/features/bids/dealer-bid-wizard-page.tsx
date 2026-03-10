@@ -158,8 +158,7 @@ export function DealerBidWizardPage({
         </p>
         <h1 className="text-3xl font-semibold text-slate-950">입찰하기</h1>
         <p className="max-w-3xl text-sm text-slate-600">
-          Flutter의 단계형 입찰 플로우를 web step workspace로 옮겼습니다. 구매
-          방식에 따라 필요한 단계만 노출됩니다.
+          구매 방식에 따라 필요한 항목만 순서대로 입력해 입찰을 제출할 수 있습니다.
         </p>
       </header>
 

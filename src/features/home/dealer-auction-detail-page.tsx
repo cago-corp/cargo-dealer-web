@@ -201,7 +201,7 @@ export function DealerAuctionDetailPage({
 
           <SectionCard
             title={`${auction.purchaseMethod} 조건`}
-            description="Flutter 상세의 조건 요약을 web 2열 정보판으로 재구성했습니다."
+            description="고객이 요청한 주요 조건을 한눈에 확인할 수 있습니다."
           >
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {conditionEntries.map((entry) => (
@@ -231,7 +231,7 @@ export function DealerAuctionDetailPage({
 
           <SectionCard
             title="차량 및 경매 메모"
-            description="실제 API 연결 전까지 Flutter 상세의 핵심 설명 영역만 유지합니다."
+            description="고객 요청사항과 현재 경매 상황을 함께 확인하세요."
           >
             <div className="grid gap-4 md:grid-cols-2">
               <DetailMetric label="희망 금액" value={auction.askingPriceLabel} />
@@ -248,7 +248,7 @@ export function DealerAuctionDetailPage({
         <aside className="xl:sticky xl:top-4 xl:self-start">
           <SectionCard
             title="다음 액션"
-            description="모바일 하단 CTA 의미를 유지하되 웹에서는 우측 고정 액션 패널로 옮깁니다."
+            description="지금 가능한 다음 작업을 바로 진행할 수 있습니다."
           >
             <div className="space-y-3">
               {primaryAction.disabled ? (

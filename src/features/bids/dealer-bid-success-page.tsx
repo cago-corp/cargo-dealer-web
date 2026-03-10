@@ -61,13 +61,13 @@ export function DealerBidSuccessPage({
           }).format(new Date(auction.deadlineAt))}
         </p>
         <p className="mt-2 text-sm text-slate-500">
-          진행 상황과 결과는 이제 `내 입찰`에서 확인할 수 있습니다.
+          진행 상황과 결과는 이제 내 입찰에서 확인할 수 있습니다.
         </p>
       </div>
 
       <SectionCard
         title="최종 입찰 요약"
-        description="Flutter bid success의 요약 카드를 웹 요약판으로 옮겼습니다."
+        description="방금 제출한 입찰 내용을 다시 확인하세요."
       >
         <div className="space-y-4">
           <SummaryRow

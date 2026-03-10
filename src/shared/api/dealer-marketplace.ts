@@ -28,6 +28,22 @@ import {
   type DealerBidSubmission,
   type DealerBidSuccess,
 } from "@/entities/bid/schemas/dealer-bid-schema";
+import {
+  dealerChatMessageSchema,
+  dealerChatRoomListItemSchema,
+  dealerChatRoomSchema,
+  type DealerChatMessage,
+  type DealerChatRoom,
+  type DealerChatRoomListItem,
+} from "@/entities/chat/schemas/dealer-chat-schema";
+import {
+  dealerDealDetailSchema,
+  dealerDealListItemSchema,
+  type DealerDealDetail,
+  type DealerDealListItem,
+  type DealerDealStage,
+  type DealerDealStep,
+} from "@/entities/deal/schemas/dealer-deal-schema";
 
 const dealerMarketplaceLatency = 140;
 
@@ -47,7 +63,7 @@ const rawAuctionRecordSchema = z.object({
   mileageLabel: z.string(),
   askingPriceValue: z.number().int().positive(),
   askingPriceLabel: z.string(),
-  dealStage: z.enum(["none", "서류 확인", "계약 입력 대기", "출고 준비"]),
+  dealStage: z.enum(["none", "서류 확인", "계약 입력 대기", "출고 준비", "출고 완료"]),
   imageUrl: z.string().nullable(),
   brandLogoImageUrl: z.string().nullable(),
   viewCount: z.number().int().nonnegative(),
@@ -67,6 +83,26 @@ const rawAuctionRecordSchema = z.object({
 });
 
 type RawAuctionRecord = z.infer<typeof rawAuctionRecordSchema>;
+
+const rawChatRoomRecordSchema = z.object({
+  id: z.string(),
+  dealId: z.string(),
+  auctionId: z.string(),
+  customerName: z.string(),
+  customerPhone: z.string().nullable(),
+  unreadCount: z.number().int().nonnegative(),
+});
+
+const rawChatMessageRecordSchema = z.object({
+  id: z.string(),
+  roomId: z.string(),
+  senderRole: z.enum(["dealer", "customer", "system"]),
+  body: z.string(),
+  createdAt: z.string().datetime(),
+});
+
+type RawChatRoomRecord = z.infer<typeof rawChatRoomRecordSchema>;
+type RawChatMessageRecord = z.infer<typeof rawChatMessageRecordSchema>;
 
 const serviceOptions = dealerBidServiceOptionSchema.array().parse([
   {
@@ -401,6 +437,106 @@ let bidSubmissionRecords = dealerBidSubmissionSchema.array().parse([
     state: "contract_pending",
     submittedAt: "2026-03-10T07:15:00.000Z",
   },
+  {
+    id: "submission-003",
+    auctionId: "auction-007",
+    purchaseMethod: "리스",
+    monthlyPaymentValue: 879000,
+    discountAmountValue: 1500000,
+    capitalId: "capital-001",
+    capitalName: "현대캐피탈",
+    note: "출고 일정 우선으로 맞춰 진행 중입니다.",
+    currentRank: 1,
+    services: [serviceOptions[0], serviceOptions[3]],
+    state: "contract_pending",
+    submittedAt: "2026-03-10T06:30:00.000Z",
+  },
+]);
+
+let rawChatRoomRecords = rawChatRoomRecordSchema.array().parse([
+  {
+    id: "room-002",
+    dealId: "deal-002",
+    auctionId: "auction-002",
+    customerName: "박*민",
+    customerPhone: "010-4123-1122",
+    unreadCount: 2,
+  },
+  {
+    id: "room-006",
+    dealId: "deal-006",
+    auctionId: "auction-006",
+    customerName: "한*우",
+    customerPhone: "010-8831-2200",
+    unreadCount: 0,
+  },
+  {
+    id: "room-007",
+    dealId: "deal-007",
+    auctionId: "auction-007",
+    customerName: "윤*혁",
+    customerPhone: "010-7612-9031",
+    unreadCount: 1,
+  },
+]);
+
+let rawChatMessageRecords = rawChatMessageRecordSchema.array().parse([
+  {
+    id: "message-001",
+    roomId: "room-002",
+    senderRole: "customer",
+    body: "서류는 오늘 오후 안으로 업로드할 예정입니다.",
+    createdAt: "2026-03-10T08:58:00.000Z",
+  },
+  {
+    id: "message-002",
+    roomId: "room-002",
+    senderRole: "dealer",
+    body: "확인되면 바로 검토 후 다시 안내드리겠습니다.",
+    createdAt: "2026-03-10T09:02:00.000Z",
+  },
+  {
+    id: "message-003",
+    roomId: "room-002",
+    senderRole: "system",
+    body: "현재 단계가 서류 확인으로 변경되었습니다.",
+    createdAt: "2026-03-10T09:03:00.000Z",
+  },
+  {
+    id: "message-004",
+    roomId: "room-006",
+    senderRole: "dealer",
+    body: "계약 정보 입력만 완료되면 바로 다음 절차로 넘기겠습니다.",
+    createdAt: "2026-03-10T08:12:00.000Z",
+  },
+  {
+    id: "message-005",
+    roomId: "room-006",
+    senderRole: "customer",
+    body: "계약자 정보 전달했습니다. 확인 부탁드립니다.",
+    createdAt: "2026-03-10T08:20:00.000Z",
+  },
+  {
+    id: "message-006",
+    roomId: "room-007",
+    senderRole: "system",
+    body: "현재 단계가 출고 준비로 변경되었습니다.",
+    createdAt: "2026-03-10T08:05:00.000Z",
+  },
+  {
+    id: "message-007",
+    roomId: "room-007",
+    senderRole: "dealer",
+    body: "출고 희망일에 맞춰 탁송 일정을 조율 중입니다.",
+    createdAt: "2026-03-10T08:16:00.000Z",
+  },
+  {
+    id: "message-008",
+    roomId: "room-007",
+    senderRole: "customer",
+    body: "금요일 오전 출고 가능하면 좋겠습니다.",
+    createdAt: "2026-03-10T08:23:00.000Z",
+  },
 ]);
 
 function delay(ms = dealerMarketplaceLatency) {
@@ -418,6 +554,171 @@ function getSubmissionByAuctionId(auctionId: string) {
           Date.parse(right.submittedAt) - Date.parse(left.submittedAt),
       )[0] ?? null
   );
+}
+
+function getRawChatRoomById(roomId: string) {
+  return rawChatRoomRecords.find((room) => room.id === roomId) ?? null;
+}
+
+function getRoomMessages(roomId: string) {
+  return rawChatMessageRecords
+    .filter((message) => message.roomId === roomId)
+    .sort((left, right) => Date.parse(left.createdAt) - Date.parse(right.createdAt));
+}
+
+function getDealStageDescription(stage: DealerDealStage) {
+  switch (stage) {
+    case "서류 확인":
+      return "고객 서류를 확인하고 다음 절차를 준비하는 단계입니다.";
+    case "계약 입력 대기":
+      return "계약 정보 입력과 승인 절차를 진행하고 있습니다.";
+    case "출고 준비":
+      return "출고 일정과 차량 인도 절차를 조율하고 있습니다.";
+    case "출고 완료":
+      return "거래가 최종 마무리되었습니다.";
+    default:
+      return "";
+  }
+}
+
+function buildDealSteps(stage: DealerDealStage): DealerDealStep[] {
+  const currentIndex = {
+    "서류 확인": 0,
+    "계약 입력 대기": 1,
+    "출고 준비": 2,
+    "출고 완료": 3,
+  }[stage];
+
+  return [
+    { label: "서류 확인", state: currentIndex > 0 ? "completed" : "current" },
+    {
+      label: "계약 입력",
+      state:
+        currentIndex > 1 ? "completed" : currentIndex === 1 ? "current" : "upcoming",
+    },
+    {
+      label: "출고 준비",
+      state:
+        currentIndex > 2 ? "completed" : currentIndex === 2 ? "current" : "upcoming",
+    },
+  ];
+}
+
+function toDealStage(record: RawAuctionRecord): DealerDealStage {
+  if (record.dealStage === "none") {
+    throw new Error("거래 단계가 없는 경매입니다.");
+  }
+
+  return record.dealStage;
+}
+
+function formatLastMessagePreview(roomId: string, isClosed: boolean) {
+  if (isClosed) {
+    return "출고 완료로 채팅이 종료되었습니다.";
+  }
+
+  const lastMessage = getRoomMessages(roomId).at(-1);
+
+  return lastMessage?.body ?? "대화를 시작해 보세요.";
+}
+
+function resolveDealRecord(room: RawChatRoomRecord) {
+  const auction = rawAuctionRecords.find((record) => record.id === room.auctionId);
+  const submission = getSubmissionByAuctionId(room.auctionId);
+
+  if (!auction || !submission || auction.dealStage === "none") {
+    return null;
+  }
+
+  return {
+    auction,
+    room,
+    stage: toDealStage(auction),
+    submission,
+  };
+}
+
+function toDealerDealListItem(room: RawChatRoomRecord): DealerDealListItem | null {
+  const resolved = resolveDealRecord(room);
+
+  if (!resolved) {
+    return null;
+  }
+
+  return dealerDealListItemSchema.parse({
+    id: room.dealId,
+    auctionId: resolved.auction.id,
+    chatRoomId: room.id,
+    customerName: room.customerName,
+    customerPhone: room.customerPhone,
+    vehicleLabel: formatVehicleLabel(resolved.auction),
+    purchaseMethod: resolved.submission.purchaseMethod,
+    stage: resolved.stage,
+    statusDescription: getDealStageDescription(resolved.stage),
+    deliveryRegion: resolved.auction.deliveryRegion,
+    updatedAt: getRoomMessages(room.id).at(-1)?.createdAt ?? resolved.submission.submittedAt,
+  });
+}
+
+function toDealerDealDetail(room: RawChatRoomRecord): DealerDealDetail | null {
+  const resolved = resolveDealRecord(room);
+
+  if (!resolved) {
+    return null;
+  }
+
+  const dealListItem = toDealerDealListItem(room);
+
+  if (!dealListItem) {
+    return null;
+  }
+
+  return dealerDealDetailSchema.parse({
+    ...dealListItem,
+    askingPriceLabel: resolved.auction.askingPriceLabel,
+    submittedAt: resolved.submission.submittedAt,
+    contractMonths: resolved.auction.contractMonths,
+    advanceDownPaymentAmount: resolved.auction.advanceDownPaymentAmount,
+    depositDownPaymentAmount: resolved.auction.depositDownPaymentAmount,
+    annualMileage: resolved.auction.annualMileage,
+    customerType: resolved.auction.customerType,
+    vehicleExteriorColorName: resolved.auction.vehicleExteriorColorName,
+    vehicleInteriorColorName: resolved.auction.vehicleInteriorColorName,
+    note: resolved.submission.note,
+    services: resolved.submission.services,
+    steps: buildDealSteps(resolved.stage),
+  });
+}
+
+function toDealerChatRoomListItem(room: RawChatRoomRecord): DealerChatRoomListItem | null {
+  const resolved = resolveDealRecord(room);
+
+  if (!resolved) {
+    return null;
+  }
+
+  const isClosed = resolved.stage === "출고 완료";
+  const lastMessageAt =
+    getRoomMessages(room.id).at(-1)?.createdAt ?? resolved.submission.submittedAt;
+
+  return dealerChatRoomListItemSchema.parse({
+    id: room.id,
+    dealId: room.dealId,
+    auctionId: resolved.auction.id,
+    customerName: room.customerName,
+    customerPhone: room.customerPhone,
+    vehicleLabel: formatVehicleLabel(resolved.auction),
+    stageLabel: resolved.stage,
+    stageDescription: getDealStageDescription(resolved.stage),
+    lastMessage: formatLastMessagePreview(room.id, isClosed),
+    lastMessageAt,
+    unreadCount: room.unreadCount,
+    isClosed,
+  });
+}
+
+function toDealerChatMessage(message: RawChatMessageRecord): DealerChatMessage {
+  return dealerChatMessageSchema.parse(message);
 }
 
 function resolveBidState(record: RawAuctionRecord) {
@@ -792,4 +1093,104 @@ export async function fetchDealerBidSuccess(
     auction: toAuctionDetail(record),
     submission,
   });
+}
+
+export async function fetchDealerDealList(): Promise<DealerDealListItem[]> {
+  await delay();
+
+  return rawChatRoomRecords
+    .map(toDealerDealListItem)
+    .filter((item): item is DealerDealListItem => item !== null)
+    .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt));
+}
+
+export async function fetchDealerDealDetail(dealId: string): Promise<DealerDealDetail> {
+  await delay();
+
+  const room = rawChatRoomRecords.find((candidate) => candidate.dealId === dealId);
+
+  if (!room) {
+    throw new Error("거래를 찾을 수 없습니다.");
+  }
+
+  const detail = toDealerDealDetail(room);
+
+  if (!detail) {
+    throw new Error("거래 상세를 찾을 수 없습니다.");
+  }
+
+  return detail;
+}
+
+export async function fetchDealerChatRoomList(): Promise<DealerChatRoomListItem[]> {
+  await delay();
+
+  return rawChatRoomRecords
+    .map(toDealerChatRoomListItem)
+    .filter((item): item is DealerChatRoomListItem => item !== null)
+    .sort(
+      (left, right) => Date.parse(right.lastMessageAt) - Date.parse(left.lastMessageAt),
+    );
+}
+
+export async function fetchDealerChatRoom(roomId: string): Promise<DealerChatRoom> {
+  await delay();
+
+  const room = getRawChatRoomById(roomId);
+
+  if (!room) {
+    throw new Error("채팅방을 찾을 수 없습니다.");
+  }
+
+  const listItem = toDealerChatRoomListItem(room);
+  const deal = resolveDealRecord(room);
+
+  if (!listItem || !deal) {
+    throw new Error("채팅방 정보를 찾을 수 없습니다.");
+  }
+
+  return dealerChatRoomSchema.parse({
+    ...listItem,
+    purchaseMethod: deal.submission.purchaseMethod,
+    messages: getRoomMessages(roomId).map(toDealerChatMessage),
+  });
+}
+
+type SendDealerChatMessageInput = {
+  roomId: string;
+  body: string;
+};
+
+export async function sendDealerChatMessage({
+  roomId,
+  body,
+}: SendDealerChatMessageInput): Promise<DealerChatMessage> {
+  await delay(120);
+
+  const room = getRawChatRoomById(roomId);
+
+  if (!room) {
+    throw new Error("채팅방을 찾을 수 없습니다.");
+  }
+
+  const roomInfo = toDealerChatRoomListItem(room);
+
+  if (!roomInfo || roomInfo.isClosed) {
+    throw new Error("종료된 채팅방입니다.");
+  }
+
+  const nextMessage = dealerChatMessageSchema.parse({
+    id: `message-${Date.now()}`,
+    roomId,
+    senderRole: "dealer",
+    body: body.trim(),
+    createdAt: new Date().toISOString(),
+  });
+
+  rawChatMessageRecords = [...rawChatMessageRecords, nextMessage];
+  rawChatRoomRecords = rawChatRoomRecords.map((candidate) =>
+    candidate.id === roomId ? { ...candidate, unreadCount: 0 } : candidate,
+  );
+
+  return nextMessage;
 }

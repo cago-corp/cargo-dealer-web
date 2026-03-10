@@ -46,7 +46,7 @@ export function HomeSummaryPanel({ mode, summary }: HomeSummaryPanelProps) {
   return (
     <SectionCard
       title="운영 브리프"
-      description="앱의 바텀탭 의미를 웹 좌측 IA에 맞게 다시 배치하고, 현재 작업량을 상단에서 바로 이동할 수 있게 정리했습니다."
+      description="현재 진행 중인 항목을 확인하고 원하는 화면으로 바로 이동하세요."
     >
       <div className="grid gap-4 xl:grid-cols-4">
         {summaryItems.map((item) => (

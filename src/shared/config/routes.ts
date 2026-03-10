@@ -8,6 +8,7 @@ export const appRoutes = {
   bidDetail: (auctionId: string) => `/bids/${auctionId}`,
   bidSuccess: (submissionId: string) => `/bids/success/${submissionId}`,
   deals: () => "/deals",
-  chat: () => "/chat",
+  dealDetail: (dealId: string) => `/deals/${dealId}`,
+  chat: (roomId?: string) => (roomId ? `/chat?roomId=${encodeURIComponent(roomId)}` : "/chat"),
   mypage: () => "/mypage",
 } as const;

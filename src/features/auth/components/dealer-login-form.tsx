@@ -91,7 +91,7 @@ export function DealerLoginForm() {
         type="submit"
         disabled={isSubmitting}
       >
-        {isSubmitting ? "로그인 중..." : "딜러 워크스페이스 진입"}
+        {isSubmitting ? "로그인 중..." : "로그인"}
       </button>
     </form>
   );

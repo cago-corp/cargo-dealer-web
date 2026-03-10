@@ -25,14 +25,13 @@ export function DealerBidsPage() {
         </p>
         <h1 className="text-3xl font-semibold text-slate-950">내 입찰</h1>
         <p className="max-w-3xl text-sm text-slate-600">
-          Flutter quote_dealer의 내 입찰 탭을 실제 목록 구조로 옮겼습니다. 홈
-          상세에서 제출한 입찰이 같은 세션 안에서 바로 반영됩니다.
+          내가 제출한 입찰 상태와 현재 진행 상황을 한 번에 확인할 수 있습니다.
         </p>
       </header>
 
       <SectionCard
         title="입찰 대시보드"
-        description="모바일 대시보드의 진행 상태를 웹 상단 브리프로 재구성했습니다."
+        description="현재 처리 중인 입찰과 거래 흐름을 빠르게 파악하세요."
       >
         <div className="grid gap-4 md:grid-cols-3">
           <DashboardTile label="입찰 진행" value={summary.bidding} />
@@ -43,7 +42,7 @@ export function DealerBidsPage() {
 
       <SectionCard
         title="내 입찰 목록"
-        description="경매 상태, 남은 시간, 내 순위를 한 번에 볼 수 있게 카드 밀도를 높였습니다."
+        description="경매 상태, 남은 시간, 내 순위를 한 곳에서 확인할 수 있습니다."
       >
         {bidListQuery.isLoading ? (
           <div className="space-y-3">

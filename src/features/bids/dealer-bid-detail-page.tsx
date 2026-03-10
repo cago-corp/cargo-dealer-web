@@ -111,7 +111,7 @@ export function DealerBidDetailPage({
         <div className="space-y-6">
           <SectionCard
             title="내 제안 조건"
-            description="Flutter my bid detail의 제출 폼 요약을 web 2단 정보판으로 옮겼습니다."
+            description="제출한 입찰 조건을 한눈에 확인할 수 있습니다."
           >
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <DetailMetric label="구매 방식" value={submission.purchaseMethod} />
@@ -140,7 +140,7 @@ export function DealerBidDetailPage({
 
           <SectionCard
             title={`${submission.purchaseMethod} 조건`}
-            description="경매 상세와 동일한 조건 필드를 유지하면서 내 제안값과 함께 봅니다."
+            description="차량 조건과 현재 제안 내용을 함께 확인하세요."
           >
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <DetailMetric label="배송지역" value={auction.deliveryRegion} />
@@ -163,7 +163,7 @@ export function DealerBidDetailPage({
 
           <SectionCard
             title="출고 서비스"
-            description="모바일 상세의 출고 서비스 박스를 그대로 유지합니다."
+            description="제안에 포함된 서비스와 전달 메모입니다."
           >
             <div className="space-y-3 rounded-3xl bg-slate-50 p-5">
               {submission.services.length === 0 ? (
@@ -193,7 +193,7 @@ export function DealerBidDetailPage({
         <aside className="xl:sticky xl:top-4 xl:self-start">
           <SectionCard
             title="랭킹 확인"
-            description="Flutter 하단 CTA를 우측 고정 액션 패널로 바꿨습니다."
+            description="현재 순위와 입찰자 수를 바로 확인할 수 있습니다."
           >
             <button
               className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white"
