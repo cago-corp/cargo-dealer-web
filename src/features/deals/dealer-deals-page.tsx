@@ -1,15 +1,35 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useDealerDealListQuery } from "@/features/deals/hooks/use-dealer-deal-list-query";
 import { appRoutes } from "@/shared/config/routes";
+import { PaginationControls } from "@/shared/ui/pagination-controls";
 import { useChatRail } from "@/shared/ui/chat-rail-provider";
 import { SectionCard } from "@/shared/ui/section-card";
+
+const DEAL_PAGE_SIZE = 10;
 
 export function DealerDealsPage() {
   const { openRoom } = useChatRail();
   const dealListQuery = useDealerDealListQuery();
   const dealItems = dealListQuery.data ?? [];
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(dealItems.length / DEAL_PAGE_SIZE));
+  const pagedDealItems = dealItems.slice(
+    (currentPage - 1) * DEAL_PAGE_SIZE,
+    currentPage * DEAL_PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dealItems.length]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const summary = {
     document: dealItems.filter((item) => item.stage === "서류 확인").length,
@@ -19,20 +39,14 @@ export function DealerDealsPage() {
 
   return (
     <section className="space-y-6">
-      <header className="space-y-2">
+      <header className="space-y-1">
         <p className="text-sm font-medium uppercase tracking-[0.2em] text-teal-700">
           Deals
         </p>
         <h1 className="text-3xl font-semibold text-slate-950">내 거래</h1>
-        <p className="max-w-3xl text-sm text-slate-600">
-          진행 중인 거래 상태를 확인하고 필요한 고객 대화로 바로 이동할 수 있습니다.
-        </p>
       </header>
 
-      <SectionCard
-        title="거래 현황"
-        description="지금 처리해야 할 거래 단계를 빠르게 확인하세요."
-      >
+      <SectionCard title="거래 현황">
         <div className="grid gap-4 md:grid-cols-3">
           <SummaryTile label="서류 확인" value={summary.document} />
           <SummaryTile label="계약 입력 대기" value={summary.contract} />
@@ -40,10 +54,7 @@ export function DealerDealsPage() {
         </div>
       </SectionCard>
 
-      <SectionCard
-        title="거래 목록"
-        description="고객 상태와 다음 액션을 한 번에 확인할 수 있습니다."
-      >
+      <SectionCard title="거래 목록">
         {dealListQuery.isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (
@@ -66,56 +77,64 @@ export function DealerDealsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {dealItems.map((item) => (
+            {pagedDealItems.map((item) => (
               <article
-                className="rounded-[28px] border border-line bg-white p-5 shadow-sm"
+                className="rounded-[24px] border border-line bg-white px-5 py-4 shadow-sm"
                 key={item.id}
               >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500">{item.customerName}</p>
-                    <h2 className="mt-2 text-xl font-semibold text-slate-950">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-500">
+                      {item.customerName}
+                    </p>
+                    <Link
+                      className="mt-1 block text-lg font-semibold text-slate-950"
+                      href={appRoutes.dealDetail(item.id)}
+                    >
                       {item.vehicleLabel}
-                    </h2>
-                    <p className="mt-2 text-sm text-slate-600">{item.statusDescription}</p>
+                    </Link>
                   </div>
-                  <span className="rounded-full bg-slate-950 px-3 py-1 text-sm font-medium text-white">
-                    {item.stage}
-                  </span>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      className="rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-medium text-white"
+                      type="button"
+                      onClick={() => openRoom(item.chatRoomId)}
+                    >
+                      채팅
+                    </button>
+                    <Link
+                      className="inline-flex items-center gap-1 text-sm font-medium text-slate-700 underline underline-offset-4"
+                      href={appRoutes.dealDetail(item.id)}
+                    >
+                      상세보기
+                      <span aria-hidden="true">›</span>
+                    </Link>
+                  </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                  <span>{item.purchaseMethod}</span>
-                  <span>{item.deliveryRegion}</span>
-                  <span>
-                    최근 업데이트{" "}
-                    {new Intl.DateTimeFormat("ko-KR", {
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: false,
-                    }).format(new Date(item.updatedAt))}
-                  </span>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <DealStagePill stage={item.stage} />
+                  <DealMetaPill>{item.purchaseMethod}</DealMetaPill>
+                  <DealMetaPill>{item.deliveryRegion}</DealMetaPill>
                 </div>
 
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <button
-                    className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white"
-                    type="button"
-                    onClick={() => openRoom(item.chatRoomId)}
-                  >
-                    채팅 열기
-                  </button>
-                  <Link
-                    className="rounded-2xl border border-line px-4 py-3 text-sm font-medium text-slate-700"
-                    href={appRoutes.dealDetail(item.id)}
-                  >
-                    상세 보기
-                  </Link>
-                </div>
+                <p className="mt-3 text-sm text-slate-600">{item.statusDescription}</p>
+
+                <p className="mt-3 text-xs text-slate-400">
+                  최근 업데이트 {formatUpdatedAt(item.updatedAt)}
+                </p>
               </article>
             ))}
+
+            <PaginationControls
+              currentPage={currentPage}
+              itemLabel="건"
+              pageSize={DEAL_PAGE_SIZE}
+              totalItems={dealItems.length}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </SectionCard>
@@ -135,4 +154,45 @@ function SummaryTile({ label, value }: SummaryTileProps) {
       <p className="mt-3 text-3xl font-semibold">{value}</p>
     </div>
   );
+}
+
+type DealStagePillProps = {
+  stage: "서류 확인" | "계약 입력 대기" | "출고 준비" | "출고 완료";
+};
+
+function DealStagePill({ stage }: DealStagePillProps) {
+  const toneClassName = {
+    "서류 확인": "bg-amber-50 text-amber-700",
+    "계약 입력 대기": "bg-violet-50 text-violet-700",
+    "출고 준비": "bg-teal-50 text-teal-700",
+    "출고 완료": "bg-emerald-50 text-emerald-700",
+  }[stage];
+
+  return (
+    <span className={`rounded-full px-3 py-1 text-xs font-medium ${toneClassName}`}>
+      {stage}
+    </span>
+  );
+}
+
+type DealMetaPillProps = {
+  children: React.ReactNode;
+};
+
+function DealMetaPill({ children }: DealMetaPillProps) {
+  return (
+    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+      {children}
+    </span>
+  );
+}
+
+function formatUpdatedAt(updatedAt: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(updatedAt));
 }

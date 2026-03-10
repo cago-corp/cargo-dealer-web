@@ -1,14 +1,34 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useDealerBidListQuery } from "@/features/bids/hooks/use-dealer-bid-list-query";
 import { appRoutes } from "@/shared/config/routes";
 import { formatRemainingTime } from "@/shared/lib/format/format-remaining-time";
+import { PaginationControls } from "@/shared/ui/pagination-controls";
 import { SectionCard } from "@/shared/ui/section-card";
+
+const BID_PAGE_SIZE = 10;
 
 export function DealerBidsPage() {
   const bidListQuery = useDealerBidListQuery();
   const bidItems = bidListQuery.data ?? [];
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(bidItems.length / BID_PAGE_SIZE));
+  const pagedBidItems = bidItems.slice(
+    (currentPage - 1) * BID_PAGE_SIZE,
+    currentPage * BID_PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [bidItems.length]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const summary = {
     bidding: bidItems.filter((item) => item.statusLabel === "입찰 진행").length,
@@ -19,20 +39,14 @@ export function DealerBidsPage() {
 
   return (
     <section className="space-y-6">
-      <header className="space-y-2">
+      <header className="space-y-1">
         <p className="text-sm font-medium uppercase tracking-[0.2em] text-teal-700">
           Bids
         </p>
         <h1 className="text-3xl font-semibold text-slate-950">내 입찰</h1>
-        <p className="max-w-3xl text-sm text-slate-600">
-          내가 제출한 입찰 상태와 현재 진행 상황을 한 번에 확인할 수 있습니다.
-        </p>
       </header>
 
-      <SectionCard
-        title="입찰 대시보드"
-        description="현재 처리 중인 입찰과 거래 흐름을 빠르게 파악하세요."
-      >
+      <SectionCard title="입찰 대시보드">
         <div className="grid gap-4 md:grid-cols-3">
           <DashboardTile label="입찰 진행" value={summary.bidding} />
           <DashboardTile label="거래 진행" value={summary.contractPending} />
@@ -40,10 +54,7 @@ export function DealerBidsPage() {
         </div>
       </SectionCard>
 
-      <SectionCard
-        title="내 입찰 목록"
-        description="경매 상태, 남은 시간, 내 순위를 한 곳에서 확인할 수 있습니다."
-      >
+      <SectionCard title="내 입찰 목록">
         {bidListQuery.isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (
@@ -66,40 +77,59 @@ export function DealerBidsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {bidItems.map((item) => (
+            {pagedBidItems.map((item) => (
               <Link
-                className="block rounded-[28px] border border-line bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-md"
+                className="block rounded-[24px] border border-line bg-white px-5 py-4 transition hover:border-slate-300 hover:shadow-sm"
                 href={appRoutes.bidDetail(item.auctionId)}
                 key={item.submissionId}
               >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <h2 className="text-xl font-semibold text-slate-950">
-                      {item.vehicleLabel}
-                    </h2>
-                    <p className="mt-2 text-sm text-slate-600">
-                      {item.purchaseMethod} · {item.yearLabel} · {item.fuelType}
-                    </p>
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-lg font-semibold text-slate-950">
+                        {item.vehicleLabel}
+                      </h2>
+                      {item.statusLabel === "입찰 진행" ? (
+                        <StatusPill tone="timer">
+                          {formatRemainingTime(item.deadlineAt)}
+                        </StatusPill>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                      <PurchaseMethodPill method={item.purchaseMethod} />
+                      <span className="whitespace-nowrap">{item.yearLabel}</span>
+                      <span className="text-slate-300">•</span>
+                      <span className="whitespace-nowrap">{item.fuelType}</span>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2 text-sm">
-                    <span className="rounded-full bg-accentSoft px-3 py-1 font-medium text-teal-800">
-                      {item.statusLabel}
-                    </span>
-                    {item.currentRank ? (
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">
-                        현재 {item.currentRank}위
-                      </span>
-                    ) : null}
+
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <span className="font-medium text-slate-700">상세보기</span>
+                    <span aria-hidden="true">›</span>
                   </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                  <span>{item.bidCount}명 입찰</span>
-                  <span>남은 시간 {formatRemainingTime(item.deadlineAt)}</span>
-                  <span className="font-medium text-slate-700">상세보기</span>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <StatusPill tone={getBidStatusTone(item.statusLabel)}>
+                    {item.statusLabel}
+                  </StatusPill>
+                  <StatusPill tone="neutral">{item.bidCount}명 입찰</StatusPill>
+                  {item.currentRank ? (
+                    <StatusPill tone="neutral">현재 {item.currentRank}위</StatusPill>
+                  ) : null}
                 </div>
               </Link>
             ))}
+
+            <PaginationControls
+              currentPage={currentPage}
+              itemLabel="건"
+              pageSize={BID_PAGE_SIZE}
+              totalItems={bidItems.length}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
           </div>
         )}
       </SectionCard>
@@ -118,5 +148,57 @@ function DashboardTile({ label, value }: DashboardTileProps) {
       <p className="text-sm text-slate-300">{label}</p>
       <p className="mt-3 text-3xl font-semibold">{value}</p>
     </div>
+  );
+}
+
+function getBidStatusTone(statusLabel: string) {
+  switch (statusLabel) {
+    case "입찰 진행":
+      return "progress" as const;
+    case "계약 입력 대기":
+      return "warning" as const;
+    case "출고 완료":
+      return "success" as const;
+    default:
+      return "neutral" as const;
+  }
+}
+
+type PurchaseMethodPillProps = {
+  method: "현금" | "할부" | "리스";
+};
+
+function PurchaseMethodPill({ method }: PurchaseMethodPillProps) {
+  const toneClassName = {
+    현금: "bg-emerald-50 text-emerald-700",
+    할부: "bg-amber-50 text-amber-700",
+    리스: "bg-slate-100 text-slate-700",
+  }[method];
+
+  return (
+    <span className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${toneClassName}`}>
+      {method}
+    </span>
+  );
+}
+
+type StatusPillProps = {
+  children: React.ReactNode;
+  tone: "neutral" | "progress" | "success" | "timer" | "warning";
+};
+
+function StatusPill({ children, tone }: StatusPillProps) {
+  const toneClassName = {
+    neutral: "bg-slate-100 text-slate-700",
+    progress: "bg-violet-50 text-violet-700",
+    success: "bg-emerald-50 text-emerald-700",
+    timer: "border border-violet-200 bg-white text-violet-700",
+    warning: "bg-amber-50 text-amber-700",
+  }[tone];
+
+  return (
+    <span className={`rounded-full px-3 py-1 text-xs font-medium ${toneClassName}`}>
+      {children}
+    </span>
   );
 }

@@ -6,6 +6,7 @@ import type {
   DealerAuctionWorkspaceMode,
 } from "@/features/home/lib/dealer-auction-workspace-query";
 import { HomeAuctionCard } from "@/features/home/components/home-auction-card";
+import { PaginationControls } from "@/shared/ui/pagination-controls";
 import { SectionCard } from "@/shared/ui/section-card";
 
 const filterChipLabels = ["브랜드", "차종", "지역", "주행거리", "구매방식"] as const;
@@ -19,19 +20,25 @@ const importTabs: Array<{
 ] as const;
 
 type HomeAuctionListSectionProps = {
+  currentPage: number;
   filters: DealerAuctionWorkspaceFilters;
+  itemLabel: string;
   isFavoriteMutationPending: boolean;
   isLoading: boolean;
   isRefreshing: boolean;
   items: DealerAuctionBrief[];
   mode: DealerAuctionWorkspaceMode;
   pendingMessage: string | null;
+  pageSize: number;
   searchInput: string;
   sortLabel: string;
+  totalItems: number;
+  totalPages: number;
   visibleCount: number;
   onFavoriteToggle: (auctionId: string) => void;
   onFilterChipClick: (label: string) => void;
   onImportFilterChange: (importFilter: DealerAuctionImportFilter) => void;
+  onPageChange: (page: number) => void;
   onRefresh: () => void;
   onSearchInputChange: (nextValue: string) => void;
   onSearchSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -39,19 +46,25 @@ type HomeAuctionListSectionProps = {
 };
 
 export function HomeAuctionListSection({
+  currentPage,
   filters,
+  itemLabel,
   isFavoriteMutationPending,
   isLoading,
   isRefreshing,
   items,
   mode,
   pendingMessage,
+  pageSize,
   searchInput,
   sortLabel,
+  totalItems,
+  totalPages,
   visibleCount,
   onFavoriteToggle,
   onFilterChipClick,
   onImportFilterChange,
+  onPageChange,
   onRefresh,
   onSearchInputChange,
   onSearchSubmit,
@@ -179,6 +192,15 @@ export function HomeAuctionListSection({
               onFavoriteToggle={onFavoriteToggle}
             />
           ))}
+
+          <PaginationControls
+            currentPage={currentPage}
+            itemLabel={itemLabel}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+          />
         </div>
       )}
     </SectionCard>

@@ -24,6 +24,8 @@ type DealerHomeWorkspaceProps = {
   initialFilters: DealerAuctionWorkspaceFilters;
 };
 
+const HOME_PAGE_SIZE = 10;
+
 const modeCopy = {
   home: {
     title: "경매장 홈",
@@ -105,6 +107,7 @@ export function DealerHomeWorkspace({
   });
 
   const [searchInput, setSearchInput] = useState(initialFilters.search);
+  const [currentPage, setCurrentPage] = useState(1);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const currentQueryKey = getDealerAuctionWorkspaceQueryKey(mode, filters);
 
@@ -139,6 +142,10 @@ export function DealerHomeWorkspace({
   }, [filters.search]);
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.search, filters.importFilter, filters.sort, mode]);
+
+  useEffect(() => {
     if (!pendingMessage) {
       return undefined;
     }
@@ -153,6 +160,20 @@ export function DealerHomeWorkspace({
   }, [pendingMessage]);
 
   const queryData = workspaceQuery.data;
+  const filteredItems = queryData?.items ?? [];
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / HOME_PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pagedItems = filteredItems.slice(
+    (safeCurrentPage - 1) * HOME_PAGE_SIZE,
+    safeCurrentPage * HOME_PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const copy = modeCopy[mode];
   const summary = queryData?.summary ?? {
     totalAuctions: 0,
@@ -219,16 +240,22 @@ export function DealerHomeWorkspace({
         isFavoriteMutationPending={favoriteMutation.isPending}
         isLoading={workspaceQuery.isLoading}
         isRefreshing={workspaceQuery.isRefetching}
-        items={queryData?.items ?? []}
+        currentPage={safeCurrentPage}
+        itemLabel="대"
+        items={pagedItems}
         mode={mode}
         pendingMessage={pendingMessage}
+        pageSize={HOME_PAGE_SIZE}
         searchInput={searchInput}
         sortLabel={filters.sort === "latest" ? "최신순" : "가격순"}
+        totalItems={filteredItems.length}
+        totalPages={totalPages}
         visibleCount={queryData?.summary.visibleCount ?? 0}
         onFavoriteToggle={(auctionId) => favoriteMutation.mutate(auctionId)}
         onFilterChipClick={(label) => {
           setPendingMessage(`${label} 상세 필터는 준비 중입니다.`);
         }}
+        onPageChange={setCurrentPage}
         onImportFilterChange={(importFilter) => {
           replaceFilters({
             ...filters,
