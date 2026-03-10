@@ -1,0 +1,71 @@
+import Link from "next/link";
+import type { DealerSession } from "@/shared/auth/auth-types";
+import { appRoutes } from "@/shared/config/routes";
+import { FloatingChatDock } from "@/shared/ui/floating-chat-dock";
+import { LogoutButton } from "@/shared/ui/logout-button";
+
+type AppShellProps = Readonly<{
+  children: React.ReactNode;
+  session: DealerSession;
+}>;
+
+const navigationItems = [
+  { href: appRoutes.dashboard(), label: "Dashboard" },
+  { href: appRoutes.quotes(), label: "Quotes" },
+  { href: appRoutes.mypage(), label: "My Page" },
+] as const;
+
+export function AppShell({ children, session }: AppShellProps) {
+  return (
+    <div className="min-h-screen px-4 py-4 md:px-6 md:py-6">
+      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-7xl gap-4 lg:grid-cols-[260px_1fr]">
+        <aside className="rounded-[32px] border border-white/70 bg-slate-950 px-5 py-6 text-white shadow-panel">
+          <p className="text-sm uppercase tracking-[0.3em] text-teal-300">Cargo</p>
+          <h1 className="mt-4 text-2xl font-semibold">Dealer Workspace</h1>
+          <p className="mt-3 text-sm text-slate-300">
+            App Router shell은 여기서만 소유하고, 실제 기능 구현은 feature 계층에서
+            이어갑니다.
+          </p>
+          <nav className="mt-8 space-y-2">
+            {navigationItems.map((item) => (
+              <Link
+                key={item.href}
+                className="block rounded-2xl px-4 py-3 text-sm text-slate-200 transition hover:bg-white/10"
+                href={item.href}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Session</p>
+            <p className="mt-3 truncate text-sm font-medium text-slate-100">
+              {session.email}
+            </p>
+            <div className="mt-3 flex items-center gap-2 text-xs text-slate-300">
+              <span className="rounded-full bg-white/10 px-3 py-1">
+                {session.backend}
+              </span>
+              <span className="rounded-full bg-white/10 px-3 py-1">
+                {session.approvalStatus === "active" ? "활성" : "승인 대기"}
+              </span>
+            </div>
+          </div>
+          <div className="mt-4">
+            <LogoutButton />
+          </div>
+        </aside>
+        <main className="rounded-[32px] border border-white/70 bg-white/88 px-6 py-6 shadow-panel backdrop-blur md:px-8 md:py-8">
+          {session.approvalStatus === "pending" ? (
+            <div className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+              관리자 승인 전까지 일부 기능은 제한될 수 있습니다. Flutter dealer 앱의
+              `pendingApproval` 상태를 웹에서도 같은 의미로 유지합니다.
+            </div>
+          ) : null}
+          {children}
+        </main>
+      </div>
+      <FloatingChatDock />
+    </div>
+  );
+}
