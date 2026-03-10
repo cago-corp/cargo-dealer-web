@@ -6,11 +6,11 @@ export function SiteFooter({
   containerClassName = "max-w-[1680px]",
 }: SiteFooterProps) {
   return (
-    <footer className="border-t border-slate-200 bg-slate-100/90">
+    <footer className="border-t border-slate-200 bg-slate-100/95">
       <div
         className={`mx-auto w-full ${containerClassName} px-6 py-7 text-xs leading-6 text-slate-500`}
       >
-        <p className="font-semibold text-slate-600">Cargo Co., Ltd.</p>
+        <p className="font-semibold text-slate-700">Cargo Co., Ltd.</p>
         <p>
           대표: 한창훈 | 사업자등록번호: 000-00-00000 | 통신판매업신고:
           2026-서울강남-00000

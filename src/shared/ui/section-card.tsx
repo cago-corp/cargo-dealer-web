@@ -6,7 +6,7 @@ type SectionCardProps = Readonly<{
 
 export function SectionCard({ title, description, children }: SectionCardProps) {
   return (
-    <section className="rounded-[28px] border border-line bg-white/80 p-6">
+    <section className="rounded-[28px] border border-line bg-white p-6 shadow-[0_12px_32px_rgba(0,0,0,0.04)]">
       <header className="mb-5 space-y-1">
         <h2 className="text-xl font-semibold text-slate-950">{title}</h2>
         {description ? (

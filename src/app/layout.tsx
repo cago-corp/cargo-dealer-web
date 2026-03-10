@@ -1,6 +1,14 @@
+import localFont from "next/font/local";
 import type { Metadata } from "next";
 import { QueryProvider } from "@/shared/lib/query/query-provider";
 import "./globals.css";
+
+const pretendard = localFont({
+  src: "./fonts/PretendardVariable.ttf",
+  display: "swap",
+  variable: "--font-pretendard",
+  weight: "100 900",
+});
 
 export const metadata: Metadata = {
   title: "Cargo Dealer Web",
@@ -14,7 +22,7 @@ type RootLayoutProps = Readonly<{
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="ko">
-      <body>
+      <body className={pretendard.variable}>
         <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
