@@ -176,12 +176,6 @@ export function DealerDealDetailPage({ dealId }: DealerDealDetailPageProps) {
               </button>
               <Link
                 className="block rounded-2xl border border-line px-4 py-3 text-center text-sm font-medium text-slate-700"
-                href={appRoutes.chat(detail.chatRoomId)}
-              >
-                전체 채팅 보기
-              </Link>
-              <Link
-                className="block rounded-2xl border border-line px-4 py-3 text-center text-sm font-medium text-slate-700"
                 href={appRoutes.deals()}
               >
                 거래 목록으로

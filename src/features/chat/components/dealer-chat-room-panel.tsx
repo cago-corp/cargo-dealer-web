@@ -19,6 +19,7 @@ import { appRoutes } from "@/shared/config/routes";
 type DealerChatRoomPanelProps = {
   mode: "page" | "rail";
   roomId: string | null;
+  onBack?: () => void;
 };
 
 function formatMessageTime(value: string) {
@@ -56,6 +57,7 @@ function applyRoomPreview(
 export function DealerChatRoomPanel({
   mode,
   roomId,
+  onBack,
 }: DealerChatRoomPanelProps) {
   const queryClient = useQueryClient();
   const roomQuery = useDealerChatRoomQuery(roomId);
@@ -157,6 +159,8 @@ export function DealerChatRoomPanel({
     },
   });
 
+  const isRailMode = mode === "rail";
+
   if (!roomId) {
     return (
       <div className="flex h-full min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-line bg-slate-50 px-6 py-12 text-center">
@@ -171,21 +175,48 @@ export function DealerChatRoomPanel({
   }
 
   if (roomQuery.isLoading) {
-    return <div className="h-[420px] animate-pulse rounded-[28px] bg-slate-100" />;
+    return (
+      <section className="rounded-[28px] border border-line bg-white">
+        {isRailMode && onBack ? (
+          <header className="border-b border-line px-5 py-4">
+            <button
+              className="rounded-full border border-line px-3 py-1.5 text-sm font-medium text-slate-700"
+              type="button"
+              onClick={onBack}
+            >
+              목록으로
+            </button>
+          </header>
+        ) : null}
+        <div className="h-[420px] animate-pulse rounded-[28px] bg-slate-100" />
+      </section>
+    );
   }
 
   if (roomQuery.isError || !roomQuery.data) {
     return (
-      <div className="rounded-[28px] border border-rose-200 bg-rose-50 px-6 py-12 text-center">
-        <p className="text-base font-semibold text-rose-700">
-          채팅 내용을 불러오지 못했습니다.
-        </p>
-      </div>
+      <section className="rounded-[28px] border border-rose-200 bg-rose-50">
+        {isRailMode && onBack ? (
+          <header className="border-b border-rose-200 px-5 py-4">
+            <button
+              className="rounded-full border border-rose-200 bg-white px-3 py-1.5 text-sm font-medium text-rose-700"
+              type="button"
+              onClick={onBack}
+            >
+              목록으로
+            </button>
+          </header>
+        ) : null}
+        <div className="px-6 py-12 text-center">
+          <p className="text-base font-semibold text-rose-700">
+            채팅 내용을 불러오지 못했습니다.
+          </p>
+        </div>
+      </section>
     );
   }
 
   const room = roomQuery.data;
-  const isRailMode = mode === "rail";
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -204,6 +235,15 @@ export function DealerChatRoomPanel({
       <header className="border-b border-line px-5 py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
+            {isRailMode && onBack ? (
+              <button
+                className="mb-3 rounded-full border border-line px-3 py-1.5 text-sm font-medium text-slate-700"
+                type="button"
+                onClick={onBack}
+              >
+                목록으로
+              </button>
+            ) : null}
             <p className="truncate text-lg font-semibold text-slate-950">
               {room.customerName}
             </p>
@@ -219,14 +259,6 @@ export function DealerChatRoomPanel({
             >
               거래 상세
             </Link>
-            {isRailMode ? (
-              <Link
-                className="rounded-full border border-line px-3 py-1 text-xs font-medium text-slate-700"
-                href={appRoutes.chat(room.id)}
-              >
-                크게 보기
-              </Link>
-            ) : null}
           </div>
         </div>
         <p className="mt-3 text-sm text-slate-600">{room.stageDescription}</p>

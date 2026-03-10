@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 type ChatRailContextValue = {
   isCompactOpen: boolean;
   selectedRoomId: string | null;
+  clearSelectedRoom: () => void;
   closeCompact: () => void;
   openCompact: () => void;
   openRoom: (roomId: string) => void;
@@ -24,6 +25,10 @@ export function ChatRailProvider({ children }: ChatRailProviderProps) {
 
   const closeCompact = useCallback(() => {
     setIsCompactOpen(false);
+  }, []);
+
+  const clearSelectedRoom = useCallback(() => {
+    setSelectedRoomId(null);
   }, []);
 
   const openCompact = useCallback(() => {
@@ -47,6 +52,7 @@ export function ChatRailProvider({ children }: ChatRailProviderProps) {
     () => ({
       isCompactOpen,
       selectedRoomId,
+      clearSelectedRoom,
       closeCompact,
       openCompact,
       openRoom,
@@ -54,6 +60,7 @@ export function ChatRailProvider({ children }: ChatRailProviderProps) {
       toggleCompact,
     }),
     [
+      clearSelectedRoom,
       closeCompact,
       isCompactOpen,
       openCompact,

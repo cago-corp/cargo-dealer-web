@@ -1,25 +1,24 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect } from "react";
 import { DealerChatRoomList } from "@/features/chat/components/dealer-chat-room-list";
 import { DealerChatRoomPanel } from "@/features/chat/components/dealer-chat-room-panel";
 import { useDealerChatRoomListQuery } from "@/features/chat/hooks/use-dealer-chat-room-list-query";
-import { appRoutes } from "@/shared/config/routes";
 import { useChatRail } from "@/shared/ui/chat-rail-provider";
 
 function ChatRailContent() {
   const roomListQuery = useDealerChatRoomListQuery();
-  const { selectedRoomId, selectRoom } = useChatRail();
+  const { clearSelectedRoom, selectedRoomId, selectRoom } = useChatRail();
   const rooms = roomListQuery.data;
 
-  useEffect(() => {
-    if (selectedRoomId || !rooms || rooms.length === 0) {
-      return;
-    }
-
-    selectRoom(rooms[0].id);
-  }, [rooms, selectRoom, selectedRoomId]);
+  if (selectedRoomId) {
+    return (
+      <DealerChatRoomPanel
+        mode="rail"
+        roomId={selectedRoomId}
+        onBack={clearSelectedRoom}
+      />
+    );
+  }
 
   return (
     <>
@@ -56,21 +55,12 @@ function ChatRailContent() {
             채팅 목록을 불러오지 못했습니다.
           </p>
         ) : (
-          <>
-            <DealerChatRoomList
-              rooms={rooms ?? []}
-              selectedRoomId={selectedRoomId}
-              onSelectRoom={selectRoom}
-            />
-            <Link
-              className="inline-flex w-full justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white"
-              href={appRoutes.chat(selectedRoomId ?? undefined)}
-            >
-              전체 채팅 보기
-            </Link>
-          </>
+          <DealerChatRoomList
+            rooms={rooms ?? []}
+            selectedRoomId={selectedRoomId}
+            onSelectRoom={selectRoom}
+          />
         )}
-        <DealerChatRoomPanel mode="rail" roomId={selectedRoomId} />
       </div>
     </>
   );
