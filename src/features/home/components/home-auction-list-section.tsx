@@ -60,11 +60,7 @@ export function HomeAuctionListSection({
   return (
     <SectionCard
       title={mode === "favorites" ? "찜한 차량" : "경매 목록"}
-      description={
-        mode === "favorites"
-          ? "찜한 차량의 현재 상태와 다음 액션을 바로 확인합니다."
-          : "검색, 필터, 정렬 기준으로 경매를 빠르게 확인합니다."
-      }
+      description="검색, 필터, 정렬 기준으로 바로 다음 액션까지 확인합니다."
     >
       <form className="rounded-[28px] bg-slate-50 px-4 py-4" onSubmit={onSearchSubmit}>
         <div className="flex flex-col gap-3 xl:flex-row">
@@ -154,10 +150,10 @@ export function HomeAuctionListSection({
       </form>
 
       {isLoading ? (
-        <div className="mt-5 grid gap-4 2xl:grid-cols-2">
+        <div className="mt-5 space-y-2">
           {Array.from({ length: 4 }).map((_, index) => (
             <div
-              className="h-[250px] animate-pulse rounded-[28px] border border-line bg-slate-100"
+              className="h-[110px] animate-pulse rounded-[22px] border border-line bg-slate-100"
               key={`home-skeleton-${index}`}
             />
           ))}
@@ -174,7 +170,25 @@ export function HomeAuctionListSection({
           </p>
         </div>
       ) : (
-        <div className="mt-5 grid gap-4 2xl:grid-cols-2">
+        <div className="mt-5 space-y-2">
+          <div className="hidden rounded-[20px] border border-line bg-slate-50 px-4 py-3 xl:grid xl:grid-cols-[minmax(0,2.3fr)_minmax(180px,1fr)_minmax(170px,0.9fr)_minmax(180px,1fr)_minmax(160px,0.9fr)_auto] xl:gap-4">
+            {[
+              "차량 / 고객",
+              "조건",
+              "차량 정보",
+              "현황",
+              "마감 / 거래",
+              "액션",
+            ].map((label) => (
+              <p
+                className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500"
+                key={label}
+              >
+                {label}
+              </p>
+            ))}
+          </div>
+
           {items.map((item) => (
             <HomeAuctionCard
               key={item.id}
