@@ -48,7 +48,7 @@ export function HomeAuctionCard({
 
   return (
     <article className="rounded-[24px] border border-line bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-      <div className="flex items-start gap-3 md:items-center md:gap-4">
+      <div className="flex items-start gap-3 md:gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="max-w-[96px] truncate text-sm font-medium text-slate-500 md:max-w-[120px]">
@@ -75,14 +75,14 @@ export function HomeAuctionCard({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-start gap-2 md:items-center">
+        <div className="flex shrink-0 flex-col items-end justify-between gap-3 self-stretch">
           <FavoriteButton
             disabled={isFavoritePending}
             isFavorited={item.isFavorited}
             onClick={() => onFavoriteToggle(item.id)}
           />
           <Link
-            className="rounded-2xl border border-line px-3 py-2 text-sm font-medium text-slate-700"
+            className="inline-flex min-h-10 items-center px-1 text-sm font-semibold text-slate-700 underline underline-offset-4"
             href={primaryAction.href}
           >
             {primaryAction.label}
