@@ -10,6 +10,7 @@ import {
   toggleDealerAuctionFavorite,
 } from "@/shared/api/dealer-marketplace";
 import { formatRemainingTime } from "@/shared/lib/format/format-remaining-time";
+import { CachedImage } from "@/shared/ui/cached-image";
 import { SectionCard } from "@/shared/ui/section-card";
 
 type DealerBidDetailPageProps = {
@@ -143,16 +144,18 @@ export function DealerBidDetailPage({
     <section className="mx-auto max-w-[960px] space-y-6">
       <div className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-sm">
         <div className="relative h-[220px] bg-slate-100">
-          {imageUrl ? (
-            <div
-              className="h-full w-full bg-cover bg-center"
-              style={{ backgroundImage: `url("${imageUrl}")` }}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-100 via-white to-slate-200 text-3xl font-semibold tracking-[0.2em] text-slate-300">
-              CAR
-            </div>
-          )}
+          <CachedImage
+            alt={`${auction.brandName} ${auction.modelName}`}
+            className="object-cover"
+            fallback={
+              <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-100 via-white to-slate-200 text-3xl font-semibold tracking-[0.2em] text-slate-300">
+                CAR
+              </div>
+            }
+            priority
+            sizes="(min-width: 1024px) 960px, 100vw"
+            src={imageUrl}
+          />
 
           <button
             className="absolute right-5 top-5 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/92 text-lg text-slate-700 shadow-sm"

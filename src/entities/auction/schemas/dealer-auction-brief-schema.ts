@@ -30,7 +30,7 @@ export const dealerAuctionBriefSchema = z.object({
   deadlineAt: z.string().datetime(),
   yearLabel: z.string(),
   mileageLabel: z.string(),
-  askingPriceValue: z.number().int().positive(),
+  askingPriceValue: z.number().int().nonnegative(),
   askingPriceLabel: z.string(),
   viewCount: z.number().int().nonnegative(),
   bidCount: z.number().int().nonnegative(),

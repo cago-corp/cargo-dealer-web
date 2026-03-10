@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchDealerAuctionDetail } from "@/shared/api/dealer-marketplace";
+import { fetchDealerAuctionDetailFromApi } from "@/features/home/lib/dealer-home-api";
 
 export const dealerAuctionDetailQueryRoot = ["dealer-auction-detail"] as const;
 
@@ -12,6 +12,6 @@ export function getDealerAuctionDetailQueryKey(auctionId: string) {
 export function useDealerAuctionDetailQuery(auctionId: string) {
   return useQuery({
     queryKey: getDealerAuctionDetailQueryKey(auctionId),
-    queryFn: () => fetchDealerAuctionDetail(auctionId),
+    queryFn: () => fetchDealerAuctionDetailFromApi(auctionId),
   });
 }

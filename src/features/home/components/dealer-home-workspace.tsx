@@ -17,7 +17,7 @@ import {
   type DealerAuctionWorkspaceFilters,
   type DealerAuctionWorkspaceMode,
 } from "@/features/home/lib/dealer-auction-workspace-query";
-import { toggleDealerAuctionFavorite } from "@/shared/api/dealer-marketplace";
+import { toggleDealerAuctionFavoriteFromApi } from "@/features/home/lib/dealer-home-api";
 
 type DealerHomeWorkspaceProps = {
   mode: DealerAuctionWorkspaceMode;
@@ -113,7 +113,7 @@ export function DealerHomeWorkspace({
 
   const workspaceQuery = useDealerAuctionWorkspaceQuery(mode, filters);
   const favoriteMutation = useMutation({
-    mutationFn: toggleDealerAuctionFavorite,
+    mutationFn: toggleDealerAuctionFavoriteFromApi,
     onMutate: async (auctionId: string) => {
       await queryClient.cancelQueries({ queryKey: currentQueryKey });
 
@@ -219,7 +219,7 @@ export function DealerHomeWorkspace({
               마지막 갱신 {formatUpdatedAt(workspaceQuery.dataUpdatedAt)}
             </span>
             <span className="rounded-full border border-line bg-slate-50 px-3 py-1.5 text-slate-600">
-              정렬 {filters.sort === "latest" ? "최신순" : "가격순"}
+              정렬 최신순
             </span>
           </div>
         </div>
@@ -247,7 +247,7 @@ export function DealerHomeWorkspace({
         pendingMessage={pendingMessage}
         pageSize={HOME_PAGE_SIZE}
         searchInput={searchInput}
-        sortLabel={filters.sort === "latest" ? "최신순" : "가격순"}
+        sortLabel="최신순"
         totalItems={filteredItems.length}
         totalPages={totalPages}
         visibleCount={queryData?.summary.visibleCount ?? 0}
@@ -268,10 +268,7 @@ export function DealerHomeWorkspace({
         onSearchInputChange={setSearchInput}
         onSearchSubmit={handleSearchSubmit}
         onSortToggle={() => {
-          replaceFilters({
-            ...filters,
-            sort: filters.sort === "latest" ? "price" : "latest",
-          });
+          setPendingMessage("정렬 기능은 준비 중입니다.");
         }}
       />
     </section>

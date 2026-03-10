@@ -4,14 +4,15 @@ import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { DealerAuctionDetail } from "@/entities/auction/schemas/dealer-auction-detail-schema";
 import { getDealerBidDetailQueryKey } from "@/features/bids/lib/dealer-bid-query";
+import { toggleDealerAuctionFavoriteFromApi } from "@/features/home/lib/dealer-home-api";
 import { dealerAuctionWorkspaceQueryRoot } from "@/features/home/lib/dealer-auction-workspace-query";
 import {
   dealerAuctionDetailQueryRoot,
   useDealerAuctionDetailQuery,
 } from "@/features/home/hooks/use-dealer-auction-detail-query";
-import { toggleDealerAuctionFavorite } from "@/shared/api/dealer-marketplace";
 import { appRoutes } from "@/shared/config/routes";
 import { formatRemainingTime } from "@/shared/lib/format/format-remaining-time";
+import { CachedImage } from "@/shared/ui/cached-image";
 import { SectionCard } from "@/shared/ui/section-card";
 
 type DealerAuctionDetailPageProps = {
@@ -98,6 +99,32 @@ function buildConditionEntries(auction: DealerAuctionDetail) {
   ];
 }
 
+function buildQuickFacts(auction: DealerAuctionDetail) {
+  const facts = [
+    { label: "판매자", value: auction.sellerName },
+    { label: "구매 방식", value: auction.purchaseMethod },
+    { label: "고객 지역", value: auction.userRegion },
+    { label: "배송 지역", value: auction.deliveryRegion },
+    { label: "연식", value: auction.yearLabel },
+    { label: "연료", value: auction.fuelType },
+  ];
+
+  if (auction.purchaseMethod === "리스") {
+    facts.push({
+      label: "연간 주행거리",
+      value: auction.annualMileage
+        ? `${new Intl.NumberFormat("ko-KR").format(auction.annualMileage)}km`
+        : "-",
+    });
+  }
+
+  if (auction.customerType) {
+    facts.push({ label: "고객 구분", value: auction.customerType });
+  }
+
+  return facts;
+}
+
 function resolvePrimaryAction(auction: DealerAuctionDetail) {
   if (auction.myBidSubmissionId) {
     return {
@@ -128,7 +155,7 @@ export function DealerAuctionDetailPage({
   const queryClient = useQueryClient();
   const auctionDetailQuery = useDealerAuctionDetailQuery(auctionId);
   const favoriteMutation = useMutation({
-    mutationFn: toggleDealerAuctionFavorite,
+    mutationFn: toggleDealerAuctionFavoriteFromApi,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: dealerAuctionWorkspaceQueryRoot });
       queryClient.invalidateQueries({ queryKey: dealerAuctionDetailQueryRoot });
@@ -138,9 +165,32 @@ export function DealerAuctionDetailPage({
 
   if (auctionDetailQuery.isLoading) {
     return (
-      <SectionCard title="경매 상세" description="상세 정보를 불러오는 중입니다.">
-        <div className="h-[320px] animate-pulse rounded-[28px] bg-slate-100" />
-      </SectionCard>
+      <section className="space-y-5">
+        <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-5">
+            <div className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-sm">
+              <div className="h-[280px] animate-pulse bg-slate-100" />
+              <div className="space-y-4 px-6 py-6">
+                <div className="h-5 w-40 animate-pulse rounded-full bg-slate-100" />
+                <div className="h-9 w-2/3 animate-pulse rounded-2xl bg-slate-100" />
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div
+                      className="h-[84px] animate-pulse rounded-[22px] bg-slate-100"
+                      key={`auction-detail-metric-${index}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="h-[220px] animate-pulse rounded-[28px] bg-slate-100" />
+          </div>
+          <div className="space-y-4">
+            <div className="h-[220px] animate-pulse rounded-[28px] bg-slate-100" />
+            <div className="h-[180px] animate-pulse rounded-[28px] bg-slate-100" />
+          </div>
+        </div>
+      </section>
     );
   }
 
@@ -155,10 +205,9 @@ export function DealerAuctionDetailPage({
   const auction = auctionDetailQuery.data;
   const primaryAction = resolvePrimaryAction(auction);
   const conditionEntries = buildConditionEntries(auction);
-  const marketLabel = auction.isImported ? "수입차" : "국산차";
   const remainingTime = formatRemainingTime(auction.deadlineAt);
   const summaryMetrics = [
-    { label: "희망 금액", value: auction.askingPriceLabel },
+    { label: "차량가", value: auction.askingPriceLabel },
     { label: "남은 시간", value: remainingTime },
     { label: "마감 시각", value: formatDateLabel(auction.deadlineAt) },
     {
@@ -166,22 +215,29 @@ export function DealerAuctionDetailPage({
       value: `${auction.bidCount.toLocaleString("ko-KR")}명 / ${auction.viewCount.toLocaleString("ko-KR")}회`,
     },
   ] as const;
-  const quickFacts = [
-    { label: "판매사", value: auction.sellerName },
-    { label: "구매 방식", value: auction.purchaseMethod },
-    { label: "고객 지역", value: auction.userRegion },
-    { label: "배송 지역", value: auction.deliveryRegion },
-    { label: "연식", value: auction.yearLabel },
-    { label: "주행거리", value: auction.mileageLabel },
-    { label: "연료", value: auction.fuelType },
-    { label: "차종 구분", value: marketLabel },
-  ] as const;
+  const quickFacts = buildQuickFacts(auction);
 
   return (
     <section className="space-y-5">
       <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-5">
-          <section className="rounded-[32px] border border-white/80 bg-white px-6 py-6 shadow-sm">
+          <section className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-sm">
+            <div className="relative h-[280px] bg-slate-100">
+              <CachedImage
+                alt={`${auction.brandName} ${auction.modelName}`}
+                className="object-cover"
+                fallback={
+                  <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-100 via-white to-slate-200 text-3xl font-semibold tracking-[0.2em] text-slate-300">
+                    CAR
+                  </div>
+                }
+                priority
+                sizes="(min-width: 1536px) 860px, 100vw"
+                src={auction.imageUrl}
+              />
+            </div>
+
+            <div className="px-6 py-6">
             <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-start 2xl:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -193,14 +249,6 @@ export function DealerAuctionDetailPage({
                   <span className="whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
                     {auction.purchaseMethod}
                   </span>
-                  <span className="whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                    {marketLabel}
-                  </span>
-                  {auction.dealStage !== "none" ? (
-                    <span className="whitespace-nowrap rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
-                      {auction.dealStage}
-                    </span>
-                  ) : null}
                 </div>
 
                 <h1 className="mt-4 text-3xl font-semibold text-slate-950">
@@ -210,9 +258,11 @@ export function DealerAuctionDetailPage({
                   {auction.sellerName} · {auction.yearLabel} · {auction.fuelType} ·{" "}
                   {auction.regionLabel}
                 </p>
-                <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-700">
-                  {auction.description}
-                </p>
+                {auction.description ? (
+                  <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-700">
+                    {auction.description}
+                  </p>
+                ) : null}
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2 2xl:w-[360px] 2xl:shrink-0">
@@ -230,6 +280,7 @@ export function DealerAuctionDetailPage({
               {quickFacts.map((fact) => (
                 <DetailMetric key={fact.label} label={fact.label} value={fact.value} />
               ))}
+            </div>
             </div>
           </section>
 
@@ -255,35 +306,16 @@ export function DealerAuctionDetailPage({
             ) : null}
           </SectionCard>
 
-          <SectionCard
-            title="판단 메모"
-            description="입찰 판단에 필요한 현재 상태와 메모를 묶어서 봅니다."
-          >
-            <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
-              <DetailMetric label="현재 상태" value={auction.statusLabel} />
-              <DetailMetric
-                label="거래 후속 상태"
-                value={auction.dealStage === "none" ? "후속 거래 없음" : auction.dealStage}
-              />
-              <DetailMetric
-                label="고객 구분"
-                value={auction.customerType ?? "확인 필요"}
-              />
-              <DetailMetric
-                label="선납 / 보증금"
-                value={`${auction.advanceDownPaymentAmount ? formatWon(auction.advanceDownPaymentAmount) : "-"} / ${auction.depositDownPaymentAmount ? formatWon(auction.depositDownPaymentAmount) : "-"}`}
-              />
-            </div>
-
-            <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5">
-              <p className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
-                고객 요청 메모
-              </p>
-              <p className="mt-3 text-sm leading-7 text-slate-700">
-                {auction.description}
-              </p>
-            </div>
-          </SectionCard>
+          {auction.description ? (
+            <SectionCard
+              title="고객 요청 메모"
+              description="입찰 판단 전에 확인해야 할 메모입니다."
+            >
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5">
+                <p className="text-sm leading-7 text-slate-700">{auction.description}</p>
+              </div>
+            </SectionCard>
+          ) : null}
         </div>
 
         <aside className="space-y-4 2xl:sticky 2xl:top-4 2xl:self-start">

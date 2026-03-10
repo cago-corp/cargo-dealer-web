@@ -19,7 +19,7 @@ export const dealerAuctionDetailSchema = dealerAuctionBriefSchema.extend({
   customerType: z.string().nullable(),
   vehicleExteriorColorName: z.string().nullable(),
   vehicleInteriorColorName: z.string().nullable(),
-  description: z.string(),
+  description: z.string().nullable(),
   myBidSubmissionId: z.string().nullable(),
 });
 

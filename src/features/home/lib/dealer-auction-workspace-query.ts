@@ -3,7 +3,7 @@ import type {
   DealerAuctionWorkspaceFilters,
   DealerAuctionWorkspaceMode,
 } from "@/entities/auction/schemas/dealer-auction-workspace-schema";
-import { fetchDealerAuctionWorkspace } from "@/shared/api/dealer-marketplace";
+import { fetchDealerAuctionWorkspaceFromApi } from "@/features/home/lib/dealer-home-api";
 
 export type {
   DealerAuctionImportFilter,
@@ -37,7 +37,7 @@ export function getDealerAuctionWorkspaceQueryOptions(
 ) {
   return queryOptions({
     queryKey: getDealerAuctionWorkspaceQueryKey(mode, filters),
-    queryFn: () => fetchDealerAuctionWorkspace(mode, filters),
+    queryFn: () => fetchDealerAuctionWorkspaceFromApi(mode, filters),
     refetchInterval: mode === "home" ? 10000 : false,
   });
 }
