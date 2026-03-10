@@ -6,6 +6,7 @@ import { DealerSignupProgress } from "@/features/auth/components/dealer-signup-p
 import { useDealerSignupDraft } from "@/features/auth/hooks/use-dealer-signup-draft";
 import { DealerAuthScaffold } from "@/features/auth/dealer-auth-scaffold";
 import { appRoutes } from "@/shared/config/routes";
+import { LogoutButton } from "@/shared/ui/logout-button";
 
 export function DealerSignupCompletePage() {
   const router = useRouter();
@@ -47,23 +48,28 @@ export function DealerSignupCompletePage() {
           </div>
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <Link
+              className="flex-1 rounded-2xl bg-slate-950 px-4 py-3 text-center text-sm font-semibold text-white"
+              href={appRoutes.pendingApproval()}
+            >
+              승인 상태 확인
+            </Link>
+            <div className="sm:min-w-40">
+              <LogoutButton variant="light" />
+            </div>
+          </div>
+
+          <div className="mt-4">
             <button
-              className="flex-1 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+              className="text-sm font-medium text-slate-500 underline-offset-4 hover:underline"
               type="button"
               onClick={() => {
                 clearDraft();
-                router.replace(appRoutes.login());
                 router.refresh();
               }}
             >
-              로그인 화면으로
+              입력 초안 비우기
             </button>
-            <Link
-              className="rounded-2xl border border-line px-4 py-3 text-center text-sm font-medium text-slate-700"
-              href={appRoutes.signupCard()}
-            >
-              가입 정보 다시 보기
-            </Link>
           </div>
         </div>
       </section>

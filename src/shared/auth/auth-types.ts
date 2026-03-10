@@ -7,6 +7,18 @@ export type DealerLoginCredentials = {
   password: string;
 };
 
+export type DealerSignupPayload = {
+  email: string;
+  password: string;
+  name: string;
+  companyName: string;
+  phone: string;
+  tosAgreed: boolean;
+  marketingNotificationOptIn: boolean;
+  nickname?: string;
+  businessCardImageUrl?: string;
+};
+
 export type DealerSession = {
   backend: DealerAuthBackend;
   dealerId: string;

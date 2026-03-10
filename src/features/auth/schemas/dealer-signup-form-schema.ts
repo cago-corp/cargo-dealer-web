@@ -4,24 +4,25 @@ const passwordPattern =
   /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
 const phonePattern = /^010\d{7,8}$/;
 
-export const dealerSignupFormSchema = z
-  .object({
-    email: z.string().trim().email("올바른 이메일 형식이 아닙니다."),
-    password: z
-      .string()
-      .min(1, "비밀번호를 입력해주세요.")
-      .regex(
-        passwordPattern,
-        "비밀번호는 8자 이상이며, 영문, 숫자, 특수문자를 포함해야 합니다.",
-      ),
-    passwordConfirm: z.string().min(1, "비밀번호 확인을 입력해주세요."),
-    name: z.string().trim().min(1, "이름을 입력해주세요."),
-    nickname: z.string().trim().min(1, "닉네임을 입력해주세요."),
-    phone: z
-      .string()
-      .trim()
-      .regex(phonePattern, "올바른 연락처 형식이 아닙니다. ('-' 제외)"),
-  })
+export const dealerSignupFormFieldsSchema = z.object({
+  email: z.string().trim().email("올바른 이메일 형식이 아닙니다."),
+  password: z
+    .string()
+    .min(1, "비밀번호를 입력해주세요.")
+    .regex(
+      passwordPattern,
+      "비밀번호는 8자 이상이며, 영문, 숫자, 특수문자를 포함해야 합니다.",
+    ),
+  passwordConfirm: z.string().min(1, "비밀번호 확인을 입력해주세요."),
+  name: z.string().trim().min(1, "이름을 입력해주세요."),
+  nickname: z.string().trim().min(1, "닉네임을 입력해주세요."),
+  phone: z
+    .string()
+    .trim()
+    .regex(phonePattern, "올바른 연락처 형식이 아닙니다. ('-' 제외)"),
+});
+
+export const dealerSignupFormSchema = dealerSignupFormFieldsSchema
   .superRefine((value, context) => {
     if (value.password !== value.passwordConfirm) {
       context.addIssue({

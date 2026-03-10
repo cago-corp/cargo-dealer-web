@@ -24,6 +24,8 @@ export function DealerSignupCardPage() {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<SignupCardField, string>>>(
     {},
   );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isHydrated) {
@@ -68,9 +70,10 @@ export function DealerSignupCardPage() {
       ...current,
       [field]: undefined,
     }));
+    setErrorMessage(null);
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const parsed = dealerSignupCardSchema.safeParse({
@@ -92,7 +95,45 @@ export function DealerSignupCardPage() {
     }
 
     setFieldErrors({});
-    router.push(appRoutes.signupComplete());
+    setErrorMessage(null);
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: draft.email,
+          password: draft.password,
+          name: draft.name,
+          nickname: draft.nickname,
+          phone: draft.phone,
+          companyName: draft.companyName,
+          tosAgreed: true,
+          marketingNotificationOptIn: true,
+        }),
+      });
+
+      const result = (await response.json().catch(() => null)) as
+        | { message?: string; redirectTo?: string }
+        | null;
+
+      if (!response.ok) {
+        setErrorMessage(
+          result?.message ?? "회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        );
+        return;
+      }
+
+      router.replace(result?.redirectTo ?? appRoutes.signupComplete());
+      router.refresh();
+    } catch {
+      setErrorMessage("회원가입 요청 중 문제가 발생했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -195,6 +236,12 @@ export function DealerSignupCardPage() {
             ) : null}
           </div>
 
+          {errorMessage ? (
+            <p className="mt-6 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
+              {errorMessage}
+            </p>
+          ) : null}
+
           <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:justify-between">
             <Link
               className="rounded-2xl border border-line px-4 py-3 text-center text-sm font-medium text-slate-700"
@@ -203,10 +250,11 @@ export function DealerSignupCardPage() {
               이전 단계
             </Link>
             <button
-              className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white"
+              className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
               type="submit"
+              disabled={isSubmitting}
             >
-              가입 신청 완료
+              {isSubmitting ? "가입 신청 중..." : "가입 신청 완료"}
             </button>
           </div>
         </form>

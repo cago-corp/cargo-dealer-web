@@ -6,6 +6,10 @@ export const springDealerAuthClient: DealerAuthClient = {
     throw new DealerAuthError("Spring auth adapter is not implemented yet.", 501);
   },
 
+  async signup() {
+    throw new DealerAuthError("Spring signup adapter is not implemented yet.", 501);
+  },
+
   async refreshSession(session) {
     return session;
   },
