@@ -14,6 +14,21 @@
 - web 경로: `/Users/hanchanghun/AndroidStudioProjects/cargo-web`
 - 분석 일자: 2026-03-10
 
+## Web IA 확정 사항
+
+2026-03-10 기준으로 dealer web의 좌측 메인 내비는 다음으로 확정했다.
+
+- `경매장 홈`
+- `찜한 차`
+- `내 입찰`
+- `내 거래`
+- `마이 페이지`
+
+추가 원칙:
+- Flutter `home`의 `전체 / 찜한 차`는 web에서 `경매장 홈 / 찜한 차`로 분리한다.
+- Flutter `quote`의 `내 입찰 / 내 거래`는 web에서 별도 진입으로 분리한다.
+- chat은 좌측 메인 내비에서 제외하고 우측 floating dock + 전용 페이지로 유지한다.
+
 ## 1. 최상위 상태 머신
 
 Flutter dealer 앱의 진입 흐름은 단순 로그인 여부가 아니라 다음 상태 전이를 가진다.

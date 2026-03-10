@@ -1,6 +1,5 @@
-import Link from "next/link";
 import type { DealerSession } from "@/shared/auth/auth-types";
-import { appRoutes } from "@/shared/config/routes";
+import { AppSidebarNav } from "@/shared/ui/app-sidebar-nav";
 import { FloatingChatDock } from "@/shared/ui/floating-chat-dock";
 import { LogoutButton } from "@/shared/ui/logout-button";
 
@@ -8,12 +7,6 @@ type AppShellProps = Readonly<{
   children: React.ReactNode;
   session: DealerSession;
 }>;
-
-const navigationItems = [
-  { href: appRoutes.home(), label: "Home" },
-  { href: appRoutes.quote(), label: "MY견적" },
-  { href: appRoutes.mypage(), label: "My Page" },
-] as const;
 
 export function AppShell({ children, session }: AppShellProps) {
   return (
@@ -23,20 +16,10 @@ export function AppShell({ children, session }: AppShellProps) {
           <p className="text-sm uppercase tracking-[0.3em] text-teal-300">Cargo</p>
           <h1 className="mt-4 text-2xl font-semibold">Dealer Workspace</h1>
           <p className="mt-3 text-sm text-slate-300">
-            App Router shell은 여기서만 소유하고, 실제 기능 구현은 feature 계층에서
-            이어갑니다.
+            Flutter dealer의 정보 구조를 웹 작업대에 맞게 재배치합니다. 채팅은
+            우측 floating dock에서 독립적으로 유지합니다.
           </p>
-          <nav className="mt-8 space-y-2">
-            {navigationItems.map((item) => (
-              <Link
-                key={item.href}
-                className="block rounded-2xl px-4 py-3 text-sm text-slate-200 transition hover:bg-white/10"
-                href={item.href}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <AppSidebarNav />
           <div className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Session</p>
             <p className="mt-3 truncate text-sm font-medium text-slate-100">

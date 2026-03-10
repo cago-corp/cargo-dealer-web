@@ -2,5 +2,5 @@ import { redirect } from "next/navigation";
 import { appRoutes } from "@/shared/config/routes";
 
 export default function QuotesLegacyRoutePage() {
-  redirect(appRoutes.quote());
+  redirect(appRoutes.bids());
 }

@@ -19,7 +19,8 @@ src/
     api/
   features/
     auth/
-    dashboard/
+    home/
+    bids/
     deals/
     chat/
     mypage/

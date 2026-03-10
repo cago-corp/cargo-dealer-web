@@ -1,8 +1,10 @@
 export const appRoutes = {
   login: () => "/login",
-  home: (options?: { tab?: "all" | "favorite" }) =>
-    options?.tab === "favorite" ? "/home?tab=favorite" : "/home",
-  quote: () => "/quote",
+  home: () => "/home",
+  homeAuctionDetail: (auctionId: string) => `/home/auctions/${auctionId}`,
+  favorites: () => "/favorites",
+  bids: () => "/bids",
+  deals: () => "/deals",
   chat: () => "/chat",
   mypage: () => "/mypage",
 } as const;

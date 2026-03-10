@@ -21,7 +21,9 @@ Dealer web frontend repository.
 
 - `/login`
 - `/home`
-- `/quote`
+- `/favorites`
+- `/bids`
+- `/deals`
 - `/chat`
 - `/mypage`
 

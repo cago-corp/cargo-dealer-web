@@ -64,7 +64,9 @@ src/app/
   (public)/
     login/
   (protected)/
-    dashboard/
+    home/
+    favorites/
+    bids/
     deals/
     chat/
 ```

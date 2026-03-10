@@ -1,5 +1,6 @@
-import { DealerQuotesPage } from "@/features/quotes/dealer-quotes-page";
+import { redirect } from "next/navigation";
+import { appRoutes } from "@/shared/config/routes";
 
-export default function QuoteRoutePage() {
-  return <DealerQuotesPage />;
+export default function QuoteLegacyRoutePage() {
+  redirect(appRoutes.bids());
 }
