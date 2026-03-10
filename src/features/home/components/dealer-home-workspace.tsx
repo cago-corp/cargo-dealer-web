@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { HomeAuctionListSection } from "@/features/home/components/home-auction-list-section";
-import { HomeSummaryPanel } from "@/features/home/components/home-summary-panel";
 import { useDealerAuctionWorkspaceQuery } from "@/features/home/hooks/use-dealer-auction-workspace-query";
 import {
   buildDealerAuctionWorkspaceHref,
@@ -27,20 +26,29 @@ type DealerHomeWorkspaceProps = {
 
 const modeCopy = {
   home: {
-    eyebrow: "Auction Home",
     title: "경매장 홈",
-    description:
-      "실시간 경매를 확인하고 원하는 차량을 빠르게 비교할 수 있습니다.",
-    operationsLabel: "목록은 10초마다 자동으로 새로고침됩니다.",
+    description: "실시간 경매 상태를 확인하고 바로 상세와 입찰로 이동합니다.",
+    refreshLabel: "10초 자동 새로고침",
   },
   favorites: {
-    eyebrow: "Favorites",
     title: "찜한 차",
-    description:
-      "관심 있는 차량만 따로 모아 보고 거래 가능성을 빠르게 점검할 수 있습니다.",
-    operationsLabel: "찜 상태는 즉시 반영되고 전체 목록에도 함께 적용됩니다.",
+    description: "찜한 차량만 모아 현재 상태와 다음 액션을 빠르게 확인합니다.",
+    refreshLabel: "찜 상태 즉시 반영",
   },
 } as const;
+
+function formatUpdatedAt(timestamp: number) {
+  if (!timestamp) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(new Date(timestamp));
+}
 
 function applyFavoriteToggle(
   current: DealerAuctionWorkspaceData | undefined,
@@ -146,6 +154,19 @@ export function DealerHomeWorkspace({
 
   const queryData = workspaceQuery.data;
   const copy = modeCopy[mode];
+  const summary = queryData?.summary ?? {
+    totalAuctions: 0,
+    favoriteAuctions: 0,
+    bidCount: 0,
+    dealCount: 0,
+    visibleCount: 0,
+  };
+  const stats = [
+    { label: "현재 노출", value: `${summary.visibleCount.toLocaleString("ko-KR")}대` },
+    { label: "찜한 차", value: `${summary.favoriteAuctions.toLocaleString("ko-KR")}대` },
+    { label: "내 입찰", value: `${summary.bidCount.toLocaleString("ko-KR")}건` },
+    { label: "내 거래", value: `${summary.dealCount.toLocaleString("ko-KR")}건` },
+  ] as const;
 
   function replaceFilters(nextFilters: DealerAuctionWorkspaceFilters) {
     router.replace(buildDealerAuctionWorkspaceHref(pathname, nextFilters), {
@@ -162,42 +183,36 @@ export function DealerHomeWorkspace({
   }
 
   return (
-    <section className="space-y-6">
-      <header className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-[32px] border border-white/80 bg-white/92 px-6 py-6 shadow-sm">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-teal-700">
-            {copy.eyebrow}
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold text-slate-950">
-            {copy.title}
-          </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-            {copy.description}
-          </p>
+    <section className="space-y-4">
+      <header className="rounded-[28px] border border-line bg-white/90 px-5 py-5 shadow-sm">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-950">{copy.title}</h1>
+            <p className="mt-2 text-sm text-slate-600">{copy.description}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded-full bg-slate-950 px-3 py-1.5 font-medium text-white">
+              {copy.refreshLabel}
+            </span>
+            <span className="rounded-full border border-line bg-slate-50 px-3 py-1.5 text-slate-600">
+              마지막 갱신 {formatUpdatedAt(workspaceQuery.dataUpdatedAt)}
+            </span>
+            <span className="rounded-full border border-line bg-slate-50 px-3 py-1.5 text-slate-600">
+              정렬 {filters.sort === "latest" ? "최신순" : "가격순"}
+            </span>
+          </div>
         </div>
-        <div className="rounded-[32px] border border-slate-200 bg-slate-950 px-6 py-6 text-white shadow-sm">
-          <p className="text-xs uppercase tracking-[0.24em] text-teal-300">
-            Overview
-          </p>
-          <p className="mt-4 text-lg font-semibold">오늘 확인할 경매 흐름</p>
-          <p className="mt-3 text-sm leading-6 text-slate-300">
-            {copy.operationsLabel}
-          </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {stats.map((stat) => (
+            <div className="rounded-2xl bg-slate-50 px-4 py-3" key={stat.label}>
+              <p className="text-xs font-medium text-slate-500">{stat.label}</p>
+              <p className="mt-2 text-lg font-semibold text-slate-950">
+                {stat.value}
+              </p>
+            </div>
+          ))}
         </div>
       </header>
-
-      <HomeSummaryPanel
-        mode={mode}
-        summary={
-          queryData?.summary ?? {
-            totalAuctions: 0,
-            favoriteAuctions: 0,
-            bidCount: 0,
-            dealCount: 0,
-            visibleCount: 0,
-          }
-        }
-      />
 
       <HomeAuctionListSection
         filters={filters}

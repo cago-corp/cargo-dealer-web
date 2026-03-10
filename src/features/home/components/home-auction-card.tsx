@@ -14,6 +14,14 @@ const purchaseMethodTone = {
   리스: "bg-slate-100 text-slate-600",
 } as const;
 
+const statusTone = {
+  경매중: "bg-sky-50 text-sky-700",
+  "마감 임박": "bg-rose-50 text-rose-700",
+  "내 입찰 진행": "bg-violet-50 text-violet-700",
+  "계약 진행": "bg-emerald-50 text-emerald-700",
+  "경매 종료": "bg-slate-200 text-slate-600",
+} as const;
+
 function formatDeadlineLabel(deadlineAt: string) {
   return new Intl.DateTimeFormat("ko-KR", {
     month: "2-digit",
@@ -51,16 +59,40 @@ export function HomeAuctionCard({
   onFavoriteToggle,
 }: HomeAuctionCardProps) {
   const primaryAction = getPrimaryAction(item);
+  const vehicleLabel = `${item.brandName} ${item.modelName} ${item.trimName}`;
+  const marketLabel = item.isImported ? "수입차" : "국산차";
 
   return (
-    <article className="rounded-[28px] border border-line bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <article className="rounded-[24px] border border-line bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-slate-500">{item.sellerName}</p>
-          <h3 className="mt-2 text-xl font-semibold text-slate-950">
-            {item.brandName} {item.modelName}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-medium text-slate-500">{item.sellerName}</p>
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone[item.statusLabel as keyof typeof statusTone] ?? "bg-slate-100 text-slate-600"}`}
+            >
+              {item.statusLabel}
+            </span>
+            {item.dealStage !== "none" ? (
+              <span className="rounded-full bg-slate-950 px-2.5 py-1 text-xs font-semibold text-white">
+                {item.dealStage}
+              </span>
+            ) : null}
+          </div>
+          <h3 className="mt-2 truncate text-lg font-semibold text-slate-950">
+            {vehicleLabel}
           </h3>
-          <p className="mt-1 text-sm text-slate-500">{item.trimName}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+            <span
+              className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${purchaseMethodTone[item.purchaseMethod]}`}
+            >
+              {item.purchaseMethod}
+            </span>
+            <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+              {marketLabel}
+            </span>
+            <span>{item.regionLabel}</span>
+          </div>
         </div>
         <button
           aria-label={item.isFavorited ? "찜 해제" : "찜하기"}
@@ -73,32 +105,22 @@ export function HomeAuctionCard({
         </button>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span
-          className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${purchaseMethodTone[item.purchaseMethod]}`}
-        >
-          {item.purchaseMethod}
-        </span>
-        <span className="text-sm text-slate-500">📍 {item.regionLabel}</span>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-          {item.statusLabel}
-        </span>
-      </div>
-
-      <dl className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="연식" value={item.yearLabel} />
-        <Metric label="주행거리" value={item.mileageLabel} />
+      <dl className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <Metric label="희망 금액" value={item.askingPriceLabel} />
         <Metric label="마감 시각" value={formatDeadlineLabel(item.deadlineAt)} />
+        <Metric label="연식" value={item.yearLabel} />
+        <Metric label="주행거리" value={item.mileageLabel} />
+        <Metric
+          label="입찰 수"
+          value={`${item.bidCount.toLocaleString("ko-KR")}명`}
+        />
+        <Metric
+          label="조회 수"
+          value={`${item.viewCount.toLocaleString("ko-KR")}회`}
+        />
       </dl>
 
-      {item.dealStage !== "none" ? (
-        <div className="mt-4 rounded-2xl bg-slate-950 px-4 py-3 text-sm text-white">
-          거래 후속 상태: <strong>{item.dealStage}</strong>
-        </div>
-      ) : null}
-
-      <div className="mt-5 flex flex-wrap gap-3">
+      <div className="mt-4 flex flex-wrap gap-3">
         {primaryAction.href ? (
           <Link
             className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white"
@@ -133,7 +155,7 @@ type MetricProps = {
 
 function Metric({ label, value }: MetricProps) {
   return (
-    <div className="rounded-2xl bg-slate-50 px-4 py-3">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
       <dt className="text-xs font-medium text-slate-500">{label}</dt>
       <dd className="mt-2 text-sm font-semibold text-slate-900">{value}</dd>
     </div>

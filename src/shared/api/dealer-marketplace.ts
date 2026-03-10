@@ -779,6 +779,8 @@ function toAuctionBrief(record: RawAuctionRecord): DealerAuctionBrief {
     mileageLabel: record.mileageLabel,
     askingPriceValue: record.askingPriceValue,
     askingPriceLabel: record.askingPriceLabel,
+    viewCount: record.viewCount,
+    bidCount: record.bidCount,
     bidState: resolveBidState(record),
     statusLabel: resolveStatusLabel(record),
     dealStage: record.dealStage,

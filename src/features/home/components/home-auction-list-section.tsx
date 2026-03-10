@@ -59,8 +59,12 @@ export function HomeAuctionListSection({
 }: HomeAuctionListSectionProps) {
   return (
     <SectionCard
-      title={mode === "favorites" ? "찜한 차량 목록" : "실시간 경매 목록"}
-      description="검색과 기본 필터를 이용해 원하는 차량을 빠르게 찾아볼 수 있습니다."
+      title={mode === "favorites" ? "찜한 차량" : "경매 목록"}
+      description={
+        mode === "favorites"
+          ? "찜한 차량의 현재 상태와 다음 액션을 바로 확인합니다."
+          : "검색, 필터, 정렬 기준으로 경매를 빠르게 확인합니다."
+      }
     >
       <form className="rounded-[28px] bg-slate-50 px-4 py-4" onSubmit={onSearchSubmit}>
         <div className="flex flex-col gap-3 xl:flex-row">
@@ -123,7 +127,7 @@ export function HomeAuctionListSection({
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
             <span>
-              총 <strong className="text-slate-900">{visibleCount}</strong>대
+              현재 <strong className="text-slate-900">{visibleCount}</strong>대
             </span>
             <button
               className="rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-slate-600"

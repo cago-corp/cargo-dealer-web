@@ -32,6 +32,8 @@ export const dealerAuctionBriefSchema = z.object({
   mileageLabel: z.string(),
   askingPriceValue: z.number().int().positive(),
   askingPriceLabel: z.string(),
+  viewCount: z.number().int().nonnegative(),
+  bidCount: z.number().int().nonnegative(),
   bidState: dealerAuctionBidStateSchema,
   statusLabel: z.string(),
   dealStage: dealerAuctionDealStageSchema,
