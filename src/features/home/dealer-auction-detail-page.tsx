@@ -4,9 +4,7 @@ import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { DealerAuctionDetail } from "@/entities/auction/schemas/dealer-auction-detail-schema";
 import { getDealerBidDetailQueryKey } from "@/features/bids/lib/dealer-bid-query";
-import {
-  dealerAuctionWorkspaceQueryRoot,
-} from "@/features/home/lib/dealer-auction-workspace-query";
+import { dealerAuctionWorkspaceQueryRoot } from "@/features/home/lib/dealer-auction-workspace-query";
 import {
   dealerAuctionDetailQueryRoot,
   useDealerAuctionDetailQuery,
@@ -20,14 +18,22 @@ type DealerAuctionDetailPageProps = {
   auctionId: string;
 };
 
+const statusTone = {
+  경매중: "bg-sky-50 text-sky-700",
+  "마감 임박": "bg-rose-50 text-rose-700",
+  "내 입찰 진행": "bg-violet-50 text-violet-700",
+  "계약 진행": "bg-emerald-50 text-emerald-700",
+  "경매 종료": "bg-slate-200 text-slate-600",
+} as const;
+
 function formatWon(value: number) {
   return `${new Intl.NumberFormat("ko-KR").format(value)}원`;
 }
 
 function formatDateLabel(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
-    month: "long",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -38,7 +44,7 @@ function buildConditionEntries(auction: DealerAuctionDetail) {
   if (auction.purchaseMethod === "현금") {
     return [
       { label: "공채용 지역", value: auction.userRegion },
-      { label: "배송지역", value: auction.deliveryRegion },
+      { label: "배송 지역", value: auction.deliveryRegion },
       {
         label: "컬러",
         value: `${auction.vehicleExteriorColorName ?? "색상 무관"} / ${auction.vehicleInteriorColorName ?? "색상 무관"}`,
@@ -60,7 +66,7 @@ function buildConditionEntries(auction: DealerAuctionDetail) {
           : "-",
       },
       { label: "공채용 지역", value: auction.userRegion },
-      { label: "배송지역", value: auction.deliveryRegion },
+      { label: "배송 지역", value: auction.deliveryRegion },
     ];
   }
 
@@ -87,8 +93,8 @@ function buildConditionEntries(auction: DealerAuctionDetail) {
         ? `${new Intl.NumberFormat("ko-KR").format(auction.annualMileage)}km`
         : "-",
     },
-    { label: "구분", value: auction.customerType ?? "-" },
-    { label: "배송지역", value: auction.deliveryRegion },
+    { label: "고객 구분", value: auction.customerType ?? "-" },
+    { label: "배송 지역", value: auction.deliveryRegion },
   ];
 }
 
@@ -96,7 +102,7 @@ function resolvePrimaryAction(auction: DealerAuctionDetail) {
   if (auction.myBidSubmissionId) {
     return {
       href: appRoutes.bidDetail(auction.id),
-      label: "입찰 완료 (내역 보기)",
+      label: "내 입찰 보기",
       disabled: false,
     };
   }
@@ -149,71 +155,91 @@ export function DealerAuctionDetailPage({
   const auction = auctionDetailQuery.data;
   const primaryAction = resolvePrimaryAction(auction);
   const conditionEntries = buildConditionEntries(auction);
+  const marketLabel = auction.isImported ? "수입차" : "국산차";
+  const remainingTime = formatRemainingTime(auction.deadlineAt);
+  const summaryMetrics = [
+    { label: "희망 금액", value: auction.askingPriceLabel },
+    { label: "남은 시간", value: remainingTime },
+    { label: "마감 시각", value: formatDateLabel(auction.deadlineAt) },
+    {
+      label: "입찰 / 조회",
+      value: `${auction.bidCount.toLocaleString("ko-KR")}명 / ${auction.viewCount.toLocaleString("ko-KR")}회`,
+    },
+  ] as const;
+  const quickFacts = [
+    { label: "판매사", value: auction.sellerName },
+    { label: "구매 방식", value: auction.purchaseMethod },
+    { label: "고객 지역", value: auction.userRegion },
+    { label: "배송 지역", value: auction.deliveryRegion },
+    { label: "연식", value: auction.yearLabel },
+    { label: "주행거리", value: auction.mileageLabel },
+    { label: "연료", value: auction.fuelType },
+    { label: "차종 구분", value: marketLabel },
+  ] as const;
 
   return (
-    <section className="space-y-6">
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-6">
-          <section className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-sm">
-            <div className="relative aspect-[16/10] bg-gradient-to-br from-slate-100 via-white to-teal-50">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(13,148,136,0.16),transparent_28%)]" />
-              <div className="absolute inset-x-8 bottom-8 rounded-[28px] border border-white/80 bg-white/92 p-6 shadow-lg backdrop-blur">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-slate-500">
-                      {auction.brandName}
-                    </p>
-                    <h1 className="mt-2 text-3xl font-semibold text-slate-950">
-                      {auction.modelName} {auction.trimName}
-                    </h1>
-                    <p className="mt-2 text-sm text-slate-600">
-                      {auction.yearLabel} · {auction.fuelType} · {auction.regionLabel}
-                    </p>
-                  </div>
-                  <button
-                    aria-label={auction.isFavorited ? "찜 해제" : "찜하기"}
-                    className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600"
-                    disabled={favoriteMutation.isPending}
-                    type="button"
-                    onClick={() => favoriteMutation.mutate(auction.id)}
+    <section className="space-y-5">
+      <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-5">
+          <section className="rounded-[32px] border border-white/80 bg-white px-6 py-6 shadow-sm">
+            <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-start 2xl:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${statusTone[auction.statusLabel as keyof typeof statusTone] ?? "bg-slate-100 text-slate-600"}`}
                   >
-                    {auction.isFavorited ? "♥ 찜한 차" : "♡ 찜하기"}
-                  </button>
+                    {auction.statusLabel}
+                  </span>
+                  <span className="whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                    {auction.purchaseMethod}
+                  </span>
+                  <span className="whitespace-nowrap rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                    {marketLabel}
+                  </span>
+                  {auction.dealStage !== "none" ? (
+                    <span className="whitespace-nowrap rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
+                      {auction.dealStage}
+                    </span>
+                  ) : null}
                 </div>
 
-                <div className="mt-5 flex flex-wrap items-center gap-3 text-sm">
-                  <span className="rounded-full bg-teal-50 px-3 py-1 font-semibold text-teal-700">
-                    남은 시간 {formatRemainingTime(auction.deadlineAt)}
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">
-                    {auction.bidCount}명 입찰
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">
-                    {auction.viewCount}명 조회
-                  </span>
-                  <span className="rounded-full bg-slate-950 px-3 py-1 text-white">
-                    {auction.askingPriceLabel}
-                  </span>
-                </div>
+                <h1 className="mt-4 text-3xl font-semibold text-slate-950">
+                  {auction.brandName} {auction.modelName} {auction.trimName}
+                </h1>
+                <p className="mt-2 text-sm text-slate-600">
+                  {auction.sellerName} · {auction.yearLabel} · {auction.fuelType} ·{" "}
+                  {auction.regionLabel}
+                </p>
+                <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-700">
+                  {auction.description}
+                </p>
               </div>
+
+              <div className="grid gap-2 sm:grid-cols-2 2xl:w-[360px] 2xl:shrink-0">
+                {summaryMetrics.map((metric) => (
+                  <SummaryMetric
+                    key={metric.label}
+                    label={metric.label}
+                    value={metric.value}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
+              {quickFacts.map((fact) => (
+                <DetailMetric key={fact.label} label={fact.label} value={fact.value} />
+              ))}
             </div>
           </section>
 
           <SectionCard
             title={`${auction.purchaseMethod} 조건`}
-            description="고객이 요청한 주요 조건을 한눈에 확인할 수 있습니다."
+            description="입찰 전에 확인해야 할 고객 요청 조건입니다."
           >
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
               {conditionEntries.map((entry) => (
-                <div
-                  className="rounded-2xl bg-slate-50 px-4 py-4"
-                  key={entry.label}
-                >
-                  <p className="text-sm text-slate-500">{entry.label}</p>
-                  <p className="mt-2 text-base font-semibold text-slate-950">
-                    {entry.value}
-                  </p>
-                </div>
+                <DetailMetric key={entry.label} label={entry.label} value={entry.value} />
               ))}
             </div>
 
@@ -230,26 +256,38 @@ export function DealerAuctionDetailPage({
           </SectionCard>
 
           <SectionCard
-            title="차량 및 경매 메모"
-            description="고객 요청사항과 현재 경매 상황을 함께 확인하세요."
+            title="판단 메모"
+            description="입찰 판단에 필요한 현재 상태와 메모를 묶어서 봅니다."
           >
-            <div className="grid gap-4 md:grid-cols-2">
-              <DetailMetric label="희망 금액" value={auction.askingPriceLabel} />
-              <DetailMetric label="마감 시각" value={formatDateLabel(auction.deadlineAt)} />
-              <DetailMetric label="주행거리" value={auction.mileageLabel} />
-              <DetailMetric label="거래 후속 상태" value={auction.dealStage === "none" ? "없음" : auction.dealStage} />
+            <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
+              <DetailMetric label="현재 상태" value={auction.statusLabel} />
+              <DetailMetric
+                label="거래 후속 상태"
+                value={auction.dealStage === "none" ? "후속 거래 없음" : auction.dealStage}
+              />
+              <DetailMetric
+                label="고객 구분"
+                value={auction.customerType ?? "확인 필요"}
+              />
+              <DetailMetric
+                label="선납 / 보증금"
+                value={`${auction.advanceDownPaymentAmount ? formatWon(auction.advanceDownPaymentAmount) : "-"} / ${auction.depositDownPaymentAmount ? formatWon(auction.depositDownPaymentAmount) : "-"}`}
+              />
             </div>
-            <p className="mt-5 rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700">
-              {auction.description}
-            </p>
+
+            <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5">
+              <p className="text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
+                고객 요청 메모
+              </p>
+              <p className="mt-3 text-sm leading-7 text-slate-700">
+                {auction.description}
+              </p>
+            </div>
           </SectionCard>
         </div>
 
-        <aside className="xl:sticky xl:top-4 xl:self-start">
-          <SectionCard
-            title="다음 액션"
-            description="지금 가능한 다음 작업을 바로 진행할 수 있습니다."
-          >
+        <aside className="space-y-4 2xl:sticky 2xl:top-4 2xl:self-start">
+          <SectionCard title="즉시 작업" description="현재 상태 기준으로 가능한 작업입니다.">
             <div className="space-y-3">
               {primaryAction.disabled ? (
                 <button
@@ -267,6 +305,16 @@ export function DealerAuctionDetailPage({
                   {primaryAction.label}
                 </Link>
               )}
+
+              <button
+                className="w-full rounded-2xl border border-line px-4 py-3 text-sm font-medium text-slate-700"
+                disabled={favoriteMutation.isPending}
+                type="button"
+                onClick={() => favoriteMutation.mutate(auction.id)}
+              >
+                {auction.isFavorited ? "♥ 찜한 차에서 해제" : "♡ 찜한 차에 추가"}
+              </button>
+
               <Link
                 className="block rounded-2xl border border-line px-4 py-3 text-center text-sm font-medium text-slate-700"
                 href={appRoutes.home()}
@@ -274,13 +322,41 @@ export function DealerAuctionDetailPage({
                 경매장 홈으로 돌아가기
               </Link>
             </div>
-            <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-              현재 상태: <strong className="text-slate-950">{auction.statusLabel}</strong>
-            </p>
+          </SectionCard>
+
+          <SectionCard title="상태 요약" description="입찰 전에 꼭 확인할 핵심 값입니다.">
+            <div className="space-y-3">
+              <SidebarRow label="현재 상태" value={auction.statusLabel} />
+              <SidebarRow label="남은 시간" value={remainingTime} />
+              <SidebarRow
+                label="마감 시각"
+                value={formatDateLabel(auction.deadlineAt)}
+              />
+              <SidebarRow
+                label="거래 상태"
+                value={auction.dealStage === "none" ? "후속 거래 없음" : auction.dealStage}
+              />
+            </div>
           </SectionCard>
         </aside>
       </div>
     </section>
+  );
+}
+
+type SummaryMetricProps = {
+  label: string;
+  value: string;
+};
+
+function SummaryMetric({ label, value }: SummaryMetricProps) {
+  return (
+    <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-2 text-base font-semibold text-slate-950 tabular-nums">
+        {value}
+      </p>
+    </div>
   );
 }
 
@@ -291,9 +367,25 @@ type DetailMetricProps = {
 
 function DetailMetric({ label, value }: DetailMetricProps) {
   return (
-    <div className="rounded-2xl bg-slate-50 px-4 py-4">
+    <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
       <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-slate-950">{value}</p>
+      <p className="mt-2 text-base font-semibold text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+type SidebarRowProps = {
+  label: string;
+  value: string;
+};
+
+function SidebarRow({ label, value }: SidebarRowProps) {
+  return (
+    <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-slate-950 tabular-nums">
+        {value}
+      </p>
     </div>
   );
 }

@@ -60,7 +60,7 @@ export function HomeAuctionListSection({
   return (
     <SectionCard
       title={mode === "favorites" ? "찜한 차량" : "경매 목록"}
-      description="검색, 필터, 정렬 기준으로 바로 다음 액션까지 확인합니다."
+      description="검색, 필터, 정렬 기준으로 차량 현황과 다음 액션을 바로 확인합니다."
     >
       <form className="rounded-[28px] bg-slate-50 px-4 py-4" onSubmit={onSearchSubmit}>
         <div className="flex flex-col gap-3 xl:flex-row">
@@ -171,15 +171,8 @@ export function HomeAuctionListSection({
         </div>
       ) : (
         <div className="mt-5 space-y-2">
-          <div className="hidden rounded-[20px] border border-line bg-slate-50 px-4 py-3 xl:grid xl:grid-cols-[minmax(0,2.3fr)_minmax(180px,1fr)_minmax(170px,0.9fr)_minmax(180px,1fr)_minmax(160px,0.9fr)_auto] xl:gap-4">
-            {[
-              "차량 / 고객",
-              "조건",
-              "차량 정보",
-              "현황",
-              "마감 / 거래",
-              "액션",
-            ].map((label) => (
+          <div className="hidden rounded-[20px] border border-line bg-slate-50 px-5 py-3 2xl:grid 2xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,1.25fr)_132px] 2xl:gap-4">
+            {["기본 정보", "실시간 지표", "액션"].map((label) => (
               <p
                 className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500"
                 key={label}

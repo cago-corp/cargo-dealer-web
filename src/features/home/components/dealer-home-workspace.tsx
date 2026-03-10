@@ -185,7 +185,7 @@ export function DealerHomeWorkspace({
   return (
     <section className="space-y-4">
       <header className="rounded-[28px] border border-line bg-white/90 px-5 py-5 shadow-sm">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-start 2xl:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-slate-950">{copy.title}</h1>
             <p className="mt-2 text-sm text-slate-600">{copy.description}</p>
@@ -202,7 +202,7 @@ export function DealerHomeWorkspace({
             </span>
           </div>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
           {stats.map((stat) => (
             <div className="rounded-2xl bg-slate-50 px-4 py-3" key={stat.label}>
               <p className="text-xs font-medium text-slate-500">{stat.label}</p>
