@@ -14,11 +14,11 @@ import {
 import {
   dealerAuctionWorkspaceQueryRoot,
   getDealerAuctionWorkspaceQueryKey,
-  toggleDealerAuctionFavorite,
   type DealerAuctionWorkspaceData,
   type DealerAuctionWorkspaceFilters,
   type DealerAuctionWorkspaceMode,
 } from "@/features/home/lib/dealer-auction-workspace-query";
+import { toggleDealerAuctionFavorite } from "@/shared/api/dealer-marketplace";
 
 type DealerHomeWorkspaceProps = {
   mode: DealerAuctionWorkspaceMode;

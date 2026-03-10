@@ -27,7 +27,7 @@ function formatDeadlineLabel(deadlineAt: string) {
 function getPrimaryAction(item: DealerAuctionBrief) {
   if (item.bidState === "my_bid") {
     return {
-      href: appRoutes.bids(),
+      href: appRoutes.bidDetail(item.id),
       label: "내 입찰 보기",
     };
   }

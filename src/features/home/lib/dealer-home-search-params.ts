@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { DealerAuctionWorkspaceFilters } from "@/features/home/lib/dealer-auction-workspace-query";
+import type { DealerAuctionWorkspaceFilters } from "@/entities/auction/schemas/dealer-auction-workspace-schema";
 
 const dealerHomeSearchParamsSchema = z.object({
   search: z.string().trim().max(50).optional(),
