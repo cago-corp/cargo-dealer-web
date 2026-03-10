@@ -10,8 +10,8 @@ type AppShellProps = Readonly<{
 }>;
 
 const navigationItems = [
-  { href: appRoutes.dashboard(), label: "Dashboard" },
-  { href: appRoutes.quotes(), label: "Quotes" },
+  { href: appRoutes.home(), label: "Home" },
+  { href: appRoutes.quote(), label: "MY견적" },
   { href: appRoutes.mypage(), label: "My Page" },
 ] as const;
 

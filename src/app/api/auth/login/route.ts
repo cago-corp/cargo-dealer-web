@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const authClient = getDealerAuthClient();
     const session = await authClient.login(parsed.data);
     const response = NextResponse.json({
-      redirectTo: appRoutes.dashboard(),
+      redirectTo: appRoutes.home(),
       approvalStatus: session.approvalStatus,
     });
 

@@ -1,0 +1,5 @@
+import { DealerQuotesPage } from "@/features/quotes/dealer-quotes-page";
+
+export default function QuoteRoutePage() {
+  return <DealerQuotesPage />;
+}

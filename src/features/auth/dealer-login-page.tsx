@@ -17,8 +17,8 @@ export function DealerLoginPage() {
             분리해 확장할 수 있도록 최소 골격을 먼저 준비했습니다.
           </p>
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            <FeatureMarker label="Dashboard" description="홈/운영 요약" />
-            <FeatureMarker label="Quotes" description="입찰/거래 흐름" />
+            <FeatureMarker label="Home" description="전체/찜한 차" />
+            <FeatureMarker label="MY견적" description="입찰/거래 흐름" />
             <FeatureMarker label="Chat" description="페이지 또는 도크 확장" />
           </div>
         </div>
@@ -39,8 +39,8 @@ export function DealerLoginPage() {
           <p className="mt-6 text-sm text-slate-500">
             참고 라우트:
             {" "}
-            <Link className="font-medium text-teal-700" href="/dashboard">
-              /dashboard
+            <Link className="font-medium text-teal-700" href="/home">
+              /home
             </Link>
           </p>
         </div>

@@ -44,7 +44,7 @@ export function DealerLoginForm() {
         return;
       }
 
-      router.push(result?.redirectTo ?? appRoutes.dashboard());
+      router.push(result?.redirectTo ?? appRoutes.home());
       router.refresh();
     } catch {
       setErrorMessage("로그인 요청 중 문제가 발생했습니다.");

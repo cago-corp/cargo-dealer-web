@@ -6,7 +6,7 @@ import { appRoutes } from "@/shared/config/routes";
 export default async function LoginRoutePage() {
   const session = await getDealerSession();
   if (session) {
-    redirect(appRoutes.dashboard());
+    redirect(appRoutes.home());
   }
 
   return <DealerLoginPage />;

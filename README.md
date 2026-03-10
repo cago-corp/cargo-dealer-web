@@ -20,8 +20,8 @@ Dealer web frontend repository.
 ## Route Skeleton
 
 - `/login`
-- `/dashboard`
-- `/quotes`
+- `/home`
+- `/quote`
 - `/chat`
 - `/mypage`
 
