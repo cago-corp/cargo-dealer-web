@@ -11,4 +11,15 @@ export const appRoutes = {
   dealDetail: (dealId: string) => `/deals/${dealId}`,
   chat: (roomId?: string) => (roomId ? `/chat?roomId=${encodeURIComponent(roomId)}` : "/chat"),
   mypage: () => "/mypage",
+  mypageNotifications: () => "/mypage/notifications",
+  mypageAnnouncements: () => "/mypage/announcements",
+  mypageAnnouncementDetail: (noticeId: string) => `/mypage/announcements/${noticeId}`,
+  mypageAnnouncementInfoDetail: (infoId: string) =>
+    `/mypage/announcements/information/${infoId}`,
+  mypageMyInfo: () => "/mypage/my-info",
+  mypageReview: () => "/mypage/review",
+  mypageInterestedVehicles: () => "/mypage/interested-vehicles",
+  mypageNotificationSettings: () => "/mypage/notification-settings",
+  mypageTerms: () => "/mypage/terms",
+  mypageCustomerService: () => "/mypage/customer-service",
 } as const;
