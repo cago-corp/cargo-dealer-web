@@ -1,5 +1,10 @@
 export const appRoutes = {
   login: () => "/login",
+  signupTerms: () => "/signup-terms",
+  signupForm: () => "/signup-form",
+  signupCard: () => "/signup-card",
+  signupComplete: () => "/signup-complete",
+  pendingApproval: () => "/pending-approval",
   home: () => "/home",
   homeAuctionDetail: (auctionId: string) => `/home/auctions/${auctionId}`,
   homeAuctionBidWizard: (auctionId: string) => `/home/auctions/${auctionId}/bid`,

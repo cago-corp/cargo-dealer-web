@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { DealerLoginForm } from "@/features/auth/components/dealer-login-form";
+import { DealerAuthScaffold } from "@/features/auth/dealer-auth-scaffold";
+import { appRoutes } from "@/shared/config/routes";
 
 export function DealerLoginPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-10">
+    <DealerAuthScaffold>
       <section className="grid w-full gap-10 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[32px] border border-white/60 bg-slate-950 px-8 py-10 text-white shadow-panel">
-          <p className="text-sm uppercase tracking-[0.3em] text-teal-300">
-            Cargo Dealer
-          </p>
+          <p className="text-sm font-medium tracking-[0.2em] text-teal-300">Cargo</p>
           <h1 className="mt-6 max-w-xl text-4xl font-semibold leading-tight">
             경매부터 거래까지 한 화면에서 관리하는 딜러 센터
           </h1>
@@ -22,7 +22,7 @@ export function DealerLoginPage() {
           </div>
         </div>
         <div className="rounded-[32px] border border-white/70 bg-white/90 p-8 shadow-panel backdrop-blur">
-          <p className="text-sm font-medium text-slate-500">Dealer Sign In</p>
+          <p className="text-sm font-medium text-slate-500">딜러 계정 로그인</p>
           <h2 className="mt-2 text-2xl font-semibold text-slate-950">
             로그인
           </h2>
@@ -32,16 +32,18 @@ export function DealerLoginPage() {
           <div className="mt-8">
             <DealerLoginForm />
           </div>
-          <p className="mt-6 text-sm text-slate-500">
-            참고 라우트:
-            {" "}
-            <Link className="font-medium text-teal-700" href="/home">
-              /home
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
+            <p>승인 완료 계정은 로그인 후 바로 경매장 홈으로 이동합니다.</p>
+            <Link
+              className="font-medium text-slate-700 underline-offset-4 hover:underline"
+              href={appRoutes.signupTerms()}
+            >
+              회원가입 시작
             </Link>
-          </p>
+          </div>
         </div>
       </section>
-    </main>
+    </DealerAuthScaffold>
   );
 }
 

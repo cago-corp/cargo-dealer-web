@@ -1,4 +1,4 @@
-export type DealerApprovalStatus = "active" | "pending";
+export type DealerAccessState = "active" | "pending_approval" | "incomplete_signup";
 
 export type DealerAuthBackend = "mock" | "supabase" | "spring";
 
@@ -11,7 +11,7 @@ export type DealerSession = {
   backend: DealerAuthBackend;
   dealerId: string;
   email: string;
-  approvalStatus: DealerApprovalStatus;
+  accessState: DealerAccessState;
   accessToken?: string;
   refreshToken?: string;
   expiresAt: string;

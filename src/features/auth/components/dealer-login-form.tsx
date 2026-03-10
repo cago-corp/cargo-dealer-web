@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { dealerLoginSchema } from "@/features/auth/schemas/dealer-login-schema";
 import { appRoutes } from "@/shared/config/routes";
 
 export function DealerLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -25,7 +26,11 @@ export function DealerLoginForm() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const nextPath = searchParams.get("next");
+      const loginUrl = nextPath
+        ? `/api/auth/login?next=${encodeURIComponent(nextPath)}`
+        : "/api/auth/login";
+      const response = await fetch(loginUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -5,5 +5,6 @@ import type {
 
 export interface DealerAuthClient {
   login(credentials: DealerLoginCredentials): Promise<DealerSession>;
+  refreshSession(session: DealerSession): Promise<DealerSession>;
   logout(session: DealerSession | null): Promise<void>;
 }

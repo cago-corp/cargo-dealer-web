@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { DealerAuthError } from "@/shared/auth/auth-error";
 import type { DealerAuthClient } from "@/shared/auth/clients/dealer-auth-client";
-import type { DealerApprovalStatus } from "@/shared/auth/auth-types";
+import type { DealerAccessState } from "@/shared/auth/auth-types";
 import { getServerEnv } from "@/shared/config/env";
 
 const supabaseLoginResponseSchema = z.object({
@@ -49,7 +49,7 @@ export const supabaseDealerAuthClient: DealerAuthClient = {
     }
 
     const authResult = supabaseLoginResponseSchema.parse(loginJson);
-    const approvalStatus = await getDealerApprovalStatus({
+    const accessState = await getDealerAccessState({
       dealerId: authResult.user.id,
       accessToken: authResult.access_token,
       supabaseUrl: env.SUPABASE_URL,
@@ -60,10 +60,29 @@ export const supabaseDealerAuthClient: DealerAuthClient = {
       backend: "supabase",
       dealerId: authResult.user.id,
       email: authResult.user.email ?? credentials.email,
-      approvalStatus,
+      accessState,
       accessToken: authResult.access_token,
       refreshToken: authResult.refresh_token,
       expiresAt: new Date(Date.now() + authResult.expires_in * 1000).toISOString(),
+    };
+  },
+
+  async refreshSession(session) {
+    const env = getServerEnv();
+    if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !session.accessToken) {
+      return session;
+    }
+
+    const accessState = await getDealerAccessState({
+      dealerId: session.dealerId,
+      accessToken: session.accessToken,
+      supabaseUrl: env.SUPABASE_URL,
+      anonKey: env.SUPABASE_ANON_KEY,
+    });
+
+    return {
+      ...session,
+      accessState,
     };
   },
 
@@ -84,12 +103,12 @@ export const supabaseDealerAuthClient: DealerAuthClient = {
   },
 };
 
-async function getDealerApprovalStatus(input: {
+async function getDealerAccessState(input: {
   dealerId: string;
   accessToken: string;
   supabaseUrl: string;
   anonKey: string;
-}): Promise<DealerApprovalStatus> {
+}): Promise<DealerAccessState> {
   const profileResponse = await fetch(
     `${input.supabaseUrl}/rest/v1/profiles_dealer?select=id,email_approval,business_card_approval&id=eq.${input.dealerId}&limit=1`,
     {
@@ -102,22 +121,22 @@ async function getDealerApprovalStatus(input: {
   );
 
   if (!profileResponse.ok) {
-    return "pending";
+    return "pending_approval";
   }
 
   const profileJson = await readJson(profileResponse);
   if (!Array.isArray(profileJson) || profileJson.length === 0) {
-    return "pending";
+    return "incomplete_signup";
   }
 
   const parsedProfile = dealerProfileStatusSchema.safeParse(profileJson[0]);
   if (!parsedProfile.success) {
-    return "pending";
+    return "pending_approval";
   }
 
   return parsedProfile.data.email_approval && parsedProfile.data.business_card_approval
     ? "active"
-    : "pending";
+    : "pending_approval";
 }
 
 async function readJson(response: Response) {

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { dealerLoginSchema } from "@/features/auth/schemas/dealer-login-schema";
 import { DealerAuthError } from "@/shared/auth/auth-error";
+import { getDealerEntryRoute, sanitizeDealerRedirectPath } from "@/shared/auth/auth-routing";
 import { getDealerAuthClient } from "@/shared/auth/get-dealer-auth-client";
 import { setDealerSessionCookie } from "@/shared/auth/session";
-import { appRoutes } from "@/shared/config/routes";
 
 export async function POST(request: Request) {
+  const nextPath = sanitizeDealerRedirectPath(new URL(request.url).searchParams.get("next"));
   const payload = await request.json().catch(() => null);
   const parsed = dealerLoginSchema.safeParse(payload);
 
@@ -20,8 +21,8 @@ export async function POST(request: Request) {
     const authClient = getDealerAuthClient();
     const session = await authClient.login(parsed.data);
     const response = NextResponse.json({
-      redirectTo: appRoutes.home(),
-      approvalStatus: session.approvalStatus,
+      redirectTo: getDealerEntryRoute(session.accessState, nextPath),
+      accessState: session.accessState,
     });
 
     setDealerSessionCookie(response, session);

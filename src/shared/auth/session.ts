@@ -2,22 +2,13 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { z } from "zod";
 import type { NextResponse } from "next/server";
 import type { DealerSession } from "@/shared/auth/auth-types";
+import {
+  dealerSessionCookieName,
+  dealerSessionSchema,
+} from "@/shared/auth/session-contract";
 import { getServerEnv } from "@/shared/config/env";
-
-const dealerSessionSchema = z.object({
-  backend: z.enum(["mock", "supabase", "spring"]),
-  dealerId: z.string(),
-  email: z.string().email(),
-  approvalStatus: z.enum(["active", "pending"]),
-  accessToken: z.string().optional(),
-  refreshToken: z.string().optional(),
-  expiresAt: z.string().datetime(),
-});
-
-const dealerSessionCookieName = "cargo_dealer_session";
 
 export async function getDealerSession(): Promise<DealerSession | null> {
   const cookieStore = await cookies();
