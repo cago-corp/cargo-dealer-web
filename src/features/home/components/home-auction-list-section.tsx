@@ -171,17 +171,6 @@ export function HomeAuctionListSection({
         </div>
       ) : (
         <div className="mt-5 space-y-2">
-          <div className="hidden rounded-[20px] border border-line bg-slate-50 px-5 py-3 2xl:grid 2xl:grid-cols-[minmax(0,1.7fr)_minmax(340px,1.25fr)_132px] 2xl:gap-4">
-            {["기본 정보", "실시간 지표", "액션"].map((label) => (
-              <p
-                className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500"
-                key={label}
-              >
-                {label}
-              </p>
-            ))}
-          </div>
-
           {items.map((item) => (
             <HomeAuctionCard
               key={item.id}
