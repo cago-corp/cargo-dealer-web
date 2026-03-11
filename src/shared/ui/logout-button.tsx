@@ -6,10 +6,12 @@ import { appRoutes } from "@/shared/config/routes";
 
 type LogoutButtonProps = {
   variant?: "dark" | "light";
+  className?: string;
 };
 
 export function LogoutButton({
   variant = "dark",
+  className,
 }: LogoutButtonProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,8 +32,8 @@ export function LogoutButton({
     <button
       className={
         variant === "light"
-          ? "rounded-2xl border border-line bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          : "rounded-2xl border border-white/20 px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10"
+          ? `rounded-2xl border border-line bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 ${className ?? ""}`.trim()
+          : `rounded-2xl border border-white/20 px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10 ${className ?? ""}`.trim()
       }
       type="button"
       onClick={handleLogout}

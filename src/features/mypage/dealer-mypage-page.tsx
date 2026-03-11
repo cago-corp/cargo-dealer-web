@@ -4,6 +4,7 @@ import Link from "next/link";
 import { DealerProfileSummary } from "@/features/mypage/components/dealer-profile-summary";
 import { useDealerProfileQuery } from "@/features/mypage/hooks/use-dealer-profile-query";
 import { appRoutes } from "@/shared/config/routes";
+import { LogoutButton } from "@/shared/ui/logout-button";
 
 export function DealerMypagePage() {
   const profileQuery = useDealerProfileQuery();
@@ -106,6 +107,12 @@ export function DealerMypagePage() {
           <SettingLink href={appRoutes.mypageTerms()} label="이용약관" />
           <SettingLink href={appRoutes.mypageCustomerService()} label="고객센터" />
           <SettingLink href={appRoutes.mypageAnnouncements()} label="공지사항" />
+          <div className="border-t border-slate-200 pt-5">
+            <LogoutButton
+              className="flex w-full items-center justify-start rounded-2xl border-slate-200 text-left text-rose-600 hover:bg-rose-50"
+              variant="light"
+            />
+          </div>
         </div>
       </section>
 

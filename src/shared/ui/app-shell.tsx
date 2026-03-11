@@ -3,7 +3,6 @@ import { AppChatRail } from "@/shared/ui/app-chat-rail";
 import { AppSidebarNav } from "@/shared/ui/app-sidebar-nav";
 import { AppUtilityNav } from "@/shared/ui/app-utility-nav";
 import { ChatRailProvider } from "@/shared/ui/chat-rail-provider";
-import { LogoutButton } from "@/shared/ui/logout-button";
 import { SiteFooter } from "@/shared/ui/site-footer";
 
 type AppShellProps = Readonly<{
@@ -28,20 +27,6 @@ export function AppShell({ children, session }: AppShellProps) {
               경매, 입찰, 거래 현황을 한 화면에서 빠르게 관리할 수 있습니다.
             </p>
             <AppSidebarNav />
-            <div className="mt-8 rounded-[28px] border border-white/10 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Session</p>
-              <p className="mt-3 truncate text-sm font-medium text-slate-100">
-                {session.email}
-              </p>
-              <div className="mt-3 flex items-center gap-2 text-xs text-slate-300">
-                <span className="rounded-full bg-white/10 px-3 py-1">
-                  {session.accessState === "active" ? "운영 가능" : "승인 대기"}
-                </span>
-              </div>
-            </div>
-            <div className="mt-4">
-              <LogoutButton />
-            </div>
           </aside>
           <ChatRailProvider>
             <main className="overflow-hidden rounded-[32px] border border-white/80 bg-white/92 shadow-panel backdrop-blur">
