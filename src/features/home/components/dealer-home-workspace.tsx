@@ -25,6 +25,7 @@ type DealerHomeWorkspaceProps = {
 };
 
 const HOME_PAGE_SIZE = 10;
+const HOME_REFRESH_SECONDS = 10;
 
 const modeCopy = {
   home: {
@@ -109,9 +110,11 @@ export function DealerHomeWorkspace({
   const [searchInput, setSearchInput] = useState(initialFilters.search);
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [refreshCountdown, setRefreshCountdown] = useState(HOME_REFRESH_SECONDS);
   const currentQueryKey = getDealerAuctionWorkspaceQueryKey(mode, filters);
 
   const workspaceQuery = useDealerAuctionWorkspaceQuery(mode, filters);
+  const { dataUpdatedAt, refetch } = workspaceQuery;
   const favoriteMutation = useMutation({
     mutationFn: toggleDealerAuctionFavoriteFromApi,
     onMutate: async (auctionId: string) => {
@@ -159,6 +162,29 @@ export function DealerHomeWorkspace({
     };
   }, [pendingMessage]);
 
+  useEffect(() => {
+    if (mode !== "home") {
+      return undefined;
+    }
+
+    setRefreshCountdown(HOME_REFRESH_SECONDS);
+
+    const intervalId = window.setInterval(() => {
+      setRefreshCountdown((current) => {
+        if (current <= 1) {
+          refetch();
+          return HOME_REFRESH_SECONDS;
+        }
+
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [dataUpdatedAt, mode, refetch]);
+
   const queryData = workspaceQuery.data;
   const filteredItems = queryData?.items ?? [];
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / HOME_PAGE_SIZE));
@@ -203,6 +229,11 @@ export function DealerHomeWorkspace({
     });
   }
 
+  function handleRefreshNow() {
+    setRefreshCountdown(HOME_REFRESH_SECONDS);
+    refetch();
+  }
+
   return (
     <section className="space-y-4">
       <header className="rounded-[28px] border border-line bg-white/90 px-5 py-5 shadow-sm">
@@ -212,11 +243,24 @@ export function DealerHomeWorkspace({
             <p className="mt-2 text-sm text-slate-600">{copy.description}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full bg-slate-950 px-3 py-1.5 font-medium text-white">
-              {copy.refreshLabel}
-            </span>
+            {mode === "home" ? (
+              <button
+                className="group inline-flex items-center gap-2 rounded-full bg-slate-950 px-3 py-1.5 font-medium text-white transition hover:bg-slate-800"
+                type="button"
+                onClick={handleRefreshNow}
+              >
+                <span>{refreshCountdown}초 후 새로고침</span>
+                <span className="text-[11px] opacity-0 transition group-hover:opacity-100">
+                  ↻
+                </span>
+              </button>
+            ) : (
+              <span className="rounded-full bg-slate-950 px-3 py-1.5 font-medium text-white">
+                {copy.refreshLabel}
+              </span>
+            )}
             <span className="rounded-full border border-line bg-slate-50 px-3 py-1.5 text-slate-600">
-              마지막 갱신 {formatUpdatedAt(workspaceQuery.dataUpdatedAt)}
+              마지막 갱신 {formatUpdatedAt(dataUpdatedAt)}
             </span>
             <span className="rounded-full border border-line bg-slate-50 px-3 py-1.5 text-slate-600">
               정렬 최신순
@@ -239,7 +283,6 @@ export function DealerHomeWorkspace({
         filters={filters}
         isFavoriteMutationPending={favoriteMutation.isPending}
         isLoading={workspaceQuery.isLoading}
-        isRefreshing={workspaceQuery.isRefetching}
         currentPage={safeCurrentPage}
         itemLabel="대"
         items={pagedItems}
@@ -261,9 +304,6 @@ export function DealerHomeWorkspace({
             ...filters,
             importFilter,
           });
-        }}
-        onRefresh={() => {
-          workspaceQuery.refetch();
         }}
         onSearchInputChange={setSearchInput}
         onSearchSubmit={handleSearchSubmit}

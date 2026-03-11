@@ -38,6 +38,5 @@ export function getDealerAuctionWorkspaceQueryOptions(
   return queryOptions({
     queryKey: getDealerAuctionWorkspaceQueryKey(mode, filters),
     queryFn: () => fetchDealerAuctionWorkspaceFromApi(mode, filters),
-    refetchInterval: mode === "home" ? 10000 : false,
   });
 }

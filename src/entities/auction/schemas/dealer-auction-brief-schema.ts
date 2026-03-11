@@ -27,6 +27,7 @@ export const dealerAuctionBriefSchema = z.object({
   isFavorited: z.boolean(),
   isImported: z.boolean(),
   openedAt: z.string().datetime(),
+  expireAt: z.string().datetime(),
   deadlineAt: z.string().datetime(),
   yearLabel: z.string(),
   mileageLabel: z.string(),

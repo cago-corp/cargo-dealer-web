@@ -58,6 +58,7 @@ const rawAuctionRecordSchema = z.object({
   isFavorited: z.boolean(),
   isImported: z.boolean(),
   openedAt: z.string().datetime(),
+  expireAt: z.string().datetime().optional(),
   deadlineAt: z.string().datetime(),
   yearLabel: z.string(),
   mileageLabel: z.string(),
@@ -723,16 +724,17 @@ function toDealerChatMessage(message: RawChatMessageRecord): DealerChatMessage {
 
 function resolveBidState(record: RawAuctionRecord) {
   const myBid = getSubmissionByAuctionId(record.id);
+  const closingAt = record.expireAt ?? record.deadlineAt;
 
   if (myBid) {
     return "my_bid" as const;
   }
 
-  if (record.statusCode === "경매 종료" || Date.parse(record.deadlineAt) <= Date.now()) {
+  if (record.statusCode === "경매 종료" || Date.parse(closingAt) <= Date.now()) {
     return "closed" as const;
   }
 
-  const remainingMilliseconds = Date.parse(record.deadlineAt) - Date.now();
+  const remainingMilliseconds = Date.parse(closingAt) - Date.now();
   if (remainingMilliseconds <= 90 * 60 * 1000) {
     return "closing" as const;
   }
@@ -742,15 +744,16 @@ function resolveBidState(record: RawAuctionRecord) {
 
 function resolveStatusLabel(record: RawAuctionRecord) {
   const myBid = getSubmissionByAuctionId(record.id);
+  const closingAt = record.expireAt ?? record.deadlineAt;
   if (myBid) {
     return myBid.state === "contract_pending" ? "계약 진행" : "내 입찰 진행";
   }
 
-  if (record.statusCode === "경매 종료" || Date.parse(record.deadlineAt) <= Date.now()) {
+  if (record.statusCode === "경매 종료" || Date.parse(closingAt) <= Date.now()) {
     return "경매 종료";
   }
 
-  const remainingMilliseconds = Date.parse(record.deadlineAt) - Date.now();
+  const remainingMilliseconds = Date.parse(closingAt) - Date.now();
   if (remainingMilliseconds <= 90 * 60 * 1000) {
     return "마감 임박";
   }
@@ -774,6 +777,7 @@ function toAuctionBrief(record: RawAuctionRecord): DealerAuctionBrief {
     isFavorited: record.isFavorited,
     isImported: record.isImported,
     openedAt: record.openedAt,
+    expireAt: record.expireAt ?? record.deadlineAt,
     deadlineAt: record.deadlineAt,
     yearLabel: record.yearLabel,
     mileageLabel: record.mileageLabel,

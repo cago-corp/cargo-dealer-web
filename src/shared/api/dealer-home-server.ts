@@ -192,11 +192,12 @@ async function fetchSupabaseDealerHomeWorkspace(
     fetchDealerAuctionBriefRecords(session, "favorites"),
     fetchDealerDashboardSummary(session),
   ]);
+  const brandImportedMap = await fetchBrandImportedMap(session);
 
   const baseItems: DealerAuctionBriefRpc[] =
     mode === "favorites" ? favoriteRecords : auctionRecords;
   const items = applyWorkspaceFilters(
-    baseItems.map((record) => toDealerAuctionBrief(record)),
+    baseItems.map((record) => toDealerAuctionBrief(record, brandImportedMap)),
     filters,
   );
 
@@ -223,7 +224,8 @@ async function fetchSupabaseDealerAuctionDetail(
 
   const briefRecord =
     briefRecords.find((record) => record.auction_id === auctionId) ?? null;
-  const [brandLogoPath, exteriorColorName, interiorColorName] = await Promise.all([
+  const [brandImportedMap, brandLogoPath, exteriorColorName, interiorColorName] = await Promise.all([
+    fetchBrandImportedMap(session),
     fetchBrandLogoPath(session, detailRecord.brand_name),
     fetchLookupNameById(
       session,
@@ -240,6 +242,7 @@ async function fetchSupabaseDealerAuctionDetail(
   return toDealerAuctionDetail({
     detailRecord: detailRecord as DealerAuctionDetailRpc,
     briefRecord: briefRecord as DealerAuctionBriefRpc | null,
+    brandImportedMap,
     brandLogoPath,
     exteriorColorName,
     interiorColorName,
@@ -325,6 +328,22 @@ async function fetchBrandLogoPath(session: DealerSession, brandName: string) {
   return typeof record?.image_url === "string" ? record.image_url : null;
 }
 
+async function fetchBrandImportedMap(session: DealerSession) {
+  const records = await fetchTableRecords(session, "vehicle_brand", {
+    select: "name,is_imported",
+  });
+
+  return new Map<string, boolean>(
+    records.flatMap((record) => {
+      if (typeof record?.name !== "string" || typeof record?.is_imported !== "boolean") {
+        return [];
+      }
+
+      return [[record.name, record.is_imported] as const];
+    }),
+  );
+}
+
 async function fetchLookupNameById(
   session: DealerSession,
   tableName: string,
@@ -348,6 +367,15 @@ async function fetchTableRecord(
   tableName: string,
   searchParams: Record<string, string>,
 ) {
+  const records = await fetchTableRecords(session, tableName, searchParams);
+  return records[0] ?? null;
+}
+
+async function fetchTableRecords(
+  session: DealerSession,
+  tableName: string,
+  searchParams: Record<string, string>,
+) {
   const env = getRequiredSupabaseDataEnv(session);
   const requestUrl = new URL(`${env.SUPABASE_URL}/rest/v1/${tableName}`);
 
@@ -367,10 +395,10 @@ async function fetchTableRecord(
 
   const responseJson = await readJson(response);
   if (!response.ok) {
-    return null;
+    return [];
   }
 
-  return Array.isArray(responseJson) ? responseJson[0] : responseJson;
+  return Array.isArray(responseJson) ? responseJson : [];
 }
 
 async function callSupabaseRpc<TSchema extends z.ZodTypeAny>(
@@ -455,7 +483,10 @@ function applyWorkspaceFilters(
   });
 }
 
-function toDealerAuctionBrief(record: DealerAuctionBriefRpc) {
+function toDealerAuctionBrief(
+  record: DealerAuctionBriefRpc,
+  brandImportedMap: Map<string, boolean>,
+) {
   return {
     id: record.auction_id,
     sellerName: record.user_name?.trim() || "고객",
@@ -465,8 +496,9 @@ function toDealerAuctionBrief(record: DealerAuctionBriefRpc) {
     purchaseMethod: record.purchase_method,
     regionLabel: record.user_region?.trim() || record.delivery_region?.trim() || "-",
     isFavorited: record.is_favorited,
-    isImported: record.is_imported,
+    isImported: brandImportedMap.get(record.brand_name) ?? record.is_imported,
     openedAt: toIsoDateTime(record.requested_at),
+    expireAt: toIsoDateTime(record.expire_at),
     deadlineAt: toIsoDateTime(record.deadline_at),
     yearLabel: record.model_year_start ? `${record.model_year_start}년식` : "-",
     mileageLabel: record.annual_mileage
@@ -476,9 +508,9 @@ function toDealerAuctionBrief(record: DealerAuctionBriefRpc) {
     askingPriceLabel: "-",
     viewCount: record.view_count,
     bidCount: record.bid_count,
-    bidState: resolveBidState(record.deadline_at),
+    bidState: resolveBidState(record.expire_at, "경매중"),
     statusLabel: resolveStatusLabel({
-      deadlineAt: record.deadline_at,
+      closingAt: record.expire_at,
       hasMyBid: false,
       statusCode: "경매중",
     }),
@@ -489,6 +521,7 @@ function toDealerAuctionBrief(record: DealerAuctionBriefRpc) {
 function toDealerAuctionDetail(input: {
   detailRecord: DealerAuctionDetailRpc;
   briefRecord: DealerAuctionBriefRpc | null;
+  brandImportedMap: Map<string, boolean>;
   brandLogoPath: string | null;
   exteriorColorName: string | null;
   interiorColorName: string | null;
@@ -497,6 +530,7 @@ function toDealerAuctionDetail(input: {
   const {
     detailRecord,
     briefRecord,
+    brandImportedMap,
     brandLogoPath,
     exteriorColorName,
     interiorColorName,
@@ -522,8 +556,10 @@ function toDealerAuctionDetail(input: {
     regionLabel:
       detailRecord.user_region?.trim() || detailRecord.delivery_region?.trim() || "-",
     isFavorited: detailRecord.is_favorited,
-    isImported: briefRecord?.is_imported ?? false,
+    isImported:
+      brandImportedMap.get(detailRecord.brand_name) ?? briefRecord?.is_imported ?? false,
     openedAt: toIsoDateTime(detailRecord.created_at),
+    expireAt: toIsoDateTime(detailRecord.expire_at),
     deadlineAt: toIsoDateTime(detailRecord.deadline_at),
     yearLabel: detailRecord.model_year_start
       ? `${detailRecord.model_year_start}년식`
@@ -541,9 +577,9 @@ function toDealerAuctionDetail(input: {
     bidCount: detailRecord.bid_count,
     bidState: myBid
       ? "my_bid"
-      : resolveBidState(detailRecord.deadline_at, detailRecord.status_code),
+      : resolveBidState(detailRecord.expire_at, detailRecord.status_code),
     statusLabel: resolveStatusLabel({
-      deadlineAt: detailRecord.deadline_at,
+      closingAt: detailRecord.expire_at,
       hasMyBid: Boolean(myBid),
       statusCode: detailRecord.status_code,
     }),
@@ -566,12 +602,12 @@ function toDealerAuctionDetail(input: {
   });
 }
 
-function resolveBidState(deadlineAt: string, statusCode: "경매중" | "경매 종료" = "경매중") {
-  if (statusCode === "경매 종료" || Date.parse(deadlineAt) <= Date.now()) {
+function resolveBidState(closingAt: string, statusCode: "경매중" | "경매 종료" = "경매중") {
+  if (statusCode === "경매 종료" || Date.parse(closingAt) <= Date.now()) {
     return "closed" as const;
   }
 
-  const remainingMilliseconds = Date.parse(deadlineAt) - Date.now();
+  const remainingMilliseconds = Date.parse(closingAt) - Date.now();
   if (remainingMilliseconds <= 90 * 60 * 1000) {
     return "closing" as const;
   }
@@ -580,7 +616,7 @@ function resolveBidState(deadlineAt: string, statusCode: "경매중" | "경매 �
 }
 
 function resolveStatusLabel(input: {
-  deadlineAt: string;
+  closingAt: string;
   hasMyBid: boolean;
   statusCode: "경매중" | "경매 종료";
 }) {
@@ -588,11 +624,11 @@ function resolveStatusLabel(input: {
     return "내 입찰 진행";
   }
 
-  if (input.statusCode === "경매 종료" || Date.parse(input.deadlineAt) <= Date.now()) {
+  if (input.statusCode === "경매 종료" || Date.parse(input.closingAt) <= Date.now()) {
     return "경매 종료";
   }
 
-  if (Date.parse(input.deadlineAt) - Date.now() <= 90 * 60 * 1000) {
+  if (Date.parse(input.closingAt) - Date.now() <= 90 * 60 * 1000) {
     return "마감 임박";
   }
 

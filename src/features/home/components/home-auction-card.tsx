@@ -43,7 +43,7 @@ export function HomeAuctionCard({
 }: HomeAuctionCardProps) {
   const primaryAction = getPrimaryAction(item);
   const vehicleLabel = `${item.brandName} ${item.modelName}`;
-  const remainingTime = formatRemainingTime(item.deadlineAt);
+  const remainingTime = formatRemainingTime(item.expireAt);
   const countLabel = `입찰 ${item.bidCount.toLocaleString("ko-KR")}명 · 조회 ${item.viewCount.toLocaleString("ko-KR")}회`;
 
   return (

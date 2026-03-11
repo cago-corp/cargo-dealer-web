@@ -25,7 +25,6 @@ type HomeAuctionListSectionProps = {
   itemLabel: string;
   isFavoriteMutationPending: boolean;
   isLoading: boolean;
-  isRefreshing: boolean;
   items: DealerAuctionBrief[];
   mode: DealerAuctionWorkspaceMode;
   pendingMessage: string | null;
@@ -39,7 +38,6 @@ type HomeAuctionListSectionProps = {
   onFilterChipClick: (label: string) => void;
   onImportFilterChange: (importFilter: DealerAuctionImportFilter) => void;
   onPageChange: (page: number) => void;
-  onRefresh: () => void;
   onSearchInputChange: (nextValue: string) => void;
   onSearchSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onSortToggle: () => void;
@@ -51,7 +49,6 @@ export function HomeAuctionListSection({
   itemLabel,
   isFavoriteMutationPending,
   isLoading,
-  isRefreshing,
   items,
   mode,
   pendingMessage,
@@ -65,7 +62,6 @@ export function HomeAuctionListSection({
   onFilterChipClick,
   onImportFilterChange,
   onPageChange,
-  onRefresh,
   onSearchInputChange,
   onSearchSubmit,
   onSortToggle,
@@ -144,13 +140,6 @@ export function HomeAuctionListSection({
               onClick={onSortToggle}
             >
               {sortLabel}
-            </button>
-            <button
-              className="rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-slate-600"
-              type="button"
-              onClick={onRefresh}
-            >
-              {isRefreshing ? "갱신 중" : "새로고침"}
             </button>
           </div>
         </div>
