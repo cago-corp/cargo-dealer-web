@@ -9,7 +9,7 @@ import { checkRateLimit, getRateLimitHeaders } from "@/shared/security/rate-limi
 
 const dealerChatAttachmentRateLimitRule = {
   windowMs: 60 * 1000,
-  maxRequests: 10,
+  maxRequests: 5,
 } as const;
 
 type RouteContext = {

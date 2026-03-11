@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { dealerLoginSchema } from "@/features/auth/schemas/dealer-login-schema";
@@ -109,6 +110,21 @@ export function DealerLoginForm() {
       >
         {isSubmitting ? "로그인 중..." : "로그인"}
       </button>
+      <div className="flex items-center justify-center gap-3 pt-1 text-sm text-slate-500">
+        <Link
+          className="font-medium text-slate-600 transition hover:text-slate-900"
+          href={appRoutes.findId()}
+        >
+          아이디 찾기
+        </Link>
+        <span aria-hidden="true" className="h-3.5 w-px bg-slate-300" />
+        <Link
+          className="font-medium text-slate-600 transition hover:text-slate-900"
+          href={appRoutes.findPassword()}
+        >
+          비밀번호 찾기
+        </Link>
+      </div>
     </form>
   );
 }

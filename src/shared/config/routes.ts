@@ -1,5 +1,7 @@
 export const appRoutes = {
   login: () => "/login",
+  findId: () => "/find-id",
+  findPassword: () => "/find-password",
   signupTerms: () => "/signup-terms",
   signupForm: () => "/signup-form",
   signupCard: () => "/signup-card",

@@ -2,15 +2,34 @@ import { SiteFooter } from "@/shared/ui/site-footer";
 
 type DealerAuthScaffoldProps = Readonly<{
   children: React.ReactNode;
+  mainClassName?: string;
+  footerContainerClassName?: string;
+  showFooter?: boolean;
+  fullBleed?: boolean;
 }>;
 
-export function DealerAuthScaffold({ children }: DealerAuthScaffoldProps) {
+export function DealerAuthScaffold({
+  children,
+  mainClassName,
+  footerContainerClassName = "max-w-6xl",
+  showFooter = true,
+  fullBleed = false,
+}: DealerAuthScaffoldProps) {
   return (
     <div className="flex min-h-screen flex-col">
-      <main className="mx-auto flex w-full max-w-6xl flex-1 px-6 py-10">
+      <main
+        className={[
+          fullBleed
+            ? "flex min-h-screen w-full flex-1"
+            : "mx-auto flex w-full max-w-6xl flex-1 px-6 py-10",
+          mainClassName,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
         {children}
       </main>
-      <SiteFooter containerClassName="max-w-6xl" />
+      {showFooter ? <SiteFooter containerClassName={footerContainerClassName} /> : null}
     </div>
   );
 }

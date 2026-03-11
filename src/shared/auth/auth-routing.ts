@@ -34,7 +34,11 @@ export function isDealerSignupPath(pathname: string) {
 }
 
 export function isDealerLoginPath(pathname: string) {
-  return pathname === appRoutes.login();
+  return (
+    pathname === appRoutes.login() ||
+    pathname === appRoutes.findId() ||
+    pathname === appRoutes.findPassword()
+  );
 }
 
 export function isDealerPendingApprovalPath(pathname: string) {

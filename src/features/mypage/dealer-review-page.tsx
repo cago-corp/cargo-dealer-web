@@ -38,59 +38,63 @@ export function DealerReviewPage() {
         </p>
       </header>
 
-      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <SectionCard title="리뷰 요약">
-          <div className="grid gap-6 lg:grid-cols-[0.72fr_1fr]">
-            <div className="rounded-[28px] bg-slate-50 px-6 py-6">
-              <p className="text-sm text-slate-500">평균 평점</p>
-              <div className="mt-3 flex items-end gap-3">
-                <p className="text-5xl font-semibold tracking-tight text-slate-950">
-                  {review.averageRating.toFixed(1)}
-                </p>
-                <p className="pb-2 text-sm text-slate-500">/ 5.0</p>
-              </div>
-              <div className="mt-3 flex gap-1 text-amber-500">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <span key={index} className="text-lg">
-                    {index < Math.round(review.averageRating) ? "★" : "☆"}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-4 text-sm leading-6 text-slate-600">
-                누적 리뷰 {review.reviewCount}건
-                <br />
-                {review.recentSummary}
+      <SectionCard title="리뷰 요약">
+        <div className="grid gap-6 lg:grid-cols-[0.72fr_1fr]">
+          <div className="rounded-[28px] bg-slate-50 px-6 py-6">
+            <p className="text-sm text-slate-500">평균 평점</p>
+            <div className="mt-3 flex items-end gap-3">
+              <p className="text-5xl font-semibold tracking-tight text-slate-950">
+                {review.averageRating.toFixed(1)}
               </p>
+              <p className="pb-2 text-sm text-slate-500">/ 5.0</p>
             </div>
-
-            <div className="space-y-4">
-              {review.ratingBreakdown
-                .slice()
-                .sort((left, right) => right.score - left.score)
-                .map((bucket) => (
-                  <div key={bucket.score} className="grid grid-cols-[44px_1fr_36px] items-center gap-3">
-                    <p className="text-sm font-medium text-slate-700">{bucket.score}점</p>
-                    <div className="h-2.5 rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full bg-violet-500"
-                        style={{
-                          width: `${Math.max((bucket.count / maxBucketCount) * 100, bucket.count > 0 ? 10 : 0)}%`,
-                        }}
-                      />
-                    </div>
-                    <p className="text-right text-sm text-slate-500">{bucket.count}</p>
-                  </div>
-                ))}
+            <div className="mt-3 flex gap-1 text-amber-500">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <span key={index} className="text-lg">
+                  {index < Math.round(review.averageRating) ? "★" : "☆"}
+                </span>
+              ))}
             </div>
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              누적 리뷰 {review.reviewCount}건
+              <br />
+              {review.recentSummary}
+            </p>
           </div>
-        </SectionCard>
 
-        <SectionCard title="운영 메모">
-          <div className="space-y-4 rounded-[28px] bg-slate-50 px-6 py-6">
-            <ReviewNote
-              label="정책"
-              value={review.policySummary}
-            />
+          <div className="space-y-4">
+            {review.ratingBreakdown
+              .slice()
+              .sort((left, right) => right.score - left.score)
+              .map((bucket) => (
+                <div key={bucket.score} className="grid grid-cols-[44px_1fr_36px] items-center gap-3">
+                  <p className="text-sm font-medium text-slate-700">{bucket.score}점</p>
+                  <div className="h-2.5 rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-violet-500"
+                      style={{
+                        width: `${Math.max((bucket.count / maxBucketCount) * 100, bucket.count > 0 ? 10 : 0)}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-right text-sm text-slate-500">{bucket.count}</p>
+                </div>
+              ))}
+          </div>
+        </div>
+      </SectionCard>
+
+      <section className="space-y-3">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold text-slate-950">운영 메모</h2>
+          <p className="text-sm text-slate-500">
+            리뷰 운영 시 바로 참고할 기준만 간결하게 모았습니다.
+          </p>
+        </div>
+
+        <div className="rounded-[28px] border border-line bg-slate-50/70 px-6 py-5">
+          <div className="grid gap-5 lg:grid-cols-3">
+            <ReviewNote label="정책" value={review.policySummary} />
             <ReviewNote
               label="관리 포인트"
               value="낮은 평점 리뷰는 거래 단계와 응답 속도를 함께 확인하는 기준으로 사용합니다."
@@ -100,8 +104,8 @@ export function DealerReviewPage() {
               value="리뷰 신고/숨김 처리는 추후 운영 정책과 함께 실제 기능으로 연결할 예정입니다."
             />
           </div>
-        </SectionCard>
-      </div>
+        </div>
+      </section>
 
       <SectionCard title="최근 리뷰">
         <div className="space-y-4">
@@ -158,7 +162,7 @@ export function DealerReviewPage() {
 
 function ReviewNote({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</p>
       <p className="text-sm leading-6 text-slate-600">{value}</p>
     </div>
