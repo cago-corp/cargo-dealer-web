@@ -233,7 +233,7 @@ export async function fetchDealerBidSuccessForSession(
     throw new Error("Spring dealer bid backend is not implemented yet.");
   }
 
-  const records = await fetchDealerMyBidRecords(session);
+  const records = await fetchDealerMyBidRecordsWithRetry(session, submissionId);
   const record = records.find((item) => item.bid_info?.bid_id === submissionId);
 
   if (!record) {
@@ -427,6 +427,25 @@ async function fetchDealerMyBidRecords(session: DealerSession): Promise<DealerMy
   );
 }
 
+async function fetchDealerMyBidRecordsWithRetry(
+  session: DealerSession,
+  submissionId: string,
+) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const records = await fetchDealerMyBidRecords(session);
+
+    if (records.some((item) => item.bid_info?.bid_id === submissionId)) {
+      return records;
+    }
+
+    if (attempt < 2) {
+      await sleep(400);
+    }
+  }
+
+  return fetchDealerMyBidRecords(session);
+}
+
 async function fetchOptionTypeNameMap(session: DealerSession, optionTypeIds: string[]) {
   if (optionTypeIds.length === 0) {
     return new Map<string, string>();
@@ -559,4 +578,10 @@ function getSupabaseErrorMessage(payload: unknown) {
 
 async function readJson(response: Response) {
   return response.json().catch(() => null);
+}
+
+function sleep(milliseconds: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
 }

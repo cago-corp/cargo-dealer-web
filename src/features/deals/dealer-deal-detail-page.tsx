@@ -45,6 +45,7 @@ export function DealerDealDetailPage({ dealId }: DealerDealDetailPageProps) {
   }
 
   const detail = dealDetailQuery.data;
+  const isChatReady = !detail.chatRoomId.startsWith("pending:");
 
   return (
     <section className="space-y-6">
@@ -168,7 +169,8 @@ export function DealerDealDetailPage({ dealId }: DealerDealDetailPageProps) {
           >
             <div className="space-y-3">
               <button
-                className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white"
+                className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                disabled={!isChatReady}
                 type="button"
                 onClick={() => openRoom(detail.chatRoomId)}
               >
