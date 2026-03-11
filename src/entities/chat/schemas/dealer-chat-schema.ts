@@ -36,6 +36,7 @@ export const dealerChatRoomListItemSchema = z.object({
   id: z.string(),
   dealId: z.string(),
   auctionId: z.string(),
+  statusCode: z.string(),
   customerName: z.string(),
   customerPhone: z.string().nullable(),
   vehicleLabel: z.string(),

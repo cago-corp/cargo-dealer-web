@@ -146,6 +146,7 @@ export async function fetchDealerChatRoomListForSession(
           id: room.id,
           dealId: deal.id,
           auctionId: deal.auctionId,
+          statusCode: deal.statusCode,
           customerName: profile?.name ?? deal.customerName,
           customerPhone: profile?.phone ?? deal.customerPhone,
           vehicleLabel: deal.vehicleLabel,

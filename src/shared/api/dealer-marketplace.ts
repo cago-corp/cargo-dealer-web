@@ -731,6 +731,7 @@ function toDealerChatRoomListItem(room: RawChatRoomRecord): DealerChatRoomListIt
     id: room.id,
     dealId: room.dealId,
     auctionId: resolved.auction.id,
+    statusCode: stageToStatusCode(resolved.stage),
     customerName: room.customerName,
     customerPhone: room.customerPhone,
     vehicleLabel: formatVehicleLabel(resolved.auction),

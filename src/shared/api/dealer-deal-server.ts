@@ -4,6 +4,12 @@ import { z } from "zod";
 import type { DealerSession } from "@/shared/auth/auth-types";
 import { getServerEnv } from "@/shared/config/env";
 import {
+  dealerContractInitDataSchema,
+  dealerContractSubmitSchema,
+  type DealerContractInitData,
+  type DealerContractSubmitPayload,
+} from "@/entities/deal/schemas/dealer-contract-schema";
+import {
   dealerDealDetailSchema,
   dealerDealListItemSchema,
   type DealerDealDetail,
@@ -74,6 +80,17 @@ const dealerDealRpcSchema = z.object({
 });
 
 const dealerDealListRpcLimit = 500;
+
+const contractInitOptionRpcSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+const contractInitDataRpcSchema = z.object({
+  exterior_colors: contractInitOptionRpcSchema.array().nullish().default([]),
+  interior_colors: contractInitOptionRpcSchema.array().nullish().default([]),
+  service_items: contractInitOptionRpcSchema.array().nullish().default([]),
+});
 
 type DealerDealRpc = z.output<typeof dealerDealRpcSchema>;
 
@@ -256,6 +273,99 @@ export async function cancelDealerDealForSession(
     {
       p_deal_id: input.dealId,
       p_cancel_reason: input.reason,
+    },
+    z.unknown(),
+  );
+}
+
+export async function fetchDealerContractInitDataForSession(
+  session: DealerSession,
+  dealId: string,
+): Promise<DealerContractInitData> {
+  const backend = resolveDealerDataBackend(session);
+
+  if (backend === "mock") {
+    return dealerContractInitDataSchema.parse({
+      exteriorColors: [
+        { id: "ext-black", name: "블랙" },
+        { id: "ext-white", name: "화이트" },
+        { id: "ext-gray", name: "그레이" },
+      ],
+      interiorColors: [
+        { id: "int-black", name: "블랙" },
+        { id: "int-brown", name: "브라운" },
+        { id: "int-beige", name: "베이지" },
+      ],
+      serviceItems: [
+        { id: "service-001", name: "블랙박스" },
+        { id: "service-002", name: "틴팅" },
+        { id: "service-003", name: "보험 대행" },
+      ],
+    });
+  }
+
+  if (backend === "spring") {
+    throw new Error("Spring dealer deal backend is not implemented yet.");
+  }
+
+  const record = await callSupabaseRpc(
+    session,
+    "get_contract_init_data",
+    { p_deal_id: dealId },
+    contractInitDataRpcSchema,
+  );
+
+  return dealerContractInitDataSchema.parse({
+    exteriorColors: record.exterior_colors,
+    interiorColors: record.interior_colors,
+    serviceItems: record.service_items,
+  });
+}
+
+export async function submitDealerFinalContractForSession(
+  session: DealerSession,
+  dealId: string,
+  payload: DealerContractSubmitPayload,
+) {
+  const backend = resolveDealerDataBackend(session);
+
+  if (backend === "mock") {
+    return;
+  }
+
+  if (backend === "spring") {
+    throw new Error("Spring dealer deal backend is not implemented yet.");
+  }
+
+  const parsedPayload = dealerContractSubmitSchema.parse(payload);
+
+  await callSupabaseRpc(
+    session,
+    "update_deal_with_options_full",
+    {
+      p_deal_id: dealId,
+      p_final_vehicle_price: parsedPayload.finalVehiclePrice,
+      p_final_discount_amount: parsedPayload.finalDiscountAmount,
+      p_final_purchase_method:
+        parsedPayload.purchaseMethod === "장기렌트"
+          ? "렌트"
+          : parsedPayload.purchaseMethod,
+      p_final_user_region: parsedPayload.region,
+      p_final_exterior_color_id: parsedPayload.exteriorColorId,
+      p_final_interior_color_id: parsedPayload.interiorColorId,
+      p_option_type_ids: parsedPayload.optionTypeIds,
+      p_final_monthly_payment: parsedPayload.monthlyPayment ?? null,
+      p_final_contract_months: parsedPayload.contractMonths ?? null,
+      p_final_annual_mileage: parsedPayload.annualMileage ?? null,
+      p_final_customer_type: parsedPayload.customerType ?? null,
+      p_final_advance_percent: parsedPayload.advancePercent ?? null,
+      p_final_advance_amount: parsedPayload.advanceAmount ?? null,
+      p_final_deposit_percent: parsedPayload.depositPercent ?? null,
+      p_final_deposit_amount: parsedPayload.depositAmount ?? null,
+      p_expected_release_week: null,
+      p_expected_release_date: null,
+      p_capital_id: null,
+      p_note: null,
     },
     z.unknown(),
   );

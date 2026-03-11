@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
 import type { DealerDealDetail } from "@/entities/deal/schemas/dealer-deal-schema";
 import { useDealerDealActions } from "@/features/deals/hooks/use-dealer-deal-actions";
@@ -7,6 +8,7 @@ import {
   dealerDealStatusCodes,
   getDealerDealActionModel,
 } from "@/features/deals/lib/dealer-deal-action";
+import { appRoutes } from "@/shared/config/routes";
 
 type DealerDealActionPanelProps = {
   detail: DealerDealDetail;
@@ -182,8 +184,16 @@ function renderActionBody({
     case "waitingForCustomerContract":
       return (
         <WaitingPanel
-          description={actionModel.description ?? "고객님의 계약 체결을 기다리고 있습니다."}
-          title="고객님의 계약 체결을 기다리고 있습니다."
+          actionHref={appRoutes.dealContract(
+            detail.id,
+            detail.chatRoomId.startsWith("pending:") ? undefined : detail.chatRoomId,
+          )}
+          actionLabel="최종 계약 입력"
+          description={
+            actionModel.description ??
+            "최종 계약 조건을 먼저 입력하고 고객에게 전달해 주세요. 전송 후에는 고객 본인인증과 계약금 입금 단계로 이어집니다."
+          }
+          title="최종 계약 입력이 먼저 필요합니다."
         />
       );
     case "confirmDeposit":
@@ -417,16 +427,28 @@ function ActionPanelLayout({ children }: { children: ReactNode }) {
 function WaitingPanel({
   title,
   description,
+  actionHref,
+  actionLabel,
 }: {
   title: string;
   description: string;
+  actionHref?: string;
+  actionLabel?: string;
 }) {
   return (
-    <div className="rounded-3xl border border-dashed border-line bg-slate-50 px-5 py-5">
+    <div className="space-y-4 rounded-3xl border border-dashed border-line bg-slate-50 px-5 py-5">
       <p className="text-base font-semibold text-slate-950">{title}</p>
       <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-600">
         {description}
       </p>
+      {actionHref && actionLabel ? (
+        <Link
+          className="inline-flex rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white"
+          href={actionHref}
+        >
+          {actionLabel}
+        </Link>
+      ) : null}
     </div>
   );
 }
