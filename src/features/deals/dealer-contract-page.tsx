@@ -145,7 +145,7 @@ export function DealerContractPage({ dealId }: DealerContractPageProps) {
     mutationFn: async (payload: DealerContractSubmitPayload) =>
       submitDealerContractFromApi(dealId, payload),
     onSuccess: async () => {
-      await Promise.all([
+      await Promise.allSettled([
         queryClient.invalidateQueries({ queryKey: dealerDealListQueryKey }),
         queryClient.invalidateQueries({ queryKey: getDealerDealDetailQueryKey(dealId) }),
         queryClient.invalidateQueries({ queryKey: dealerChatRoomListQueryKey }),
@@ -153,7 +153,7 @@ export function DealerContractPage({ dealId }: DealerContractPageProps) {
           ? queryClient.invalidateQueries({ queryKey: getDealerChatRoomQueryKey(roomId) })
           : Promise.resolve(),
       ]);
-      router.replace(appRoutes.dealDetail(dealId), { scroll: false });
+      router.replace(`${appRoutes.dealDetail(dealId)}?contractUpdated=1`, { scroll: false });
     },
   });
 
@@ -184,6 +184,8 @@ export function DealerContractPage({ dealId }: DealerContractPageProps) {
 
   const detail = dealDetailQuery.data;
   const initData = contractInitQuery.data;
+  const hasSubmittedContract =
+    detail.askingPriceLabel !== "-" && detail.askingPriceLabel.trim().length > 0;
   const isCash = formState.purchaseMethod === "현금";
   const isLeaseOrRent =
     formState.purchaseMethod === "리스" || formState.purchaseMethod === "장기렌트";
@@ -218,9 +220,13 @@ export function DealerContractPage({ dealId }: DealerContractPageProps) {
             <span aria-hidden="true">‹</span>
             {backLabel}
           </Link>
-          <h1 className="text-3xl font-semibold text-slate-950">최종 계약 입력</h1>
+          <h1 className="text-3xl font-semibold text-slate-950">
+            {hasSubmittedContract ? "최종 계약 수정" : "최종 계약 입력"}
+          </h1>
           <p className="text-sm text-slate-600">
-            {detail.customerName} 고객에게 전달할 최종 계약 조건을 입력합니다.
+            {hasSubmittedContract
+              ? `${detail.customerName} 고객에게 전달된 최신 계약 조건을 다시 확인하고 수정합니다.`
+              : `${detail.customerName} 고객에게 전달할 최종 계약 조건을 입력합니다.`}
           </p>
         </div>
         <div className="rounded-2xl border border-line bg-white px-4 py-3 text-right shadow-sm">
@@ -228,6 +234,12 @@ export function DealerContractPage({ dealId }: DealerContractPageProps) {
           <p className="mt-1 text-lg font-semibold text-slate-950">{detail.vehicleLabel}</p>
         </div>
       </header>
+
+      {hasSubmittedContract ? (
+        <div className="rounded-[28px] border border-violet-200 bg-violet-50 px-5 py-4 text-sm text-violet-800">
+          이미 고객에게 전달된 최종 계약입니다. 수정 후 다시 전송하면 최신 조건으로 바로 갱신됩니다.
+        </div>
+      ) : null}
 
       {submitMutation.error instanceof Error ? (
         <div className="rounded-[28px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
@@ -560,7 +572,11 @@ export function DealerContractPage({ dealId }: DealerContractPageProps) {
                 void handleSubmit();
               }}
             >
-              {submitMutation.isPending ? "전송 중..." : "견적서 전송"}
+              {submitMutation.isPending
+                ? "전송 중..."
+                : hasSubmittedContract
+                  ? "최종 계약 다시 전송"
+                  : "최종 계약 전송"}
             </button>
           </SectionCard>
         </aside>

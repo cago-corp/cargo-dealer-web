@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { DealerChatRoomList } from "@/features/chat/components/dealer-chat-room-list";
 import { useDealerChatSyncStream } from "@/features/chat/hooks/use-dealer-chat-sync-stream";
 import { filterLiveChatRooms } from "@/features/chat/lib/filter-live-chat-rooms";
@@ -18,13 +18,22 @@ export function DealerChatWorkspace({
   variant = "default",
 }: DealerChatWorkspaceProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const roomListQuery = useDealerChatRoomListQuery();
-  const { clearSelectedRoom, selectedRoomId, selectRoom } = useChatRail();
+  const {
+    clearSelectedRoom,
+    isPoppedOutModule,
+    markPoppedOutModule,
+    releasePoppedOutModule,
+    selectedRoomId,
+    selectRoom,
+  } = useChatRail();
   const roomIdFromQuery = searchParams.get("roomId");
   const rooms = filterLiveChatRooms(roomListQuery.data);
   const isWindowVariant = variant === "window";
+  const detailPanelClassName = isWindowVariant
+    ? "min-h-0 h-full"
+    : "min-h-[680px] xl:h-[calc(100vh-18rem)]";
 
   const handleSelectRoom = useCallback((nextRoomId: string) => {
     selectRoom(nextRoomId);
@@ -33,10 +42,14 @@ export function DealerChatWorkspace({
       return;
     }
 
-    const nextSearchParams = new URLSearchParams(searchParams.toString());
+    const nextSearchParams = new URLSearchParams(window.location.search);
     nextSearchParams.set("roomId", nextRoomId);
-    router.replace(`${pathname}?${nextSearchParams.toString()}`, { scroll: false });
-  }, [isWindowVariant, pathname, router, searchParams, selectRoom]);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${pathname}?${nextSearchParams.toString()}`,
+    );
+  }, [isWindowVariant, pathname, selectRoom]);
 
   useDealerChatSyncStream(selectedRoomId);
 
@@ -79,6 +92,34 @@ export function DealerChatWorkspace({
     }
   }, [clearSelectedRoom, rooms, selectedRoomId]);
 
+  useEffect(() => {
+    if (!isWindowVariant || !selectedRoomId) {
+      return;
+    }
+
+    markPoppedOutModule();
+
+    return () => {
+      releasePoppedOutModule();
+    };
+  }, [isWindowVariant, markPoppedOutModule, releasePoppedOutModule, selectedRoomId]);
+
+  useEffect(() => {
+    if (!isWindowVariant) {
+      return;
+    }
+
+    function handleBeforeUnload() {
+      releasePoppedOutModule();
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isWindowVariant, releasePoppedOutModule]);
+
   const summary = {
     activeRooms: rooms.length,
     unreadMessages: rooms.reduce(
@@ -100,6 +141,16 @@ export function DealerChatWorkspace({
               <h1 className="mt-1 text-xl font-semibold text-slate-950">채팅 전용 창</h1>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <button
+                className="rounded-full border border-line px-3 py-1 font-medium text-slate-700 transition hover:bg-slate-50"
+                type="button"
+                onClick={() => {
+                  releasePoppedOutModule();
+                  window.close();
+                }}
+              >
+                도킹으로 돌아가기
+              </button>
               <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
                 진행 중 {rooms.length}건
               </span>
@@ -138,7 +189,7 @@ export function DealerChatWorkspace({
             )}
           </SectionCard>
 
-          <div className="min-h-0">
+          <div className={detailPanelClassName}>
             <DealerChatRoomPanel
               allowPopout={false}
               density="compact"
@@ -196,7 +247,21 @@ export function DealerChatWorkspace({
           )}
         </SectionCard>
 
-        <DealerChatRoomPanel mode="page" roomId={selectedRoomId} />
+        {isPoppedOutModule ? (
+          <SectionCard
+            className={detailPanelClassName}
+            title="새 창에서 진행 중"
+            description="채팅 모듈 전체가 새 창에서 열려 있습니다."
+          >
+            <div className="rounded-3xl border border-dashed border-violet-200 bg-violet-50 px-5 py-5 text-sm text-violet-700">
+              새 창을 닫거나 상단의 `도킹으로 돌아가기`를 누르면 이 자리에서 다시 이어서 볼 수 있습니다.
+            </div>
+          </SectionCard>
+        ) : (
+          <div className={detailPanelClassName}>
+            <DealerChatRoomPanel mode="page" roomId={selectedRoomId} />
+          </div>
+        )}
       </div>
     </section>
   );

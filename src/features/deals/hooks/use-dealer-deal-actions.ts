@@ -20,7 +20,7 @@ export function useDealerDealActions(detail: DealerDealDetail) {
   const queryClient = useQueryClient();
 
   async function invalidateRelatedQueries() {
-    await Promise.all([
+    await Promise.allSettled([
       queryClient.invalidateQueries({ queryKey: dealerDealListQueryKey }),
       queryClient.invalidateQueries({
         queryKey: getDealerDealDetailQueryKey(detail.id),

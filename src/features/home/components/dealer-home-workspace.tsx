@@ -170,20 +170,22 @@ export function DealerHomeWorkspace({
     setRefreshCountdown(HOME_REFRESH_SECONDS);
 
     const intervalId = window.setInterval(() => {
-      setRefreshCountdown((current) => {
-        if (current <= 1) {
-          refetch();
-          return HOME_REFRESH_SECONDS;
-        }
-
-        return current - 1;
-      });
+      setRefreshCountdown((current) => Math.max(current - 1, 0));
     }, 1000);
 
     return () => {
       window.clearInterval(intervalId);
     };
   }, [dataUpdatedAt, mode, refetch]);
+
+  useEffect(() => {
+    if (mode !== "home" || refreshCountdown !== 0) {
+      return;
+    }
+
+    setRefreshCountdown(HOME_REFRESH_SECONDS);
+    void refetch();
+  }, [mode, refreshCountdown, refetch]);
 
   const queryData = workspaceQuery.data;
   const filteredItems = queryData?.items ?? [];

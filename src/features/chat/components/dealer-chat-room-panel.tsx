@@ -8,6 +8,7 @@ import type {
   DealerChatRoom,
   DealerChatRoomListItem,
 } from "@/entities/chat/schemas/dealer-chat-schema";
+import { DealerChatCustomMessageCard } from "@/features/chat/components/dealer-chat-custom-message-card";
 import { useDealerChatRoomQuery } from "@/features/chat/hooks/use-dealer-chat-room-query";
 import {
   dealerChatRoomListQueryKey,
@@ -19,6 +20,7 @@ import {
   sendDealerChatMessageFromApi,
 } from "@/features/chat/lib/dealer-chat-api";
 import { appRoutes } from "@/shared/config/routes";
+import { useChatRail } from "@/shared/ui/chat-rail-provider";
 
 type DealerChatRoomPanelProps = {
   mode: "page" | "rail";
@@ -125,6 +127,7 @@ export function DealerChatRoomPanel({
   density = "default",
 }: DealerChatRoomPanelProps) {
   const queryClient = useQueryClient();
+  const { markPoppedOutModule } = useChatRail();
   const roomQuery = useDealerChatRoomQuery(roomId);
   const [messageInput, setMessageInput] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -412,7 +415,39 @@ export function DealerChatRoomPanel({
             </button>
           </header>
         ) : null}
-        <div className="h-[420px] animate-pulse rounded-[28px] bg-slate-100" />
+        <div className="flex h-[420px] flex-col items-center justify-center gap-4 rounded-[28px] bg-slate-50 px-6 text-center">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm">
+            <svg
+              aria-hidden="true"
+              className="h-5 w-5 animate-spin text-violet-700"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-20"
+                cx="12"
+                cy="12"
+                r="9"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              />
+              <path
+                d="M21 12a9 9 0 0 0-9-9"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeWidth="2.5"
+              />
+            </svg>
+          </div>
+          <div className="space-y-1">
+            <p className="text-base font-semibold text-slate-900">
+              채팅 내용을 불러오는 중입니다.
+            </p>
+            <p className="text-sm text-slate-500">
+              선택한 대화방의 최근 메시지와 첨부 파일을 준비하고 있습니다.
+            </p>
+          </div>
+        </div>
       </section>
     );
   }
@@ -444,6 +479,16 @@ export function DealerChatRoomPanel({
   const room = roomQuery.data;
   const currentStageIndex = getDealStageIndex(room.stageLabel);
   const contractEntrySource = allowPopout ? "deal" : "chat-window";
+
+  function openChatPopout(nextRoomId: string) {
+    markPoppedOutModule();
+
+    window.open(
+      appRoutes.chatWindow(nextRoomId),
+      "_blank",
+      "popup=yes,width=1280,height=900,resizable=yes,scrollbars=yes",
+    );
+  }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -509,17 +554,16 @@ export function DealerChatRoomPanel({
             ) : null}
           </div>
           {allowPopout ? (
-            <Link
+            <button
               aria-label="새 창으로 보기"
               className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              href={appRoutes.chatWindow(room.id)}
-              rel="noreferrer"
-              target="_blank"
               title="새 창으로 보기"
+              type="button"
+              onClick={() => openChatPopout(room.id)}
             >
               <span>새 창</span>
               <PopoutIcon />
-            </Link>
+            </button>
           ) : null}
         </div>
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -683,7 +727,16 @@ export function DealerChatRoomPanel({
       >
         <div className="space-y-3" ref={messagesContentRef}>
           {room.messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+            <MessageBubble
+              contractHref={appRoutes.dealContract(room.dealId, {
+                roomId: room.id,
+                source: contractEntrySource,
+              })}
+              detailHref={appRoutes.dealDetail(room.dealId)}
+              key={message.id}
+              message={message}
+              room={room}
+            />
           ))}
         </div>
       </div>
@@ -846,10 +899,13 @@ function PopoutIcon() {
 }
 
 type MessageBubbleProps = {
+  contractHref: string;
+  detailHref: string;
   message: DealerChatMessage;
+  room: Pick<DealerChatRoom, "dealId" | "id" | "vehicleLabel">;
 };
 
-function MessageBubble({ message }: MessageBubbleProps) {
+function MessageBubble({ message, room, contractHref, detailHref }: MessageBubbleProps) {
   if (message.senderRole === "system") {
     return (
       <div className="flex justify-center">
@@ -862,6 +918,19 @@ function MessageBubble({ message }: MessageBubbleProps) {
 
   const isDealer = message.senderRole === "dealer";
 
+  if (message.kind === "custom" && message.customPayload) {
+    return (
+      <div className={isDealer ? "flex justify-end" : "flex justify-start"}>
+        <DealerChatCustomMessageCard
+          contractHref={contractHref}
+          detailHref={detailHref}
+          message={message}
+          room={room}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={isDealer ? "flex justify-end" : "flex justify-start"}>
       <div
@@ -871,20 +940,6 @@ function MessageBubble({ message }: MessageBubbleProps) {
             : "max-w-[82%] rounded-[24px] rounded-bl-md bg-slate-100 px-4 py-3 text-sm text-slate-800"
         }
       >
-        {message.kind === "custom" && message.customPayload ? (
-          <div className={isDealer ? "space-y-2" : "space-y-2"}>
-            <p className={isDealer ? "text-xs text-slate-300" : "text-xs text-slate-500"}>
-              {message.customPayload.type}
-            </p>
-            <p className="font-semibold">
-              {message.customPayload.title ?? message.body}
-            </p>
-            {message.customPayload.description ? (
-              <p>{message.customPayload.description}</p>
-            ) : null}
-          </div>
-        ) : null}
-
         {(message.kind === "text" || message.kind === "system") && message.body ? (
           <p>{message.body}</p>
         ) : null}

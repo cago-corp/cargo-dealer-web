@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   dealerChatRoomListQueryKey,
@@ -9,6 +9,11 @@ import {
 
 export function useDealerChatSyncStream(selectedRoomId: string | null) {
   const queryClient = useQueryClient();
+  const selectedRoomIdRef = useRef<string | null>(selectedRoomId);
+
+  useEffect(() => {
+    selectedRoomIdRef.current = selectedRoomId;
+  }, [selectedRoomId]);
 
   useEffect(() => {
     const eventSource = new EventSource("/api/dealer/chat/stream");
@@ -16,9 +21,9 @@ export function useDealerChatSyncStream(selectedRoomId: string | null) {
     const handleSync = () => {
       queryClient.invalidateQueries({ queryKey: dealerChatRoomListQueryKey });
 
-      if (selectedRoomId) {
+      if (selectedRoomIdRef.current) {
         queryClient.invalidateQueries({
-          queryKey: getDealerChatRoomQueryKey(selectedRoomId),
+          queryKey: getDealerChatRoomQueryKey(selectedRoomIdRef.current),
         });
       }
     };
@@ -29,5 +34,5 @@ export function useDealerChatSyncStream(selectedRoomId: string | null) {
       eventSource.removeEventListener("sync", handleSync);
       eventSource.close();
     };
-  }, [queryClient, selectedRoomId]);
+  }, [queryClient]);
 }

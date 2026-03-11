@@ -1,12 +1,24 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+const CHAT_POPOUT_ACTIVE_STORAGE_KEY = "cargo-web:chat-popout-active";
 
 type ChatRailContextValue = {
   isCompactOpen: boolean;
+  isPoppedOutModule: boolean;
   selectedRoomId: string | null;
   clearSelectedRoom: () => void;
   closeCompact: () => void;
+  releasePoppedOutModule: () => void;
+  markPoppedOutModule: () => void;
   openCompact: () => void;
   openRoom: (roomId: string) => void;
   selectRoom: (roomId: string) => void;
@@ -22,6 +34,26 @@ type ChatRailProviderProps = Readonly<{
 export function ChatRailProvider({ children }: ChatRailProviderProps) {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [isCompactOpen, setIsCompactOpen] = useState(false);
+  const [isPoppedOutModule, setIsPoppedOutModule] = useState(false);
+
+  useEffect(() => {
+    const nextValue = window.localStorage.getItem(CHAT_POPOUT_ACTIVE_STORAGE_KEY);
+    setIsPoppedOutModule(nextValue === "true");
+
+    function handleStorage(event: StorageEvent) {
+      if (event.key !== CHAT_POPOUT_ACTIVE_STORAGE_KEY) {
+        return;
+      }
+
+      setIsPoppedOutModule(event.newValue === "true");
+    }
+
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
 
   const closeCompact = useCallback(() => {
     setIsCompactOpen(false);
@@ -33,6 +65,16 @@ export function ChatRailProvider({ children }: ChatRailProviderProps) {
 
   const openCompact = useCallback(() => {
     setIsCompactOpen(true);
+  }, []);
+
+  const markPoppedOutModule = useCallback(() => {
+    window.localStorage.setItem(CHAT_POPOUT_ACTIVE_STORAGE_KEY, "true");
+    setIsPoppedOutModule(true);
+  }, []);
+
+  const releasePoppedOutModule = useCallback(() => {
+    window.localStorage.removeItem(CHAT_POPOUT_ACTIVE_STORAGE_KEY);
+    setIsPoppedOutModule(false);
   }, []);
 
   const selectRoom = useCallback((roomId: string) => {
@@ -51,9 +93,12 @@ export function ChatRailProvider({ children }: ChatRailProviderProps) {
   const value = useMemo<ChatRailContextValue>(
     () => ({
       isCompactOpen,
+      isPoppedOutModule,
       selectedRoomId,
       clearSelectedRoom,
       closeCompact,
+      releasePoppedOutModule,
+      markPoppedOutModule,
       openCompact,
       openRoom,
       selectRoom,
@@ -63,8 +108,11 @@ export function ChatRailProvider({ children }: ChatRailProviderProps) {
       clearSelectedRoom,
       closeCompact,
       isCompactOpen,
+      isPoppedOutModule,
+      markPoppedOutModule,
       openCompact,
       openRoom,
+      releasePoppedOutModule,
       selectRoom,
       selectedRoomId,
       toggleCompact,

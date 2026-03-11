@@ -674,13 +674,13 @@ function buildCustomPayload(metadata: Record<string, unknown> | null) {
       : typeof metadata.type === "string"
         ? metadata.type
         : "custom";
+  const data = isRecord(metadata.data) ? metadata.data : metadata;
 
   return {
     type,
-    title: typeof metadata.title === "string" ? metadata.title : null,
-    description:
-      typeof metadata.description === "string" ? metadata.description : null,
-    data: metadata,
+    title: inferCustomMessageTitle(type, metadata, data),
+    description: inferCustomMessageDescription(type, metadata, data),
+    data,
   };
 }
 
@@ -708,11 +708,15 @@ function getMessageBody(
   }
 
   if (kind === "custom") {
-    if (typeof metadata?.title === "string") {
-      return metadata.title;
-    }
-
-    return "안내 메시지";
+    return inferCustomMessageTitle(
+      typeof metadata?.customType === "string"
+        ? metadata.customType
+        : typeof metadata?.type === "string"
+          ? metadata.type
+          : "custom",
+      metadata,
+      isRecord(metadata?.data) ? metadata.data : metadata,
+    );
   }
 
   return "";
@@ -736,7 +740,27 @@ function buildChatPreview(record: ChatMessageRecord) {
   }
 
   if (kind === "custom") {
-    return typeof metadata?.title === "string" ? metadata.title : "(안내 메시지)";
+    const type =
+      typeof metadata?.customType === "string"
+        ? metadata.customType
+        : typeof metadata?.type === "string"
+          ? metadata.type
+          : "custom";
+    const data = isRecord(metadata?.data) ? metadata.data : metadata;
+
+    if (type === "ESTIMATE") {
+      return "최종 견적서";
+    }
+
+    if (type === "IDENTITY_VERIFIED") {
+      return "본인 인증 완료";
+    }
+
+    if (type === "STATUS_CHANGE") {
+      return getStatusChangeLabel(data) ?? "상태 변경";
+    }
+
+    return inferCustomMessageTitle(type, metadata, data);
   }
 
   return getMessageBody(record, metadata, kind) || "대화를 시작해 보세요.";
@@ -757,6 +781,62 @@ function parseMetadata(value: unknown) {
   }
 
   return isRecord(value) ? value : null;
+}
+
+function inferCustomMessageTitle(
+  type: string,
+  metadata: Record<string, unknown> | null,
+  data: Record<string, unknown> | null,
+) {
+  if (typeof metadata?.title === "string" && metadata.title.trim().length > 0) {
+    return metadata.title;
+  }
+
+  if (type === "ESTIMATE") {
+    return "최종 계약 발송";
+  }
+
+  if (type === "IDENTITY_VERIFIED") {
+    return "본인 인증 완료";
+  }
+
+  if (type === "STATUS_CHANGE") {
+    return getStatusChangeLabel(data) ?? "상태 변경";
+  }
+
+  return "안내 메시지";
+}
+
+function inferCustomMessageDescription(
+  type: string,
+  metadata: Record<string, unknown> | null,
+  data: Record<string, unknown> | null,
+) {
+  if (typeof metadata?.description === "string" && metadata.description.trim().length > 0) {
+    return metadata.description;
+  }
+
+  if (type === "STATUS_CHANGE") {
+    return typeof data?.description === "string"
+      ? data.description
+      : "거래 단계가 변경되었습니다.";
+  }
+
+  if (type === "ESTIMATE") {
+    return "고객에게 전달된 최신 최종 계약서입니다.";
+  }
+
+  if (type === "IDENTITY_VERIFIED") {
+    return "고객 본인 인증이 완료되었습니다.";
+  }
+
+  return null;
+}
+
+function getStatusChangeLabel(data: Record<string, unknown> | null) {
+  return typeof data?.to_status_name === "string" && data.to_status_name.trim().length > 0
+    ? data.to_status_name
+    : null;
 }
 
 function parseAttachmentDescriptor(value: string | null | undefined) {

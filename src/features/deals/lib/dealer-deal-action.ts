@@ -79,7 +79,7 @@ export function getDealerDealActionModel(
         stepIndex,
         statusCode,
         description: hasSubmittedContract
-          ? "보낸 최종 계약 조건을 다시 열어 수정할 수 있습니다. 고객 계약 전까지는 여러 번 갱신해도 됩니다."
+          ? "고객에게 전달된 최신 최종 계약입니다. 고객 계약 전까지는 다시 열어 금액과 조건을 수정할 수 있습니다."
           : "최종 계약 조건을 입력하고 고객에게 전달해 주세요. 전송 후에는 고객 본인인증과 계약금 입금 단계로 이어집니다.",
         primaryLabel: hasSubmittedContract ? "최종 계약 수정" : "최종 계약 입력",
       };

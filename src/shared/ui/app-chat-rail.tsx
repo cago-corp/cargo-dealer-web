@@ -8,11 +8,16 @@ import { filterLiveChatRooms } from "@/features/chat/lib/filter-live-chat-rooms"
 import { useDealerChatRoomListQuery } from "@/features/chat/hooks/use-dealer-chat-room-list-query";
 import { useChatRail } from "@/shared/ui/chat-rail-provider";
 import { appRoutes } from "@/shared/config/routes";
-import Link from "next/link";
 
 function ChatRailContent() {
   const roomListQuery = useDealerChatRoomListQuery();
-  const { clearSelectedRoom, selectedRoomId, selectRoom } = useChatRail();
+  const {
+    clearSelectedRoom,
+    isPoppedOutModule,
+    markPoppedOutModule,
+    selectedRoomId,
+    selectRoom,
+  } = useChatRail();
   const rooms = filterLiveChatRooms(roomListQuery.data);
 
   useDealerChatSyncStream(selectedRoomId);
@@ -28,6 +33,40 @@ function ChatRailContent() {
       clearSelectedRoom();
     }
   }, [clearSelectedRoom, rooms, selectedRoomId]);
+
+  if (isPoppedOutModule) {
+    return (
+      <div className="flex h-full min-h-0 flex-col justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
+            Live Chat
+          </p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-950">실시간 채팅</h2>
+          <div className="mt-5 rounded-[24px] border border-dashed border-violet-200 bg-violet-50 px-4 py-5">
+            <p className="text-sm font-semibold text-violet-900">
+              채팅 모듈이 새 창에서 열려 있습니다.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-violet-700">
+              목록과 상세 대화는 새 창에서 계속 사용할 수 있습니다. 창을 닫으면 여기로 다시 돌아옵니다.
+            </p>
+          </div>
+        </div>
+        <button
+          className="mt-5 inline-flex items-center justify-center gap-1.5 rounded-full border border-line px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          type="button"
+          onClick={() =>
+            window.open(
+              appRoutes.chatWindow(selectedRoomId ?? undefined),
+              "_blank",
+              "popup=yes,width=1280,height=900,resizable=yes,scrollbars=yes",
+            )
+          }
+        >
+          새 창 다시 열기
+        </button>
+      </div>
+    );
+  }
 
   if (selectedRoomId) {
     return (
@@ -54,13 +93,19 @@ function ChatRailContent() {
           <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
             {rooms.length}건 진행 중
           </span>
-          <Link
+          <button
             aria-label="새 창으로 보기"
             className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            href={appRoutes.chatWindow(selectedRoomId ?? undefined)}
-            rel="noreferrer"
-            target="_blank"
             title="새 창으로 보기"
+            type="button"
+            onClick={() => {
+              markPoppedOutModule();
+              window.open(
+                appRoutes.chatWindow(selectedRoomId ?? undefined),
+                "_blank",
+                "popup=yes,width=1280,height=900,resizable=yes,scrollbars=yes",
+              );
+            }}
           >
             <span>새 창</span>
             <svg
@@ -84,7 +129,7 @@ function ChatRailContent() {
                 strokeWidth="1.8"
               />
             </svg>
-          </Link>
+          </button>
         </div>
       </div>
 

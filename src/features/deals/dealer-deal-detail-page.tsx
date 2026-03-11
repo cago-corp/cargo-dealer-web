@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { DealerDealActionPanel } from "@/features/deals/components/dealer-deal-action-panel";
 import { DealerDealStepper } from "@/features/deals/components/dealer-deal-stepper";
 import { useDealerDealDetailQuery } from "@/features/deals/hooks/use-dealer-deal-detail-query";
+import { appRoutes } from "@/shared/config/routes";
 import { SectionCard } from "@/shared/ui/section-card";
 
 type DealerDealDetailPageProps = {
@@ -29,6 +32,19 @@ function formatDateLabel(value: string) {
 
 export function DealerDealDetailPage({ dealId }: DealerDealDetailPageProps) {
   const dealDetailQuery = useDealerDealDetailQuery(dealId);
+  const searchParams = useSearchParams();
+  const [showContractUpdatedNotice, setShowContractUpdatedNotice] = useState(
+    searchParams.get("contractUpdated") === "1",
+  );
+
+  useEffect(() => {
+    if (searchParams.get("contractUpdated") !== "1") {
+      return;
+    }
+
+    setShowContractUpdatedNotice(true);
+    window.history.replaceState(window.history.state, "", appRoutes.dealDetail(dealId));
+  }, [dealId, searchParams]);
 
   if (dealDetailQuery.isLoading) {
     return <div className="h-[420px] animate-pulse rounded-[28px] bg-slate-100" />;
@@ -46,6 +62,12 @@ export function DealerDealDetailPage({ dealId }: DealerDealDetailPageProps) {
 
   return (
     <section className="space-y-6">
+      {showContractUpdatedNotice ? (
+        <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
+          최종 계약이 전송되었습니다. 고객 계약 전까지는 언제든 다시 열어 수정할 수 있습니다.
+        </div>
+      ) : null}
+
       <header className="rounded-[32px] border border-white/80 bg-white px-6 py-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>

@@ -565,12 +565,12 @@ function ActionModal({
   return (
     <div
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/45 px-4 py-6 sm:pt-24"
       role="dialog"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl"
+        className="mt-0 w-full max-w-md rounded-[28px] bg-white p-6 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <h3 className="text-xl font-semibold text-slate-950">{title}</h3>
