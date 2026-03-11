@@ -12,12 +12,12 @@ export function DealerProfileSummary({ profile }: DealerProfileSummaryProps) {
   return (
     <SectionCard
       title="딜러 계정 개요"
-      description="기본 계정 정보와 승인 상태를 확인하세요."
+      description="앱의 계정 요약 톤을 유지하면서, 웹에서는 한 번에 읽기 쉬운 정보 행으로 정리했습니다."
     >
-      <dl className="grid gap-4 md:grid-cols-2">
+      <dl className="divide-y divide-slate-200 rounded-[24px] bg-slate-50 px-5">
         <ProfileRow label="상호명" value={profile.companyName} />
         <ProfileRow label="대표자" value={profile.ownerName} />
-        <ProfileRow label="승인 상태" value={approvalStatusLabel} />
+        <ProfileRow label="승인 상태" value={approvalStatusLabel} valueTone={profile.approvalStatus} />
         <ProfileRow label="지점 수" value={`${profile.branchCount}개`} />
       </dl>
     </SectionCard>
@@ -27,13 +27,20 @@ export function DealerProfileSummary({ profile }: DealerProfileSummaryProps) {
 type ProfileRowProps = {
   label: string;
   value: string;
+  valueTone?: DealerProfile["approvalStatus"] | "default";
 };
 
-function ProfileRow({ label, value }: ProfileRowProps) {
+function ProfileRow({ label, value, valueTone = "default" }: ProfileRowProps) {
+  const toneClassName = {
+    default: "text-slate-950",
+    active: "text-emerald-700",
+    pending: "text-amber-700",
+  }[valueTone];
+
   return (
-    <div className="rounded-3xl border border-line bg-white p-5">
+    <div className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
       <dt className="text-sm text-slate-500">{label}</dt>
-      <dd className="mt-2 text-lg font-semibold text-slate-950">{value}</dd>
+      <dd className={`text-base font-semibold ${toneClassName}`}>{value}</dd>
     </div>
   );
 }

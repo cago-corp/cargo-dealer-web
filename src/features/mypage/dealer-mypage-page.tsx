@@ -1,16 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { DealerProfileSummary } from "@/features/mypage/components/dealer-profile-summary";
 import { useDealerProfileQuery } from "@/features/mypage/hooks/use-dealer-profile-query";
+import {
+  dealerInterestedVehiclesQueryKey,
+  fetchDealerInterestedVehicles,
+} from "@/features/mypage/lib/dealer-mypage-query";
 import { appRoutes } from "@/shared/config/routes";
 import { LogoutButton } from "@/shared/ui/logout-button";
 
+const sectionDividerClassName = "h-3 w-full rounded-full bg-slate-100";
+
 export function DealerMypagePage() {
   const profileQuery = useDealerProfileQuery();
+  const interestedVehiclesQuery = useQuery({
+    queryKey: dealerInterestedVehiclesQueryKey,
+    queryFn: fetchDealerInterestedVehicles,
+  });
 
   if (profileQuery.isLoading) {
-    return <div className="h-[480px] animate-pulse rounded-[32px] bg-slate-100" />;
+    return <div className="h-[560px] animate-pulse rounded-[32px] bg-slate-100" />;
   }
 
   if (profileQuery.isError || !profileQuery.data) {
@@ -24,94 +35,93 @@ export function DealerMypagePage() {
   }
 
   const profile = profileQuery.data;
+  const interestedVehicleCount = interestedVehiclesQuery.data?.length ?? 0;
 
   return (
     <section className="space-y-6">
-      <header className="flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-teal-700">
-            My Page
-          </p>
-          <h1 className="text-3xl font-semibold text-slate-950">마이 페이지</h1>
-          <p className="max-w-3xl text-sm text-slate-600">
-            계정 정보와 자주 쓰는 메뉴를 한 곳에서 확인할 수 있습니다.
-          </p>
-        </div>
-        <Link
-          className="inline-flex rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-slate-700"
-          href={appRoutes.mypageNotifications()}
-        >
-          알림 보기
-        </Link>
+      <header className="space-y-2">
+        <p className="text-sm font-medium uppercase tracking-[0.18em] text-teal-700">
+          My Page
+        </p>
+        <h1 className="text-3xl font-semibold text-slate-950">마이페이지</h1>
       </header>
 
-      <section className="rounded-[32px] border border-white/80 bg-white px-6 py-6 shadow-sm">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <section className="rounded-[32px] bg-white px-6 py-6 shadow-sm">
+        <Link
+          className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between"
+          href={appRoutes.mypageMyInfo()}
+        >
           <div className="flex items-center gap-5">
-            <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-slate-950 text-3xl font-semibold text-white">
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-slate-100 text-4xl font-semibold text-slate-400">
               {profile.dealerName.slice(0, 1)}
             </div>
             <div>
-              <p className="text-sm text-slate-500">{profile.companyName}</p>
-              <h2 className="mt-2 text-3xl font-semibold text-slate-950">
-                {profile.dealerName} 님
-              </h2>
-              <p className="mt-2 text-base font-medium text-teal-700">
+              <p className="text-2xl font-semibold text-slate-950">{profile.dealerName} 님</p>
+              <p className="mt-2 text-lg font-semibold text-violet-700">
                 {profile.dealerNickname ?? "딜러 닉네임 없음"}
               </p>
+              <p className="mt-3 text-sm text-slate-500">내정보 관리</p>
             </div>
           </div>
-          <Link
-            className="inline-flex rounded-2xl border border-line px-4 py-3 text-sm font-medium text-slate-700"
-            href={appRoutes.mypageMyInfo()}
-          >
-            내정보 관리
-          </Link>
-        </div>
+          <span className="self-end text-3xl leading-none text-slate-300 lg:self-center">›</span>
+        </Link>
       </section>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <section className="grid gap-3 md:grid-cols-2">
         <QuickActionCard
-          description="제출한 입찰 상태를 바로 확인할 수 있습니다."
-          href={appRoutes.bids()}
-          label="나의 입찰"
+          accentTone="primary"
+          badgeText={null}
+          href={appRoutes.mypageArchive()}
+          icon="archive"
+          label="거래 아카이브"
         />
         <QuickActionCard
-          description="리뷰 관련 메뉴를 빠르게 확인할 수 있습니다."
+          accentTone="secondary"
+          badgeText="!"
           href={appRoutes.mypageReview()}
+          icon="review"
           label="리뷰 관리"
         />
-      </div>
+      </section>
+
+      <div className={sectionDividerClassName} />
 
       <Link
-        className="block rounded-[32px] border border-line bg-white px-6 py-6 shadow-sm transition hover:border-slate-300"
+        className="block rounded-[32px] bg-white px-6 py-6 shadow-sm transition hover:bg-slate-50"
         href={appRoutes.mypageInterestedVehicles()}
       >
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-slate-950">관심 차량 보기</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              관심 차량으로 등록한 모델과 알림 대상을 한눈에 확인할 수 있습니다.
+            <h2 className="text-xl font-semibold text-slate-950">관심차량보기</h2>
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              관심차량으로 설정해두면 경매 시작시 알림을 받을 수 있어요.
             </p>
           </div>
-          <span className="text-2xl text-slate-400">›</span>
+          <div className="flex items-center gap-4">
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+              {interestedVehicleCount}건
+            </span>
+            <span className="text-3xl leading-none text-slate-300">›</span>
+          </div>
         </div>
       </Link>
 
-      <section className="rounded-[32px] border border-line bg-white px-6 py-6 shadow-sm">
-        <p className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">
-          Settings
-        </p>
-        <div className="mt-6 space-y-5">
+      <div className={sectionDividerClassName} />
+
+      <section className="rounded-[32px] bg-white px-6 py-6 shadow-sm">
+        <p className="text-sm font-medium uppercase tracking-[0.18em] text-slate-500">설정</p>
+        <div className="mt-6 space-y-7">
           <SettingLink href={appRoutes.mypageNotificationSettings()} label="알림 설정" />
           <SettingLink href={appRoutes.mypageTerms()} label="이용약관" />
           <SettingLink href={appRoutes.mypageCustomerService()} label="고객센터" />
           <SettingLink href={appRoutes.mypageAnnouncements()} label="공지사항" />
+          <SettingStaticRow
+            description="웹에서는 브라우저 확대 설정을 우선 사용합니다."
+            label="큰 글씨 모드"
+            valueLabel="준비 중"
+          />
           <div className="border-t border-slate-200 pt-5">
-            <LogoutButton
-              className="flex w-full items-center justify-start rounded-2xl border-slate-200 text-left text-rose-600 hover:bg-rose-50"
-              variant="light"
-            />
+            <LogoutButton className="text-left text-rose-600" variant="text" />
           </div>
         </div>
       </section>
@@ -120,9 +130,7 @@ export function DealerMypagePage() {
 
       <section className="rounded-[32px] bg-slate-100 px-6 py-6">
         <p className="text-sm text-slate-500">참여 딜러 전용 혜택</p>
-        <h2 className="mt-3 text-3xl font-semibold text-slate-950">
-          수수료 할인 혜택
-        </h2>
+        <h2 className="mt-3 text-3xl font-semibold text-slate-950">수수료 할인 혜택</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
           진행 중인 입찰과 거래 수에 따라 적용 가능한 혜택이 달라집니다.
         </p>
@@ -133,37 +141,99 @@ export function DealerMypagePage() {
   );
 }
 
-type QuickActionCardProps = {
-  description: string;
-  href: string;
+function QuickActionCard({
+  label,
+  href,
+  accentTone,
+  badgeText,
+  icon,
+}: {
   label: string;
-};
+  href: string;
+  accentTone: "primary" | "secondary";
+  badgeText: string | null;
+  icon: "archive" | "review";
+}) {
+  const toneClassName =
+    accentTone === "primary" ? "text-violet-700 bg-violet-50" : "text-sky-700 bg-sky-50";
 
-function QuickActionCard({ description, href, label }: QuickActionCardProps) {
   return (
     <Link
-      className="rounded-[32px] border border-line bg-white px-6 py-6 shadow-sm transition hover:border-slate-300"
+      className="rounded-[28px] bg-white px-5 py-5 shadow-sm transition hover:bg-slate-50"
       href={href}
     >
-      <p className="text-lg font-semibold text-slate-950">{label}</p>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
+      <div className="flex items-center gap-3">
+        <div
+          className={`relative flex h-11 w-11 items-center justify-center rounded-2xl ${toneClassName}`}
+        >
+          {icon === "archive" ? <ArchiveIcon /> : <ReviewIcon />}
+          {badgeText ? (
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-violet-700 px-1 text-[10px] font-semibold text-white">
+              {badgeText}
+            </span>
+          ) : null}
+        </div>
+        <span className="text-lg font-semibold text-slate-950">{label}</span>
+      </div>
     </Link>
   );
 }
 
-type SettingLinkProps = {
-  href: string;
-  label: string;
-};
-
-function SettingLink({ href, label }: SettingLinkProps) {
+function ArchiveIcon() {
   return (
-    <Link
-      className="flex items-center justify-between gap-4 rounded-2xl px-1 py-1 text-lg font-semibold text-slate-950"
-      href={href}
-    >
-      <span>{label}</span>
-      <span className="text-2xl text-slate-400">›</span>
+    <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+      <path
+        d="M5 7h14v11.5A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5V7Zm2-3h10a1.5 1.5 0 0 1 1.5 1.5V7h-13V5.5A1.5 1.5 0 0 1 7 4Zm2.5 8.5h5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
+function ReviewIcon() {
+  return (
+    <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+      <path
+        d="M7 17.5h10M7 12h10M7 6.5h6M5 3.5h14A1.5 1.5 0 0 1 20.5 5v14A1.5 1.5 0 0 1 19 20.5H5A1.5 1.5 0 0 1 3.5 19V5A1.5 1.5 0 0 1 5 3.5Z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
+function SettingLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link className="flex items-center justify-between gap-4" href={href}>
+      <span className="text-lg font-semibold text-slate-950">{label}</span>
+      <span className="text-3xl leading-none text-slate-300">›</span>
     </Link>
+  );
+}
+
+function SettingStaticRow({
+  label,
+  valueLabel,
+  description,
+}: {
+  label: string;
+  valueLabel: string;
+  description: string;
+}) {
+  return (
+    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <div>
+        <p className="text-lg font-semibold text-slate-950">{label}</p>
+        <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+      </div>
+      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+        {valueLabel}
+      </span>
+    </div>
   );
 }

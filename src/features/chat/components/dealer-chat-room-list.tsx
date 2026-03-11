@@ -4,6 +4,8 @@ type DealerChatRoomListProps = {
   rooms: DealerChatRoomListItem[];
   selectedRoomId: string | null;
   onSelectRoom: (roomId: string) => void;
+  emptyTitle?: string;
+  emptyDescription?: string;
 };
 
 function formatRoomTimestamp(value: string) {
@@ -48,13 +50,15 @@ export function DealerChatRoomList({
   rooms,
   selectedRoomId,
   onSelectRoom,
+  emptyTitle = "진행 중인 채팅이 없습니다.",
+  emptyDescription = "현재 진행 중인 거래 대화만 이 영역에 표시됩니다.",
 }: DealerChatRoomListProps) {
   if (rooms.length === 0) {
     return (
       <div className="rounded-[28px] border border-dashed border-line bg-slate-50 px-6 py-12 text-center">
-        <p className="text-lg font-semibold text-slate-900">진행 중인 채팅이 없습니다.</p>
+        <p className="text-lg font-semibold text-slate-900">{emptyTitle}</p>
         <p className="mt-2 text-sm text-slate-500">
-          현재 진행 중인 거래 대화만 이 영역에 표시됩니다.
+          {emptyDescription}
         </p>
       </div>
     );

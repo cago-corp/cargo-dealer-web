@@ -38,6 +38,7 @@ export const appRoutes = {
   chatWindow: (roomId?: string) =>
     roomId ? `/chat-window?roomId=${encodeURIComponent(roomId)}` : "/chat-window",
   mypage: () => "/mypage",
+  mypageArchive: () => "/mypage/archive",
   mypageNotifications: () => "/mypage/notifications",
   mypageAnnouncements: () => "/mypage/announcements",
   mypageAnnouncementDetail: (noticeId: string) => `/mypage/announcements/${noticeId}`,

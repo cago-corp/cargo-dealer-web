@@ -15,6 +15,22 @@ import {
   dealerNotificationItemSchema,
   type DealerNotificationItem,
 } from "@/entities/notification/schemas/dealer-notification-schema";
+import {
+  dealerCustomerServiceSchema,
+  dealerInterestedVehicleSchema,
+  dealerMyInfoSchema,
+  dealerNotificationSettingsSchema,
+  dealerReviewWorkspaceSchema,
+  dealerTermSchema,
+  dealerTermTypeSchema,
+  type DealerCustomerService,
+  type DealerInterestedVehicle,
+  type DealerMyInfo,
+  type DealerNotificationSettings,
+  type DealerReviewWorkspace,
+  type DealerTerm,
+  type DealerTermType,
+} from "@/entities/mypage/schemas/dealer-mypage-detail-schema";
 
 const dealerMypageLatency = 140;
 const announcementPageSize = 4;
@@ -27,6 +43,122 @@ let dealerProfileRecord = dealerProfileSchema.parse({
   ownerName: "한창훈",
   approvalStatus: "active",
   branchCount: 3,
+});
+
+let dealerMyInfoRecord = dealerMyInfoSchema.parse({
+  dealerName: "한창훈",
+  dealerNickname: "Cargo 압구정",
+  phone: "010-1234-5678",
+  email: "test1@gmail.com",
+  companyName: "Cargo Auto Lounge",
+  recruiterRegistrationNumber: null,
+  approvalStatus: "active",
+  joinedAt: "2026-01-03T03:20:00.000Z",
+});
+
+let dealerNotificationSettingsRecord = dealerNotificationSettingsSchema.parse({
+  serviceAlertEnabled: true,
+  marketingAlertEnabled: false,
+  browserPushEnabled: false,
+  browserPushStatusLabel: "브라우저 푸시는 추후 연동 예정입니다.",
+  quietHoursEnabled: true,
+  quietHoursRangeLabel: "22:00 - 08:00",
+});
+
+let dealerInterestedVehicleRecords = dealerInterestedVehicleSchema.array().parse([]);
+
+const dealerTermTypeRecords = dealerTermTypeSchema.array().parse([
+  {
+    id: "term-service",
+    name: "서비스 이용약관",
+    summary: "딜러 웹 이용 시 필요한 기본 서비스 이용 조건입니다.",
+  },
+  {
+    id: "term-privacy",
+    name: "개인정보 처리방침",
+    summary: "개인정보 수집, 이용, 보관 및 파기 기준을 확인할 수 있습니다.",
+  },
+  {
+    id: "term-marketing",
+    name: "마케팅 정보 수신 동의",
+    summary: "이벤트, 혜택, 프로모션 안내에 대한 수신 기준입니다.",
+  },
+]);
+
+const dealerTermRecords = dealerTermSchema.array().parse([
+  {
+    id: "term-detail-service",
+    typeId: "term-service",
+    name: "서비스 이용약관",
+    content:
+      "제1조 목적\n이 약관은 CARGO 딜러 웹 서비스의 이용 조건과 절차를 규정합니다.\n\n제2조 서비스 범위\n회사는 딜러 회원에게 경매장 홈, 입찰, 거래, 채팅, 공지, 알림 설정 기능을 제공합니다.\n\n제3조 회원 의무\n딜러 회원은 등록 정보와 사업자 관련 정보를 최신 상태로 유지해야 하며, 고객 응대와 거래 진행에서 운영 정책을 준수해야 합니다.",
+  },
+  {
+    id: "term-detail-privacy",
+    typeId: "term-privacy",
+    name: "개인정보 처리방침",
+    content:
+      "회사는 딜러 회원의 이름, 연락처, 업체명, 로그인 정보 및 거래 관련 활동 내역을 서비스 제공 목적 범위에서 처리합니다.\n\n보관 기간과 파기 기준은 관련 법령 및 내부 보안 정책을 따릅니다.\n\n개인정보 관련 문의는 고객센터 메뉴를 통해 접수할 수 있습니다.",
+  },
+  {
+    id: "term-detail-marketing",
+    typeId: "term-marketing",
+    name: "마케팅 정보 수신 동의",
+    content:
+      "마케팅 수신 동의 시 프로모션, 수수료 할인, 이벤트, 신규 기능 소개 알림을 받을 수 있습니다.\n\n설정은 마이페이지 > 알림 설정에서 언제든 변경할 수 있습니다.",
+  },
+]);
+
+const dealerCustomerServiceRecord = dealerCustomerServiceSchema.parse({
+  heroTitle: "도움이 필요할 때 바로 확인할 수 있는 지원 정보",
+  heroDescription:
+    "거래 진행 중 막히는 부분이나 계정 정보 변경 요청은 아래 채널과 안내를 기준으로 처리합니다.",
+  channels: [
+    {
+      id: "support-channel-1",
+      label: "운영 문의",
+      description: "거래 진행, 채팅, 공지사항 관련 운영 문의를 접수합니다.",
+      availability: "평일 09:00 - 18:00",
+    },
+    {
+      id: "support-channel-2",
+      label: "계정 / 승인 문의",
+      description: "회원 정보 변경, 승인 상태, 재심사 관련 문의에 사용합니다.",
+      availability: "영업일 기준 순차 답변",
+    },
+    {
+      id: "support-channel-3",
+      label: "긴급 이슈 접수",
+      description: "거래 차단, 결제/출고 단계 긴급 이슈는 공지된 긴급 채널 기준으로 처리합니다.",
+      availability: "운영 정책 확인 필요",
+    },
+  ],
+  faqs: [
+    {
+      id: "faq-1",
+      question: "최종 계약을 보낸 뒤 다시 수정할 수 있나요?",
+      answer: "고객 계약 전까지는 최종 계약을 다시 열어 수정하고 재전송할 수 있습니다.",
+    },
+    {
+      id: "faq-2",
+      question: "출고 완료된 거래는 어디서 확인하나요?",
+      answer: "마이페이지의 거래 아카이브에서 종료된 거래와 채팅 기록을 함께 확인할 수 있습니다.",
+    },
+    {
+      id: "faq-3",
+      question: "알림이 오지 않으면 어디를 확인해야 하나요?",
+      answer: "마이페이지의 알림 설정 상태와 브라우저/기기 알림 권한을 먼저 확인해 주세요.",
+    },
+  ],
+});
+
+const dealerReviewWorkspaceRecord = dealerReviewWorkspaceSchema.parse({
+  reviewCount: 0,
+  averageRating: 0,
+  policySummary: "거래 완료 후 등록된 리뷰는 운영 정책 검수 후 노출됩니다.",
+  emptyStateTitle: "아직 등록된 리뷰가 없습니다.",
+  emptyStateDescription:
+    "거래가 완료되면 고객 리뷰가 이 화면에 정리됩니다. 이후 평점, 최근 리뷰, 신고 내역을 한 번에 확인할 수 있도록 확장됩니다.",
 });
 
 let dealerNotificationRecords = dealerNotificationItemSchema.array().parse([
@@ -194,6 +326,65 @@ export async function fetchDealerProfile(): Promise<DealerProfile> {
   await delay();
 
   return dealerProfileRecord;
+}
+
+export async function fetchDealerMyInfo(): Promise<DealerMyInfo> {
+  await delay();
+
+  return dealerMyInfoRecord;
+}
+
+export async function fetchDealerNotificationSettings(): Promise<DealerNotificationSettings> {
+  await delay();
+
+  return dealerNotificationSettingsRecord;
+}
+
+export async function updateDealerNotificationSettings(
+  nextSettings: DealerNotificationSettings,
+) {
+  await delay(90);
+
+  dealerNotificationSettingsRecord = dealerNotificationSettingsSchema.parse(nextSettings);
+  return dealerNotificationSettingsRecord;
+}
+
+export async function fetchDealerInterestedVehicles(): Promise<DealerInterestedVehicle[]> {
+  await delay();
+
+  return [...dealerInterestedVehicleRecords].sort(
+    (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt),
+  );
+}
+
+export async function fetchDealerTermTypes(): Promise<DealerTermType[]> {
+  await delay();
+
+  return dealerTermTypeRecords;
+}
+
+export async function fetchDealerTerm(termTypeId: string): Promise<DealerTerm> {
+  await delay();
+
+  const term = dealerTermRecords.find((item) => item.typeId === termTypeId);
+
+  if (!term) {
+    throw new Error("약관 정보를 찾을 수 없습니다.");
+  }
+
+  return term;
+}
+
+export async function fetchDealerCustomerService(): Promise<DealerCustomerService> {
+  await delay();
+
+  return dealerCustomerServiceRecord;
+}
+
+export async function fetchDealerReviewWorkspace(): Promise<DealerReviewWorkspace> {
+  await delay();
+
+  return dealerReviewWorkspaceRecord;
 }
 
 export async function fetchDealerNotifications(): Promise<DealerNotificationItem[]> {
