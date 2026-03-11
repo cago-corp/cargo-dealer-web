@@ -23,6 +23,73 @@ export async function fetchDealerDealDetailFromApi(dealId: string) {
   return readApiResponse(response, dealerDealDetailSchema);
 }
 
+export async function updateDealerDealStatusFromApi(input: {
+  dealId: string;
+  targetStatusCode: string;
+  reason?: string;
+}) {
+  const response = await fetch(`/api/dealer/deals/${input.dealId}/status`, {
+    method: "POST",
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      targetStatusCode: input.targetStatusCode,
+      reason: input.reason,
+    }),
+  });
+
+  return readApiResponse(response, okResponseSchema);
+}
+
+export async function updateDealerDealScheduleFromApi(input: {
+  dealId: string;
+  kind: "assignment" | "release";
+  date: string;
+}) {
+  const response = await fetch(`/api/dealer/deals/${input.dealId}/schedule`, {
+    method: "POST",
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      kind: input.kind,
+      date: input.date,
+    }),
+  });
+
+  return readApiResponse(response, okResponseSchema);
+}
+
+export async function cancelDealerDealFromApi(input: {
+  dealId: string;
+  reason: string;
+}) {
+  const response = await fetch(`/api/dealer/deals/${input.dealId}/cancel`, {
+    method: "POST",
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      reason: input.reason,
+    }),
+  });
+
+  return readApiResponse(response, okResponseSchema);
+}
+
+const okResponseSchema = {
+  parse(payload: unknown) {
+    return payload;
+  },
+};
+
 async function readApiResponse<T>(
   response: Response,
   schema: {

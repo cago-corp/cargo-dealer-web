@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { DealerDealActionPanel } from "@/features/deals/components/dealer-deal-action-panel";
+import { DealerDealStepper } from "@/features/deals/components/dealer-deal-stepper";
 import { useDealerDealDetailQuery } from "@/features/deals/hooks/use-dealer-deal-detail-query";
 import { appRoutes } from "@/shared/config/routes";
 import { useChatRail } from "@/shared/ui/chat-rail-provider";
@@ -75,23 +77,11 @@ export function DealerDealDetailPage({ dealId }: DealerDealDetailPageProps) {
         <div className="space-y-6">
           <SectionCard
             title="진행 단계"
-            description="현재 거래가 어느 단계까지 진행되었는지 한눈에 확인할 수 있습니다."
+            description="현재 거래 상태와 다음으로 처리해야 할 업무를 바로 확인할 수 있습니다."
           >
-            <div className="grid gap-3 md:grid-cols-3">
-              {detail.steps.map((step) => (
-                <div
-                  className={
-                    step.state === "current"
-                      ? "rounded-3xl border border-slate-950 bg-slate-950 px-4 py-5 text-white"
-                      : step.state === "completed"
-                        ? "rounded-3xl border border-teal-200 bg-teal-50 px-4 py-5 text-teal-800"
-                        : "rounded-3xl border border-line bg-slate-50 px-4 py-5 text-slate-500"
-                  }
-                  key={step.label}
-                >
-                  <p className="text-sm font-medium">{step.label}</p>
-                </div>
-              ))}
+            <div className="space-y-5">
+              <DealerDealStepper statusCode={detail.statusCode} />
+              <DealerDealActionPanel detail={detail} />
             </div>
           </SectionCard>
 

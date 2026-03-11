@@ -15,6 +15,8 @@ const dealerDealStepSchema = z.object({
   state: dealerDealStepStateSchema,
 });
 
+const dealerDealStatusCodeSchema = z.string().min(1);
+
 const dealerDealServiceSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -36,8 +38,12 @@ export const dealerDealListItemSchema = z.object({
 });
 
 export const dealerDealDetailSchema = dealerDealListItemSchema.extend({
+  statusCode: dealerDealStatusCodeSchema,
+  statusName: z.string(),
   askingPriceLabel: z.string(),
   submittedAt: z.string().datetime(),
+  expectedAssignmentDate: z.string().datetime().nullable(),
+  expectedReleaseDate: z.string().datetime().nullable(),
   contractMonths: z.number().int().positive().nullable(),
   advanceDownPaymentAmount: z.number().int().nonnegative().nullable(),
   depositDownPaymentAmount: z.number().int().nonnegative().nullable(),
@@ -51,6 +57,7 @@ export const dealerDealDetailSchema = dealerDealListItemSchema.extend({
 });
 
 export type DealerDealStage = z.infer<typeof dealerDealStageSchema>;
+export type DealerDealStatusCode = z.infer<typeof dealerDealStatusCodeSchema>;
 export type DealerDealListItem = z.infer<typeof dealerDealListItemSchema>;
 export type DealerDealDetail = z.infer<typeof dealerDealDetailSchema>;
 export type DealerDealStep = z.infer<typeof dealerDealStepSchema>;

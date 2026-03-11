@@ -592,16 +592,21 @@ function buildDealSteps(stage: DealerDealStage): DealerDealStep[] {
   }[stage];
 
   return [
-    { label: "서류 확인", state: currentIndex > 0 ? "completed" : "current" },
+    { label: "계약금 입금", state: currentIndex > 0 ? "completed" : "current" },
     {
-      label: "계약 입력",
+      label: "차량 배정",
       state:
         currentIndex > 1 ? "completed" : currentIndex === 1 ? "current" : "upcoming",
     },
     {
-      label: "출고 준비",
+      label: "잔금 결제",
       state:
         currentIndex > 2 ? "completed" : currentIndex === 2 ? "current" : "upcoming",
+    },
+    {
+      label: "차량 출고",
+      state:
+        currentIndex > 3 ? "completed" : currentIndex === 3 ? "current" : "upcoming",
     },
   ];
 }
@@ -677,8 +682,12 @@ function toDealerDealDetail(room: RawChatRoomRecord): DealerDealDetail | null {
 
   return dealerDealDetailSchema.parse({
     ...dealListItem,
+    statusCode: stageToStatusCode(resolved.stage),
+    statusName: getDealStageDescription(resolved.stage),
     askingPriceLabel: resolved.auction.askingPriceLabel,
     submittedAt: resolved.submission.submittedAt,
+    expectedAssignmentDate: null,
+    expectedReleaseDate: null,
     contractMonths: resolved.auction.contractMonths,
     advanceDownPaymentAmount: resolved.auction.advanceDownPaymentAmount,
     depositDownPaymentAmount: resolved.auction.depositDownPaymentAmount,
@@ -690,6 +699,21 @@ function toDealerDealDetail(room: RawChatRoomRecord): DealerDealDetail | null {
     services: resolved.submission.services,
     steps: buildDealSteps(resolved.stage),
   });
+}
+
+function stageToStatusCode(stage: DealerDealStage) {
+  switch (stage) {
+    case "서류 확인":
+      return "계약요청";
+    case "계약 입력 대기":
+      return "배정진행";
+    case "출고 준비":
+      return "출고진행";
+    case "출고 완료":
+      return "출고완료";
+    default:
+      return "계약요청";
+  }
 }
 
 function toDealerChatRoomListItem(room: RawChatRoomRecord): DealerChatRoomListItem | null {

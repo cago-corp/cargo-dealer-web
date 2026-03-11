@@ -142,8 +142,16 @@ export async function fetchDealerDealDetailForSession(
 
   return dealerDealDetailSchema.parse({
     ...toDealerDealListItem(record, chatRoomId),
+    statusCode: record.status_code ?? "계약요청",
+    statusName: record.status_name ?? "거래 상태 확인이 필요합니다.",
     askingPriceLabel: formatWon(record.final_vehicle_price),
     submittedAt: toIsoDateTime(record.deal_created_at),
+    expectedAssignmentDate: record.expected_assignment_date
+      ? toIsoDateTime(record.expected_assignment_date)
+      : null,
+    expectedReleaseDate: record.expected_release_date
+      ? toIsoDateTime(record.expected_release_date)
+      : null,
     contractMonths: record.final_contract_months ?? null,
     advanceDownPaymentAmount: record.final_advance_down_payment_amount ?? null,
     depositDownPaymentAmount: record.final_deposit_down_payment_amount ?? null,
@@ -159,6 +167,98 @@ export async function fetchDealerDealDetailForSession(
     })),
     steps: buildDealSteps(record.status_code),
   });
+}
+
+export async function updateDealerDealStatusForSession(
+  session: DealerSession,
+  input: {
+    dealId: string;
+    targetStatusCode: string;
+    reason?: string | null;
+  },
+) {
+  const backend = resolveDealerDataBackend(session);
+
+  if (backend === "mock") {
+    throw new Error("Mock dealer deal mutations are not implemented yet.");
+  }
+
+  if (backend === "spring") {
+    throw new Error("Spring dealer deal backend is not implemented yet.");
+  }
+
+  await callSupabaseRpc(
+    session,
+    "update_deal_status_with_log",
+    {
+      p_deal_id: input.dealId,
+      p_to_status_code: input.targetStatusCode,
+      p_reason: input.reason ?? null,
+    },
+    z.unknown(),
+  );
+}
+
+export async function updateDealerDealExpectedDateForSession(
+  session: DealerSession,
+  input: {
+    dealId: string;
+    assignmentDate?: string | null;
+    releaseDate?: string | null;
+  },
+) {
+  const backend = resolveDealerDataBackend(session);
+
+  if (backend === "mock") {
+    throw new Error("Mock dealer deal mutations are not implemented yet.");
+  }
+
+  if (backend === "spring") {
+    throw new Error("Spring dealer deal backend is not implemented yet.");
+  }
+
+  await callSupabaseRpc(
+    session,
+    "update_deal_with_options_full",
+    {
+      p_deal_id: input.dealId,
+      p_expected_assignment_date: input.assignmentDate ?? null,
+      p_expected_assignment_week: input.assignmentDate
+        ? toDealerWeekString(input.assignmentDate)
+        : null,
+      p_expected_release_date: input.releaseDate ?? null,
+      p_expected_release_week: input.releaseDate ? toDealerWeekString(input.releaseDate) : null,
+    },
+    z.unknown(),
+  );
+}
+
+export async function cancelDealerDealForSession(
+  session: DealerSession,
+  input: {
+    dealId: string;
+    reason: string;
+  },
+) {
+  const backend = resolveDealerDataBackend(session);
+
+  if (backend === "mock") {
+    throw new Error("Mock dealer deal mutations are not implemented yet.");
+  }
+
+  if (backend === "spring") {
+    throw new Error("Spring dealer deal backend is not implemented yet.");
+  }
+
+  await callSupabaseRpc(
+    session,
+    "update_deal_cancel_with_log",
+    {
+      p_deal_id: input.dealId,
+      p_cancel_reason: input.reason,
+    },
+    z.unknown(),
+  );
 }
 
 function toDealerDealListItem(
@@ -201,27 +301,8 @@ function mapDealStage(statusCode: string | null | undefined): DealerDealStage {
 }
 
 function buildDealSteps(statusCode: string | null | undefined): DealerDealStep[] {
-  const labels = ["서류 확인", "계약 입력", "결제 확인", "출고"];
-  const currentIndex = (() => {
-    switch (statusCode) {
-      case "계약요청":
-      case "계약금_입금대기":
-        return 0;
-      case "배정진행":
-      case "배정완료":
-        return 1;
-      case "결제대기":
-      case "결제완료":
-        return 2;
-      case "출고진행":
-      case "출고지연":
-      case "출고완료":
-      case "계약취소":
-        return 3;
-      default:
-        return 0;
-    }
-  })();
+  const labels = ["계약금 입금", "차량 배정", "잔금 결제", "차량 출고"];
+  const currentIndex = getDealStepIndex(statusCode);
 
   return labels.map((label, index) => ({
     label,
@@ -232,6 +313,27 @@ function buildDealSteps(statusCode: string | null | undefined): DealerDealStep[]
           ? "current"
           : "upcoming",
   }));
+}
+
+function getDealStepIndex(statusCode: string | null | undefined) {
+  switch (statusCode) {
+    case "계약요청":
+    case "계약금_입금대기":
+      return 0;
+    case "배정진행":
+    case "배정완료":
+      return 1;
+    case "결제대기":
+    case "결제완료":
+      return 2;
+    case "출고진행":
+    case "출고지연":
+    case "출고완료":
+    case "계약취소":
+      return 3;
+    default:
+      return 0;
+  }
 }
 
 function normalizePurchaseMethod(
@@ -388,4 +490,14 @@ function formatWon(value: number | null | undefined) {
   }
 
   return `${new Intl.NumberFormat("ko-KR").format(value)}원`;
+}
+
+function toDealerWeekString(dateValue: string) {
+  const date = new Date(dateValue);
+  const startOfYear = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const days =
+    Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+  const weekNum = Math.ceil((days + startOfYear.getUTCDay()) / 7);
+
+  return `${date.getUTCFullYear()}-W${String(weekNum).padStart(2, "0")}`;
 }
