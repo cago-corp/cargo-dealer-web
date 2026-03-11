@@ -23,6 +23,11 @@ export async function POST() {
   }
 
   try {
+    // TODO(auth-session-policy): Spring 전환 또는 인증 정책 확정 후 아래를 정리해야 한다.
+    // 1) refresh token 기반 silent refresh 도입 여부
+    // 2) 세션 만료 시 공통 모달(예: "세션이 만료되어 다시 로그인해 주세요") 노출 여부
+    // 3) 비활성 시간 기준 자동 로그아웃 정책 도입 여부
+    // 현재는 accessState만 재확인하고 있으며, 토큰 수명 연장/만료 UX는 의도적으로 미구현 상태다.
     const authClient = getDealerAuthClient();
     const refreshedSession = await authClient.refreshSession(session);
     const response = NextResponse.json({

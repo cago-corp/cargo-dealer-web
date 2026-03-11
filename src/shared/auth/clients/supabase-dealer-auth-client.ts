@@ -108,6 +108,12 @@ export const supabaseDealerAuthClient: DealerAuthClient = {
       return session;
     }
 
+    // TODO(auth-session-policy): 현재는 Supabase refresh token을 사용하지 않고 accessState만 다시 조회한다.
+    // 정책 확정 후 아래 중 하나로 정리 필요:
+    // - refresh token 기반 세션 연장
+    // - 세션 만료 시 재로그인 유도 모달
+    // - 비활성 시간 기준 자동 로그아웃
+    // 백엔드가 Spring으로 전환될 가능성이 있어 지금은 의도적으로 보수적으로 유지한다.
     const accessState = await getDealerAccessState({
       dealerId: session.dealerId,
       accessToken: session.accessToken,
