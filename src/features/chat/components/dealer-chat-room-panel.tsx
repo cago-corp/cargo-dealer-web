@@ -443,7 +443,7 @@ export function DealerChatRoomPanel({
 
   const room = roomQuery.data;
   const currentStageIndex = getDealStageIndex(room.stageLabel);
-  const canOpenContractInput = room.statusCode === "계약요청";
+  const contractEntrySource = allowPopout ? "deal" : "chat-window";
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -536,18 +536,17 @@ export function DealerChatRoomPanel({
             <p className="mt-1 truncate text-sm text-slate-500">{room.vehicleLabel}</p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
-            {canOpenContractInput ? (
+            {!room.isClosed ? (
               <Link
                 className="rounded-full bg-violet-700 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_10px_20px_rgba(90,42,235,0.16)]"
-                href={appRoutes.dealContract(room.dealId, room.id)}
+                href={appRoutes.dealContract(room.dealId, {
+                  roomId: room.id,
+                  source: contractEntrySource,
+                })}
               >
                 최종 계약
               </Link>
-            ) : (
-              <span className="rounded-full border border-line px-3 py-1.5 text-xs font-medium text-slate-400">
-                발송 완료
-              </span>
-            )}
+            ) : null}
             <Link
               className="rounded-full border border-line px-3 py-1.5 text-xs font-medium text-slate-700"
               href={appRoutes.dealDetail(room.dealId)}

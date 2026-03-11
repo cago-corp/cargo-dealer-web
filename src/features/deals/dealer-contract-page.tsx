@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { DealerContractSubmitPayload } from "@/entities/deal/schemas/dealer-contract-schema";
 import { useDealerDealDetailQuery } from "@/features/deals/hooks/use-dealer-deal-detail-query";
 import { dealerChatRoomListQueryKey, getDealerChatRoomQueryKey } from "@/features/chat/lib/dealer-chat-query";
@@ -70,8 +70,10 @@ const emptyFormState: ContractFormState = {
 };
 
 export function DealerContractPage({ dealId }: DealerContractPageProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const roomId = searchParams.get("roomId");
+  const source = searchParams.get("source");
   const queryClient = useQueryClient();
   const dealDetailQuery = useDealerDealDetailQuery(dealId);
   const contractInitQuery = useQuery({
@@ -81,7 +83,6 @@ export function DealerContractPage({ dealId }: DealerContractPageProps) {
   const [formState, setFormState] = useState<ContractFormState>(emptyFormState);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isInitialized, setIsInitialized] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (
@@ -152,7 +153,7 @@ export function DealerContractPage({ dealId }: DealerContractPageProps) {
           ? queryClient.invalidateQueries({ queryKey: getDealerChatRoomQueryKey(roomId) })
           : Promise.resolve(),
       ]);
-      setSuccessMessage("최종 계약 조건을 전송했습니다.");
+      router.replace(appRoutes.dealDetail(dealId), { scroll: false });
     },
   });
 
@@ -186,6 +187,14 @@ export function DealerContractPage({ dealId }: DealerContractPageProps) {
   const isCash = formState.purchaseMethod === "현금";
   const isLeaseOrRent =
     formState.purchaseMethod === "리스" || formState.purchaseMethod === "장기렌트";
+  const backHref =
+    source === "chat-window" && roomId
+      ? appRoutes.chatWindow(roomId)
+      : appRoutes.dealDetail(dealId);
+  const backLabel =
+    source === "chat-window" && roomId
+      ? "채팅 창으로 돌아가기"
+      : "거래 상세로 돌아가기";
 
   async function handleSubmit() {
     const nextErrors = validateContractForm(formState);
@@ -195,7 +204,6 @@ export function DealerContractPage({ dealId }: DealerContractPageProps) {
       return;
     }
 
-    setSuccessMessage(null);
     await submitMutation.mutateAsync(toSubmitPayload(formState));
   }
 
@@ -205,10 +213,10 @@ export function DealerContractPage({ dealId }: DealerContractPageProps) {
         <div className="space-y-2">
           <Link
             className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-950"
-            href={roomId ? appRoutes.chat(roomId) : appRoutes.dealDetail(dealId)}
+            href={backHref}
           >
             <span aria-hidden="true">‹</span>
-            {roomId ? "채팅으로 돌아가기" : "거래 상세로 돌아가기"}
+            {backLabel}
           </Link>
           <h1 className="text-3xl font-semibold text-slate-950">최종 계약 입력</h1>
           <p className="text-sm text-slate-600">
@@ -220,28 +228,6 @@ export function DealerContractPage({ dealId }: DealerContractPageProps) {
           <p className="mt-1 text-lg font-semibold text-slate-950">{detail.vehicleLabel}</p>
         </div>
       </header>
-
-      {successMessage ? (
-        <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
-          <p className="font-semibold">{successMessage}</p>
-          <div className="mt-3 flex flex-wrap gap-3">
-            <Link
-              className="rounded-full bg-white px-4 py-2 font-medium text-emerald-700"
-              href={appRoutes.dealDetail(dealId)}
-            >
-              거래 상세 보기
-            </Link>
-            {roomId ? (
-              <Link
-                className="rounded-full bg-white px-4 py-2 font-medium text-emerald-700"
-                href={appRoutes.chat(roomId)}
-              >
-                채팅으로 돌아가기
-              </Link>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
 
       {submitMutation.error instanceof Error ? (
         <div className="rounded-[28px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">

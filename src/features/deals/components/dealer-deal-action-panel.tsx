@@ -186,14 +186,20 @@ function renderActionBody({
         <WaitingPanel
           actionHref={appRoutes.dealContract(
             detail.id,
-            detail.chatRoomId.startsWith("pending:") ? undefined : detail.chatRoomId,
+            {
+              roomId: detail.chatRoomId.startsWith("pending:")
+                ? undefined
+                : detail.chatRoomId,
+              source: "deal",
+            },
           )}
-          actionLabel="최종 계약 입력"
-          description={
-            actionModel.description ??
-            "최종 계약 조건을 먼저 입력하고 고객에게 전달해 주세요. 전송 후에는 고객 본인인증과 계약금 입금 단계로 이어집니다."
+          actionLabel={actionModel.primaryLabel ?? "최종 계약 입력"}
+          description={actionModel.description ?? "최종 계약 조건을 열어 확인해 주세요."}
+          title={
+            actionModel.primaryLabel === "최종 계약 수정"
+              ? "보낸 최종 계약을 다시 확인할 수 있습니다."
+              : "최종 계약 입력이 먼저 필요합니다."
           }
-          title="최종 계약 입력이 먼저 필요합니다."
         />
       );
     case "confirmDeposit":

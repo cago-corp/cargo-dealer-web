@@ -62,10 +62,15 @@ export function getDealerDealStepIndex(statusCode: string | null | undefined) {
 }
 
 export function getDealerDealActionModel(
-  detail: Pick<DealerDealDetail, "statusCode" | "expectedAssignmentDate" | "expectedReleaseDate">,
+  detail: Pick<
+    DealerDealDetail,
+    "statusCode" | "expectedAssignmentDate" | "expectedReleaseDate" | "askingPriceLabel"
+  >,
 ): DealerDealActionModel {
   const statusCode = detail.statusCode ?? "";
   const stepIndex = getDealerDealStepIndex(statusCode);
+  const hasSubmittedContract =
+    detail.askingPriceLabel !== "-" && detail.askingPriceLabel.trim().length > 0;
 
   switch (statusCode) {
     case dealerDealStatusCodes.contractRequest:
@@ -73,8 +78,10 @@ export function getDealerDealActionModel(
         kind: "waitingForCustomerContract",
         stepIndex,
         statusCode,
-        description:
-          "고객님이 최종 견적을 확인하고 본인인증을 완료하면, 계약금 입금 단계로 넘어갑니다.",
+        description: hasSubmittedContract
+          ? "보낸 최종 계약 조건을 다시 열어 수정할 수 있습니다. 고객 계약 전까지는 여러 번 갱신해도 됩니다."
+          : "최종 계약 조건을 입력하고 고객에게 전달해 주세요. 전송 후에는 고객 본인인증과 계약금 입금 단계로 이어집니다.",
+        primaryLabel: hasSubmittedContract ? "최종 계약 수정" : "최종 계약 입력",
       };
     case dealerDealStatusCodes.depositWait:
       return {
