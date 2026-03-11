@@ -41,6 +41,23 @@ export async function sendDealerChatMessageFromApi(input: {
   return readApiResponse(response, dealerChatMessageSchema);
 }
 
+export async function sendDealerChatAttachmentFromApi(input: {
+  roomId: string;
+  file: File;
+}) {
+  const formData = new FormData();
+  formData.set("file", input.file);
+
+  const response = await fetch(`/api/dealer/chat/rooms/${input.roomId}/attachments`, {
+    method: "POST",
+    cache: "no-store",
+    credentials: "same-origin",
+    body: formData,
+  });
+
+  return readApiResponse(response, dealerChatMessageSchema);
+}
+
 export async function markDealerChatRoomReadFromApi(input: {
   roomId: string;
   lastMessageId: string;

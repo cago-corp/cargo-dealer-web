@@ -10,6 +10,7 @@ export function DealerLoginForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -77,14 +78,24 @@ export function DealerLoginForm() {
         <label className="text-sm font-medium text-slate-700" htmlFor="password">
           비밀번호
         </label>
-        <input
-          id="password"
-          className="w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none transition focus:border-accent"
-          name="password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
+        <div className="relative">
+          <input
+            id="password"
+            className="w-full rounded-2xl border border-line bg-white px-4 py-3 pr-12 outline-none transition focus:border-accent"
+            name="password"
+            type={isPasswordVisible ? "text" : "password"}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+          <button
+            aria-label={isPasswordVisible ? "비밀번호 숨기기" : "비밀번호 보기"}
+            className="absolute inset-y-0 right-0 inline-flex w-12 items-center justify-center text-slate-500 transition hover:text-slate-700"
+            type="button"
+            onClick={() => setIsPasswordVisible((current) => !current)}
+          >
+            {isPasswordVisible ? <EyeOffIcon /> : <EyeIcon />}
+          </button>
+        </div>
       </div>
       {errorMessage ? (
         <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-700">
@@ -99,5 +110,64 @@ export function DealerLoginForm() {
         {isSubmitting ? "로그인 중..." : "로그인"}
       </button>
     </form>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+      <circle
+        cx="12"
+        cy="12"
+        r="3"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="M3 3 21 21"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M10.6 5.2A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.4 4.3M6.1 6.1C3.6 7.8 2 12 2 12a17.8 17.8 0 0 0 6.3 5.4A10.4 10.4 0 0 0 12 19c1.3 0 2.5-.2 3.6-.6"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M9.9 9.9a3 3 0 0 0 4.2 4.2"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
   );
 }

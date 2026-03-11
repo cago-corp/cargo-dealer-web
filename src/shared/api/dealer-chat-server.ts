@@ -1,5 +1,6 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
   dealerChatRoomListItemSchema,
@@ -55,6 +56,7 @@ const chatReadStateRecordSchema = z.object({
 });
 
 const sendDealerChatMessageResultSchema = z.array(chatMessageRecordSchema).min(1);
+export const DEALER_CHAT_VIDEO_UPLOAD_LIMIT_BYTES = 100 * 1024 * 1024;
 
 type ChatRoomRecord = z.output<typeof chatRoomRecordSchema>;
 type ChatMessageRecord = z.output<typeof chatMessageRecordSchema>;
@@ -78,10 +80,10 @@ export async function fetchDealerChatRoomListForSession(
     return [];
   }
 
-  const [rooms, profiles, latestMessages, readStates] = await Promise.all([
+  const [rooms, profiles, recentMessages, readStates] = await Promise.all([
     fetchChatRooms(session, roomIds),
     fetchProfilesUser(session, roomIds),
-    fetchLatestMessages(session, roomIds),
+    fetchRecentMessages(session, roomIds),
     fetchReadStates(session, roomIds),
   ]);
   const dealEntries = await Promise.all(
@@ -98,11 +100,21 @@ export async function fetchDealerChatRoomListForSession(
 
   const roomMap = new Map(rooms.map((room) => [room.id, room]));
   const profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
-  const latestMessageMap = new Map(latestMessages.map((message) => [message.room_id, message]));
   const readStateMap = new Map(readStates.map((state) => [state.room_id, state]));
   const dealMap = new Map(
     dealEntries.flatMap((entry) => (entry ? [entry] : [])),
   );
+  const messagesByRoom = new Map<string, ChatMessageRecord[]>();
+
+  for (const message of recentMessages) {
+    const current = messagesByRoom.get(message.room_id);
+
+    if (current) {
+      current.push(message);
+    } else {
+      messagesByRoom.set(message.room_id, [message]);
+    }
+  }
 
   return roomIds
     .flatMap((roomId) => {
@@ -119,13 +131,15 @@ export async function fetchDealerChatRoomListForSession(
       }
 
       const profile = profileMap.get(room.profiles_user_id);
-      const latestMessage = latestMessageMap.get(roomId) ?? null;
       const readState = readStateMap.get(roomId);
-      const isUnread =
-        latestMessage &&
-        latestMessage.auth_users_id !== session.dealerId &&
-        getNumericMessageId(latestMessage.id) >
-          getNumericMessageId(readState?.last_read_message_id ?? null);
+      const roomMessages = messagesByRoom.get(roomId) ?? [];
+      const latestMessage = roomMessages[0] ?? null;
+      const unreadCount = roomMessages.filter(
+        (message) =>
+          message.auth_users_id !== session.dealerId &&
+          getNumericMessageId(message.id) >
+            getNumericMessageId(readState?.last_read_message_id ?? null),
+      ).length;
 
       return [
         dealerChatRoomListItemSchema.parse({
@@ -143,7 +157,7 @@ export async function fetchDealerChatRoomListForSession(
           lastMessageAt: toIsoDateTime(
             latestMessage?.created_at ?? room.created_at,
           ),
-          unreadCount: isUnread ? 1 : 0,
+          unreadCount,
           isClosed: deal.stage === "출고 완료",
         }),
       ];
@@ -233,6 +247,77 @@ export async function sendDealerChatMessageForSession(
   return toDealerChatMessage(inserted, session);
 }
 
+export async function sendDealerChatAttachmentForSession(
+  session: DealerSession,
+  input: {
+    roomId: string;
+    fileName: string;
+    mimeType: string;
+    size: number;
+    bytes: ArrayBuffer;
+  },
+): Promise<DealerChatMessage> {
+  const backend = resolveDealerDataBackend(session);
+
+  if (backend === "mock") {
+    throw new Error("Mock 채팅 첨부 전송은 아직 지원하지 않습니다.");
+  }
+
+  if (backend === "spring") {
+    throw new Error("Spring dealer chat backend is not implemented yet.");
+  }
+
+  if (input.mimeType.startsWith("video/") && input.size > DEALER_CHAT_VIDEO_UPLOAD_LIMIT_BYTES) {
+    throw new Error("100MB 이하 영상만 업로드할 수 있습니다.");
+  }
+
+  const room = await fetchChatRoomById(session, input.roomId);
+
+  if (!room?.deal_id) {
+    throw new Error("첨부를 전송할 채팅방을 찾을 수 없습니다.");
+  }
+
+  const storagePath = await uploadChatAttachmentToStorage(session, {
+    roomId: input.roomId,
+    dealId: room.deal_id,
+    fileName: input.fileName,
+    mimeType: input.mimeType,
+    bytes: input.bytes,
+  });
+
+  const metadataJson = JSON.stringify({
+    name: input.fileName,
+    size: input.size,
+    mime: input.mimeType,
+  });
+
+  const env = getRequiredSupabaseDataEnv(session);
+  const response = await fetch(`${env.SUPABASE_URL}/rest/v1/chat_message?select=*`, {
+    method: "POST",
+    headers: {
+      apikey: env.SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${env.accessToken}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    cache: "no-store",
+    body: JSON.stringify({
+      room_id: input.roomId,
+      auth_users_id: session.dealerId,
+      content: metadataJson,
+      file_url: storagePath,
+    }),
+  });
+
+  const responseJson = await readJson(response);
+  if (!response.ok) {
+    throw new Error(getSupabaseErrorMessage(responseJson) ?? "첨부 전송에 실패했습니다.");
+  }
+
+  const inserted = sendDealerChatMessageResultSchema.parse(responseJson)[0];
+  return toDealerChatMessage(inserted, session);
+}
+
 export async function markDealerChatRoomReadForSession(
   session: DealerSession,
   input: {
@@ -289,15 +374,15 @@ export async function fetchDealerChatStreamCursorForSession(session: DealerSessi
     return { cursor: "empty" };
   }
 
-  const [rooms, latestMessages] = await Promise.all([
+  const [rooms, recentMessages] = await Promise.all([
     fetchChatRooms(session, roomIds),
-    fetchLatestMessages(session, roomIds),
+    fetchRecentMessages(session, roomIds),
   ]);
 
   const latestRoomAt = rooms
     .map((room) => Date.parse(room.created_at))
     .sort((left, right) => right - left)[0] ?? 0;
-  const latestMessageId = latestMessages
+  const latestMessageId = recentMessages
     .map((message) => getNumericMessageId(message.id))
     .sort((left, right) => right - left)[0] ?? 0;
 
@@ -340,6 +425,16 @@ async function fetchChatRooms(session: DealerSession, roomIds: string[]) {
   return chatRoomRecordSchema.array().parse(records);
 }
 
+async function fetchChatRoomById(session: DealerSession, roomId: string) {
+  const records = await fetchTableRecords(session, "chat_room", {
+    select: "id,deal_id,profiles_user_id,created_at",
+    id: `eq.${roomId}`,
+    limit: "1",
+  });
+
+  return chatRoomRecordSchema.array().parse(records)[0] ?? null;
+}
+
 async function fetchProfilesUser(session: DealerSession, roomIds: string[]) {
   const rooms = await fetchChatRooms(session, roomIds);
   const userIds = [...new Set(rooms.map((room) => room.profiles_user_id))];
@@ -356,7 +451,7 @@ async function fetchProfilesUser(session: DealerSession, roomIds: string[]) {
   return profileUserRecordSchema.array().parse(records);
 }
 
-async function fetchLatestMessages(session: DealerSession, roomIds: string[]) {
+async function fetchRecentMessages(session: DealerSession, roomIds: string[]) {
   const messages = await fetchTableRecords(session, "chat_message", {
     select: "id,room_id,auth_users_id,content,file_url,metadata,created_at,edited_at",
     room_id: toPostgrestInFilter(roomIds),
@@ -364,16 +459,7 @@ async function fetchLatestMessages(session: DealerSession, roomIds: string[]) {
     limit: "200",
   });
 
-  const parsed = chatMessageRecordSchema.array().parse(messages);
-  const latestByRoom = new Map<string, ChatMessageRecord>();
-
-  for (const message of parsed) {
-    if (!latestByRoom.has(message.room_id)) {
-      latestByRoom.set(message.room_id, message);
-    }
-  }
-
-  return [...latestByRoom.values()];
+  return chatMessageRecordSchema.array().parse(messages);
 }
 
 async function fetchChatMessages(session: DealerSession, roomId: string) {
@@ -732,6 +818,59 @@ function toPostgrestInFilter(values: string[]) {
 function resolveDealerDataBackend(session: DealerSession) {
   const env = getServerEnv();
   return env.DEALER_DATA_BACKEND ?? session.backend;
+}
+
+async function uploadChatAttachmentToStorage(
+  session: DealerSession,
+  input: {
+    roomId: string;
+    dealId: string;
+    fileName: string;
+    mimeType: string;
+    bytes: ArrayBuffer;
+  },
+) {
+  const env = getRequiredSupabaseDataEnv(session);
+  const extension = getFileExtension(input.fileName, input.mimeType);
+  const storageFileName = extension ? `${randomUUID()}.${extension}` : randomUUID();
+  const storagePath = `deal/${input.dealId}/room/${input.roomId}/${storageFileName}`;
+  const encodedPath = storagePath
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
+
+  const response = await fetch(
+    `${env.SUPABASE_URL}/storage/v1/object/chat-attached-files/${encodedPath}`,
+    {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${env.accessToken}`,
+        "Content-Type": input.mimeType || "application/octet-stream",
+        "x-upsert": "false",
+      },
+      cache: "no-store",
+      body: Buffer.from(input.bytes),
+    },
+  );
+
+  if (!response.ok) {
+    const responseJson = await readJson(response);
+    throw new Error(getSupabaseErrorMessage(responseJson) ?? "파일 업로드에 실패했습니다.");
+  }
+
+  return storagePath;
+}
+
+function getFileExtension(fileName: string, mimeType: string) {
+  const fileExtension = fileName.split(".").at(-1)?.trim().toLowerCase();
+
+  if (fileExtension) {
+    return fileExtension;
+  }
+
+  const mimeExtension = mimeType.split("/").at(-1)?.trim().toLowerCase();
+  return mimeExtension || "";
 }
 
 function getRequiredSupabaseDataEnv(session: DealerSession) {

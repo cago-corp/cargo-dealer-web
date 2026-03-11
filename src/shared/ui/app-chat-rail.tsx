@@ -55,12 +55,35 @@ function ChatRailContent() {
             {rooms.length}건 진행 중
           </span>
           <Link
-            className="text-xs font-medium text-slate-500 underline underline-offset-4"
+            aria-label="새 창으로 보기"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             href={appRoutes.chatWindow(selectedRoomId ?? undefined)}
             rel="noreferrer"
             target="_blank"
+            title="새 창으로 보기"
           >
-            새 창으로 보기
+            <span>새 창</span>
+            <svg
+              aria-hidden="true"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M14 5h5v5M19 5l-8 8"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+              />
+              <path
+                d="M10 7H7.8A2.8 2.8 0 0 0 5 9.8v6.4A2.8 2.8 0 0 0 7.8 19h6.4a2.8 2.8 0 0 0 2.8-2.8V14"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+              />
+            </svg>
           </Link>
         </div>
       </div>

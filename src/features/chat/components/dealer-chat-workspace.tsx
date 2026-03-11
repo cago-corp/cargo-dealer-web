@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DealerChatRoomList } from "@/features/chat/components/dealer-chat-room-list";
 import { useDealerChatSyncStream } from "@/features/chat/hooks/use-dealer-chat-sync-stream";
 import { filterLiveChatRooms } from "@/features/chat/lib/filter-live-chat-rooms";
@@ -17,12 +17,26 @@ type DealerChatWorkspaceProps = {
 export function DealerChatWorkspace({
   variant = "default",
 }: DealerChatWorkspaceProps) {
+  const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const roomListQuery = useDealerChatRoomListQuery();
   const { clearSelectedRoom, selectedRoomId, selectRoom } = useChatRail();
   const roomIdFromQuery = searchParams.get("roomId");
   const rooms = filterLiveChatRooms(roomListQuery.data);
   const isWindowVariant = variant === "window";
+
+  const handleSelectRoom = useCallback((nextRoomId: string) => {
+    selectRoom(nextRoomId);
+
+    if (!isWindowVariant) {
+      return;
+    }
+
+    const nextSearchParams = new URLSearchParams(searchParams.toString());
+    nextSearchParams.set("roomId", nextRoomId);
+    router.replace(`${pathname}?${nextSearchParams.toString()}`, { scroll: false });
+  }, [isWindowVariant, pathname, router, searchParams, selectRoom]);
 
   useDealerChatSyncStream(selectedRoomId);
 
@@ -35,7 +49,7 @@ export function DealerChatWorkspace({
 
     if (!hasRequestedRoom) {
       if (!selectedRoomId) {
-        selectRoom(rooms[0].id);
+        handleSelectRoom(rooms[0].id);
       }
       return;
     }
@@ -43,15 +57,15 @@ export function DealerChatWorkspace({
     if (roomIdFromQuery !== selectedRoomId) {
       selectRoom(roomIdFromQuery);
     }
-  }, [roomIdFromQuery, rooms, selectRoom, selectedRoomId]);
+  }, [handleSelectRoom, roomIdFromQuery, rooms, selectRoom, selectedRoomId]);
 
   useEffect(() => {
     if (selectedRoomId || rooms.length === 0) {
       return;
     }
 
-    selectRoom(rooms[0].id);
-  }, [rooms, selectRoom, selectedRoomId]);
+    handleSelectRoom(rooms[0].id);
+  }, [handleSelectRoom, rooms, selectedRoomId]);
 
   useEffect(() => {
     if (!selectedRoomId) {
@@ -77,13 +91,13 @@ export function DealerChatWorkspace({
   if (isWindowVariant) {
     return (
       <section className="flex h-full min-h-0 flex-col gap-5">
-        <header className="rounded-[28px] border border-white/80 bg-white px-5 py-4 shadow-sm">
+        <header className="rounded-[24px] border border-white/80 bg-white px-4 py-3 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
                 Chat
               </p>
-              <h1 className="mt-1 text-2xl font-semibold text-slate-950">채팅 전용 창</h1>
+              <h1 className="mt-1 text-xl font-semibold text-slate-950">채팅 전용 창</h1>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
               <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
@@ -97,7 +111,11 @@ export function DealerChatWorkspace({
         </header>
 
         <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <SectionCard title="대화 목록">
+          <SectionCard
+            className="flex min-h-0 flex-col"
+            contentClassName="min-h-0 flex-1 overflow-y-auto"
+            title="대화 목록"
+          >
             {roomListQuery.isLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, index) => (
@@ -115,13 +133,18 @@ export function DealerChatWorkspace({
               <DealerChatRoomList
                 rooms={rooms}
                 selectedRoomId={selectedRoomId}
-                onSelectRoom={selectRoom}
+                onSelectRoom={handleSelectRoom}
               />
             )}
           </SectionCard>
 
           <div className="min-h-0">
-            <DealerChatRoomPanel mode="page" roomId={selectedRoomId} />
+            <DealerChatRoomPanel
+              allowPopout={false}
+              density="compact"
+              mode="page"
+              roomId={selectedRoomId}
+            />
           </div>
         </div>
       </section>
@@ -168,7 +191,7 @@ export function DealerChatWorkspace({
               <DealerChatRoomList
                 rooms={rooms}
                 selectedRoomId={selectedRoomId}
-                onSelectRoom={selectRoom}
+                onSelectRoom={handleSelectRoom}
               />
           )}
         </SectionCard>

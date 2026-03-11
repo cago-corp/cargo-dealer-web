@@ -12,8 +12,8 @@ export default async function ChatWindowLayout({
 
   return (
     <ChatRailProvider>
-      <div className="min-h-screen bg-slate-100/80 px-4 py-4 md:px-6 md:py-6">
-        <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-[1680px] flex-col">
+      <div className="h-screen overflow-hidden bg-slate-100/80 px-4 py-4 md:px-6 md:py-6">
+        <div className="mx-auto flex h-[calc(100vh-2rem)] max-w-[1680px] min-h-0 flex-col">
           {children}
         </div>
       </div>
