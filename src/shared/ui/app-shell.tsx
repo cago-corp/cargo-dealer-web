@@ -1,4 +1,6 @@
+import Link from "next/link";
 import type { DealerSession } from "@/shared/auth/auth-types";
+import { appRoutes } from "@/shared/config/routes";
 import { AppChatRail } from "@/shared/ui/app-chat-rail";
 import { AppSidebarNav } from "@/shared/ui/app-sidebar-nav";
 import { AppUtilityNav } from "@/shared/ui/app-utility-nav";
@@ -15,7 +17,12 @@ export function AppShell({ children, session }: AppShellProps) {
     <div className="flex min-h-screen flex-col bg-slate-100/80">
       <header className="border-b border-slate-200 bg-white/96 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-[1680px] items-center justify-between px-4 md:px-6">
-          <span className="text-base font-bold text-slate-950">CARGO 딜러</span>
+          <Link
+            className="text-base font-bold text-slate-950 transition hover:opacity-80"
+            href={appRoutes.home()}
+          >
+            CARGO 딜러
+          </Link>
           <AppUtilityNav variant="topbar" />
         </div>
       </header>
