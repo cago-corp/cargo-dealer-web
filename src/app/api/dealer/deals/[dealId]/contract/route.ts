@@ -6,6 +6,12 @@ import {
 } from "@/shared/api/dealer-deal-server";
 import { dealerContractSubmitSchema } from "@/entities/deal/schemas/dealer-contract-schema";
 import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
+import { checkRateLimit, getRateLimitHeaders } from "@/shared/security/rate-limit";
+
+const dealerDealContractRateLimitRule = {
+  windowMs: 10 * 60 * 1000,
+  maxRequests: 10,
+} as const;
 
 type RouteContext = {
   params: Promise<{
@@ -34,6 +40,15 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function POST(request: Request, context: RouteContext) {
+  const rateLimit = checkRateLimit(request, "dealer:deal-contract", dealerDealContractRateLimitRule);
+
+  if (!rateLimit.ok) {
+    return NextResponse.json(
+      { message: "최종 계약 전송 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429, headers: getRateLimitHeaders(rateLimit) },
+    );
+  }
+
   const session = await getDealerSession();
 
   if (!session) {

@@ -4,8 +4,23 @@ import { DealerAuthError } from "@/shared/auth/auth-error";
 import { getDealerEntryRoute, sanitizeDealerRedirectPath } from "@/shared/auth/auth-routing";
 import { getDealerAuthClient } from "@/shared/auth/get-dealer-auth-client";
 import { setDealerSessionCookie } from "@/shared/auth/session";
+import { checkRateLimit, getRateLimitHeaders } from "@/shared/security/rate-limit";
+
+const dealerLoginRateLimitRule = {
+  windowMs: 10 * 60 * 1000,
+  maxRequests: 10,
+} as const;
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit(request, "auth:login", dealerLoginRateLimitRule);
+
+  if (!rateLimit.ok) {
+    return NextResponse.json(
+      { message: "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429, headers: getRateLimitHeaders(rateLimit) },
+    );
+  }
+
   const nextPath = sanitizeDealerRedirectPath(new URL(request.url).searchParams.get("next"));
   const payload = await request.json().catch(() => null);
   const parsed = dealerLoginSchema.safeParse(payload);

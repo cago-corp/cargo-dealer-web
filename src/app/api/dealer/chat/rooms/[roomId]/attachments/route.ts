@@ -5,6 +5,12 @@ import {
   validateDealerChatAttachment,
 } from "@/shared/api/dealer-chat-server";
 import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
+import { checkRateLimit, getRateLimitHeaders } from "@/shared/security/rate-limit";
+
+const dealerChatAttachmentRateLimitRule = {
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+} as const;
 
 type RouteContext = {
   params: Promise<{
@@ -13,6 +19,15 @@ type RouteContext = {
 };
 
 export async function POST(request: Request, context: RouteContext) {
+  const rateLimit = checkRateLimit(request, "dealer:chat-attachment", dealerChatAttachmentRateLimitRule);
+
+  if (!rateLimit.ok) {
+    return NextResponse.json(
+      { message: "첨부 전송이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429, headers: getRateLimitHeaders(rateLimit) },
+    );
+  }
+
   const session = await getDealerSession();
 
   if (!session) {

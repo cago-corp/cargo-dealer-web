@@ -166,12 +166,71 @@ const dealerCustomerServiceRecord = dealerCustomerServiceSchema.parse({
 });
 
 const dealerReviewWorkspaceRecord = dealerReviewWorkspaceSchema.parse({
-  reviewCount: 0,
-  averageRating: 0,
+  reviewCount: 18,
+  averageRating: 4.7,
   policySummary: "거래 완료 후 등록된 리뷰는 운영 정책 검수 후 노출됩니다.",
-  emptyStateTitle: "아직 등록된 리뷰가 없습니다.",
-  emptyStateDescription:
-    "거래가 완료되면 고객 리뷰가 이 화면에 정리됩니다. 이후 평점, 최근 리뷰, 신고 내역을 한 번에 확인할 수 있도록 확장됩니다.",
+  recentSummary: "최근 30일 기준으로 응대 태도와 진행 속도에 대한 긍정 리뷰가 가장 많습니다.",
+  ratingBreakdown: [
+    { score: 5, count: 14 },
+    { score: 4, count: 3 },
+    { score: 3, count: 1 },
+    { score: 2, count: 0 },
+    { score: 1, count: 0 },
+  ],
+  recentReviews: [
+    {
+      id: "dealer-review-001",
+      customerName: "김*우",
+      rating: 5,
+      title: "계약 진행이 빨라서 좋았습니다",
+      body:
+        "최종 계약서 수정도 빠르게 대응해 주셨고 출고 일정 안내가 명확했습니다. 채팅 답변 속도도 만족스러웠습니다.",
+      vehicleLabel: "BMW 5시리즈 530i xDrive",
+      createdAt: "2026-03-08T02:20:00.000Z",
+      tags: ["응답 빠름", "설명 명확", "출고 일정 안내"],
+      flagged: false,
+      statusLabel: "노출 중",
+    },
+    {
+      id: "dealer-review-002",
+      customerName: "한*은",
+      rating: 4,
+      title: "견적 비교가 편했습니다",
+      body:
+        "금액 설명이 자세했고 요청사항 반영도 빨랐습니다. 다만 중간에 서류 확인 단계 안내가 조금 더 있으면 좋겠습니다.",
+      vehicleLabel: "제네시스 GV80 2.5T AWD",
+      createdAt: "2026-03-06T06:10:00.000Z",
+      tags: ["가격 설명", "요청 반영"],
+      flagged: false,
+      statusLabel: "노출 중",
+    },
+    {
+      id: "dealer-review-003",
+      customerName: "박*현",
+      rating: 5,
+      title: "배정 이후 진행이 안정적이었어요",
+      body:
+        "배정 완료 이후에도 계속 상황을 공유해 주셔서 안심이 됐습니다. 다음 거래 때도 다시 문의하고 싶습니다.",
+      vehicleLabel: "기아 EV9 GT-line",
+      createdAt: "2026-03-02T01:35:00.000Z",
+      tags: ["진행 공유", "친절함"],
+      flagged: false,
+      statusLabel: "노출 중",
+    },
+    {
+      id: "dealer-review-004",
+      customerName: "이*민",
+      rating: 3,
+      title: "조건 설명은 좋았지만 응답이 조금 늦었어요",
+      body:
+        "전반적으로는 만족했지만 마지막 결제 안내가 조금 늦었습니다. 이후에는 잘 마무리됐습니다.",
+      vehicleLabel: "벤츠 E-Class E300 4MATIC",
+      createdAt: "2026-02-25T11:05:00.000Z",
+      tags: ["응답 지연"],
+      flagged: true,
+      statusLabel: "확인 필요",
+    },
+  ],
 });
 
 let dealerNotificationRecords = dealerNotificationItemSchema.array().parse([

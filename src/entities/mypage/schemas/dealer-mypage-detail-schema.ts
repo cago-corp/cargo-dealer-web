@@ -142,8 +142,27 @@ export const dealerReviewWorkspaceSchema = z.object({
   reviewCount: z.number().int().nonnegative(),
   averageRating: z.number().min(0).max(5),
   policySummary: z.string(),
-  emptyStateTitle: z.string(),
-  emptyStateDescription: z.string(),
+  recentSummary: z.string(),
+  ratingBreakdown: z.array(
+    z.object({
+      score: z.number().int().min(1).max(5),
+      count: z.number().int().nonnegative(),
+    }),
+  ),
+  recentReviews: z.array(
+    z.object({
+      id: z.string(),
+      customerName: z.string(),
+      rating: z.number().int().min(1).max(5),
+      title: z.string(),
+      body: z.string(),
+      vehicleLabel: z.string(),
+      createdAt: z.string().datetime(),
+      tags: z.array(z.string()),
+      flagged: z.boolean(),
+      statusLabel: z.string(),
+    }),
+  ),
 });
 
 export type DealerMyInfo = z.infer<typeof dealerMyInfoSchema>;

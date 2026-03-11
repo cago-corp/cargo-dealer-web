@@ -8,10 +8,15 @@ import {
 } from "@/shared/api/dealer-bid-server";
 import { fetchDealerHomeAuctionDetailForSession } from "@/shared/api/dealer-home-server";
 import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
+import { checkRateLimit, getRateLimitHeaders } from "@/shared/security/rate-limit";
 
 const dealerBidSubmitRequestSchema = dealerBidWizardSubmitSchema.extend({
   auctionId: z.string().min(1),
 });
+const dealerBidSubmitRateLimitRule = {
+  windowMs: 10 * 60 * 1000,
+  maxRequests: 10,
+} as const;
 
 export async function GET() {
   const session = await getDealerSession();
@@ -32,6 +37,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit(request, "dealer:bid-submit", dealerBidSubmitRateLimitRule);
+
+  if (!rateLimit.ok) {
+    return NextResponse.json(
+      { message: "입찰 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429, headers: getRateLimitHeaders(rateLimit) },
+    );
+  }
+
   const session = await getDealerSession();
 
   if (!session) {

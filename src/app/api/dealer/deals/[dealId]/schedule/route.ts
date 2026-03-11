@@ -3,11 +3,16 @@ import { z } from "zod";
 import { getDealerSession } from "@/shared/auth/session";
 import { updateDealerDealExpectedDateForSession } from "@/shared/api/dealer-deal-server";
 import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
+import { checkRateLimit, getRateLimitHeaders } from "@/shared/security/rate-limit";
 
 const updateDealerDealScheduleRequestSchema = z.object({
   kind: z.enum(["assignment", "release"]),
   date: z.string().date(),
 });
+const dealerDealScheduleRateLimitRule = {
+  windowMs: 5 * 60 * 1000,
+  maxRequests: 20,
+} as const;
 
 type RouteContext = {
   params: Promise<{
@@ -16,6 +21,15 @@ type RouteContext = {
 };
 
 export async function POST(request: Request, context: RouteContext) {
+  const rateLimit = checkRateLimit(request, "dealer:deal-schedule", dealerDealScheduleRateLimitRule);
+
+  if (!rateLimit.ok) {
+    return NextResponse.json(
+      { message: "일정 변경 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429, headers: getRateLimitHeaders(rateLimit) },
+    );
+  }
+
   const session = await getDealerSession();
 
   if (!session) {

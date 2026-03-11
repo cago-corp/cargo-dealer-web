@@ -4,8 +4,23 @@ import { DealerAuthError } from "@/shared/auth/auth-error";
 import { getDealerAuthClient } from "@/shared/auth/get-dealer-auth-client";
 import { setDealerSessionCookie } from "@/shared/auth/session";
 import { appRoutes } from "@/shared/config/routes";
+import { checkRateLimit, getRateLimitHeaders } from "@/shared/security/rate-limit";
+
+const dealerSignupRateLimitRule = {
+  windowMs: 60 * 60 * 1000,
+  maxRequests: 5,
+} as const;
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit(request, "auth:signup", dealerSignupRateLimitRule);
+
+  if (!rateLimit.ok) {
+    return NextResponse.json(
+      { message: "가입 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429, headers: getRateLimitHeaders(rateLimit) },
+    );
+  }
+
   try {
     const body = await request.json();
     const parsedPayload = dealerSignupSubmitSchema.safeParse(body);

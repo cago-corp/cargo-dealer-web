@@ -4,8 +4,23 @@ import { DealerAuthError } from "@/shared/auth/auth-error";
 import { changeDealerPassword } from "@/shared/auth/change-dealer-password";
 import { clearDealerSessionCookie, getDealerSession } from "@/shared/auth/session";
 import { appRoutes } from "@/shared/config/routes";
+import { checkRateLimit, getRateLimitHeaders } from "@/shared/security/rate-limit";
+
+const dealerPasswordRateLimitRule = {
+  windowMs: 10 * 60 * 1000,
+  maxRequests: 5,
+} as const;
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit(request, "auth:password", dealerPasswordRateLimitRule);
+
+  if (!rateLimit.ok) {
+    return NextResponse.json(
+      { message: "비밀번호 변경 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요." },
+      { status: 429, headers: getRateLimitHeaders(rateLimit) },
+    );
+  }
+
   const session = await getDealerSession();
 
   if (!session) {
