@@ -28,7 +28,7 @@ const dealerAuctionBriefRpcSchema = z.object({
   brand_name: z.string(),
   model_name: z.string(),
   model_year_start: z.number().int().nullable().optional(),
-  purchase_method: z.enum(["현금", "할부", "리스"]),
+  purchase_method: z.string(),
   requested_at: z.string(),
   expire_at: z.string(),
   deadline_at: z.string(),
@@ -72,7 +72,7 @@ const dealerAuctionDetailRpcSchema = z.object({
   vehicle_grade_id: z.string(),
   vehicle_exterior_color_id: z.string().nullable().optional(),
   vehicle_interior_color_id: z.string().nullable().optional(),
-  purchase_method: z.enum(["현금", "할부", "리스"]),
+  purchase_method: z.string(),
   contract_months: z.number().int().nullable().optional(),
   advance_down_payment_percent: z.number().int().nullable().optional(),
   deposit_down_payment_percent: z.number().int().nullable().optional(),
@@ -493,7 +493,7 @@ function toDealerAuctionBrief(
     brandName: record.brand_name,
     modelName: record.model_name,
     trimName: buildTrimLabel(record.vehicle_grade_name, record.vehicle_grade_trim),
-    purchaseMethod: record.purchase_method,
+    purchaseMethod: normalizePurchaseMethod(record.purchase_method),
     regionLabel: record.user_region?.trim() || record.delivery_region?.trim() || "-",
     isFavorited: record.is_favorited,
     isImported: brandImportedMap.get(record.brand_name) ?? record.is_imported,
@@ -552,7 +552,7 @@ function toDealerAuctionDetail(input: {
       detailRecord.vehicle_grade_name,
       detailRecord.vehicle_grade_trim,
     ),
-    purchaseMethod: detailRecord.purchase_method,
+    purchaseMethod: normalizePurchaseMethod(detailRecord.purchase_method),
     regionLabel:
       detailRecord.user_region?.trim() || detailRecord.delivery_region?.trim() || "-",
     isFavorited: detailRecord.is_favorited,
@@ -613,6 +613,20 @@ function resolveBidState(closingAt: string, statusCode: "경매중" | "경매 �
   }
 
   return "open" as const;
+}
+
+function normalizePurchaseMethod(
+  value: string | null | undefined,
+): "현금" | "할부" | "리스" | "장기렌트" {
+  if (value === "현금" || value === "할부" || value === "리스" || value === "장기렌트") {
+    return value;
+  }
+
+  if (value?.includes("렌트")) {
+    return "장기렌트" as const;
+  }
+
+  return "현금" as const;
 }
 
 function resolveStatusLabel(input: {

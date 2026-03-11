@@ -26,6 +26,7 @@ const purchaseMethodTone = {
   현금: "bg-emerald-50 text-emerald-700",
   할부: "bg-amber-50 text-amber-700",
   리스: "bg-slate-100 text-slate-600",
+  장기렌트: "bg-sky-50 text-sky-700",
 } as const;
 
 function formatWon(value: number | null) {
@@ -177,7 +178,8 @@ export function DealerBidWizardPage({ auctionId }: DealerBidWizardPageProps) {
   const auction = auctionDetailQuery.data;
   const { serviceOptions, capitalOptions } = bidOptionsQuery.data;
   const showMonthlyField = auction.purchaseMethod !== "현금";
-  const showCapitalField = auction.purchaseMethod === "리스";
+  const showCapitalField =
+    auction.purchaseMethod === "리스" || auction.purchaseMethod.includes("렌트");
 
   function handleSubmit() {
     const parsed = dealerBidWizardSubmitSchema.safeParse({

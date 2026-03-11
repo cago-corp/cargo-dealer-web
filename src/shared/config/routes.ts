@@ -15,6 +15,8 @@ export const appRoutes = {
   deals: () => "/deals",
   dealDetail: (dealId: string) => `/deals/${dealId}`,
   chat: (roomId?: string) => (roomId ? `/chat?roomId=${encodeURIComponent(roomId)}` : "/chat"),
+  chatWindow: (roomId?: string) =>
+    roomId ? `/chat-window?roomId=${encodeURIComponent(roomId)}` : "/chat-window",
   mypage: () => "/mypage",
   mypageNotifications: () => "/mypage/notifications",
   mypageAnnouncements: () => "/mypage/announcements",

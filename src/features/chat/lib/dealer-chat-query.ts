@@ -1,7 +1,7 @@
 import {
-  fetchDealerChatRoom,
-  fetchDealerChatRoomList,
-} from "@/shared/api/dealer-marketplace";
+  fetchDealerChatRoomFromApi,
+  fetchDealerChatRoomListFromApi,
+} from "@/features/chat/lib/dealer-chat-api";
 
 export const dealerChatRoomListQueryKey = ["dealer-chat-rooms"] as const;
 export const dealerChatRoomQueryRoot = ["dealer-chat-room"] as const;
@@ -11,6 +11,6 @@ export function getDealerChatRoomQueryKey(roomId: string) {
 }
 
 export {
-  fetchDealerChatRoom,
-  fetchDealerChatRoomList,
+  fetchDealerChatRoomFromApi as fetchDealerChatRoom,
+  fetchDealerChatRoomListFromApi as fetchDealerChatRoomList,
 };

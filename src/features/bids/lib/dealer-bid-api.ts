@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dealerAuctionPurchaseMethodSchema } from "@/entities/auction/schemas/dealer-auction-brief-schema";
 import {
   dealerBidCapitalOptionSchema,
   dealerBidDetailSchema,
@@ -20,7 +21,7 @@ const dealerBidOptionsSchema = z.object({
 
 const dealerBidSubmitInputSchema = z.object({
   auctionId: z.string(),
-  purchaseMethod: z.enum(["현금", "할부", "리스"]),
+  purchaseMethod: dealerAuctionPurchaseMethodSchema,
   vehiclePrice: z.number().int().nonnegative(),
   monthlyPaymentValue: z.number().int().nonnegative().nullable(),
   discountAmountValue: z.number().int().nonnegative(),

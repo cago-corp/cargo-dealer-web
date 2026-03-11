@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dealerAuctionPurchaseMethodSchema } from "@/entities/auction/schemas/dealer-auction-brief-schema";
 
 const dealerChatStageSchema = z.enum([
   "서류 확인",
@@ -6,6 +7,30 @@ const dealerChatStageSchema = z.enum([
   "출고 준비",
   "출고 완료",
 ]);
+
+export const dealerChatMessageKindSchema = z.enum([
+  "text",
+  "image",
+  "video",
+  "file",
+  "custom",
+  "system",
+]);
+
+export const dealerChatAttachmentSchema = z.object({
+  url: z.string(),
+  fileName: z.string().nullable(),
+  mimeType: z.string().nullable(),
+  kind: z.enum(["image", "video", "file"]),
+  thumbnailUrl: z.string().nullable(),
+});
+
+export const dealerChatCustomPayloadSchema = z.object({
+  type: z.string(),
+  title: z.string().nullable(),
+  description: z.string().nullable(),
+  data: z.record(z.unknown()).nullable(),
+});
 
 export const dealerChatRoomListItemSchema = z.object({
   id: z.string(),
@@ -28,10 +53,15 @@ export const dealerChatMessageSchema = z.object({
   senderRole: z.enum(["dealer", "customer", "system"]),
   body: z.string(),
   createdAt: z.string().datetime(),
+  editedAt: z.string().datetime().nullable().optional(),
+  kind: dealerChatMessageKindSchema,
+  attachment: dealerChatAttachmentSchema.nullable(),
+  customPayload: dealerChatCustomPayloadSchema.nullable(),
+  metadata: z.record(z.unknown()).nullable(),
 });
 
 export const dealerChatRoomSchema = dealerChatRoomListItemSchema.extend({
-  purchaseMethod: z.enum(["현금", "할부", "리스"]),
+  purchaseMethod: dealerAuctionPurchaseMethodSchema,
   messages: dealerChatMessageSchema.array(),
 });
 

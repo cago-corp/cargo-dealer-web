@@ -10,6 +10,5 @@ export function useDealerChatRoomListQuery() {
   return useQuery({
     queryKey: dealerChatRoomListQueryKey,
     queryFn: fetchDealerChatRoomList,
-    refetchInterval: 15_000,
   });
 }

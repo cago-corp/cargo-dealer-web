@@ -45,7 +45,8 @@ export function DealerDealDetailPage({ dealId }: DealerDealDetailPageProps) {
   }
 
   const detail = dealDetailQuery.data;
-  const isChatReady = !detail.chatRoomId.startsWith("pending:");
+  const isChatReady =
+    !detail.chatRoomId.startsWith("pending:") && detail.stage !== "출고 완료";
 
   return (
     <section className="space-y-6">

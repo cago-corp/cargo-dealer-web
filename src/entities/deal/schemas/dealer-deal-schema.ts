@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { dealerAuctionPurchaseMethodSchema } from "@/entities/auction/schemas/dealer-auction-brief-schema";
 
 const dealerDealStageSchema = z.enum([
   "서류 확인",
@@ -27,7 +28,7 @@ export const dealerDealListItemSchema = z.object({
   customerName: z.string(),
   customerPhone: z.string().nullable(),
   vehicleLabel: z.string(),
-  purchaseMethod: z.enum(["현금", "할부", "리스"]),
+  purchaseMethod: dealerAuctionPurchaseMethodSchema,
   stage: dealerDealStageSchema,
   statusDescription: z.string(),
   deliveryRegion: z.string(),

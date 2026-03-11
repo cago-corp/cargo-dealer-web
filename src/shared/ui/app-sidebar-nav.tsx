@@ -11,11 +11,6 @@ const navigationItems = [
     matches: ["/home", "/home/auctions"],
   },
   {
-    href: appRoutes.favorites(),
-    label: "찜한 차",
-    matches: ["/favorites"],
-  },
-  {
     href: appRoutes.bids(),
     label: "내 입찰",
     matches: ["/bids", "/quote"],
@@ -24,11 +19,6 @@ const navigationItems = [
     href: appRoutes.deals(),
     label: "내 거래",
     matches: ["/deals"],
-  },
-  {
-    href: appRoutes.mypage(),
-    label: "마이 페이지",
-    matches: ["/mypage"],
   },
 ] as const;
 

@@ -98,7 +98,10 @@ export function DealerDealsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       className="rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300"
-                      disabled={item.chatRoomId.startsWith("pending:")}
+                      disabled={
+                        item.chatRoomId.startsWith("pending:") ||
+                        item.stage === "출고 완료"
+                      }
                       type="button"
                       onClick={() => openRoom(item.chatRoomId)}
                     >

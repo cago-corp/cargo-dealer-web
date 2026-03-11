@@ -46,7 +46,7 @@ const auctionTimeInfoRpcSchema = z.object({
 
 const auctionInfoRpcSchema = z.object({
   auction_id: z.string(),
-  purchase_method: z.enum(["현금", "할부", "리스"]),
+  purchase_method: z.string(),
   user_region: z.string().nullable().optional(),
   delivery_region: z.string().nullable().optional(),
   contract_months: z.number().int().nullable().optional(),
@@ -75,7 +75,7 @@ const userInfoRpcSchema = z.object({
 });
 
 const bidOptionRpcSchema = z.object({
-  option_type_id: z.string(),
+  option_type_id: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
 });
 
@@ -150,7 +150,7 @@ export async function fetchDealerBidListForSession(
       submissionId: record.bid_info?.bid_id ?? auctionId,
       auctionId,
       vehicleLabel: `${record.vehicle_info.vehicle_brand_name} ${record.vehicle_info.vehicle_model_name}`,
-      purchaseMethod: record.auction_info.purchase_method,
+      purchaseMethod: normalizePurchaseMethod(record.auction_info.purchase_method),
       yearLabel: homeItem?.yearLabel ?? "-",
       fuelType: "-",
       bidCount: record.bid_count,
@@ -190,7 +190,9 @@ export async function fetchDealerBidDetailForSession(
     fetchLookupNameById(session, "capital", record.bid_info.capital_id),
     fetchOptionTypeNameMap(
       session,
-      record.bid_info.bid_options.map((option) => option.option_type_id),
+      record.bid_info.bid_options.flatMap((option) =>
+        typeof option.option_type_id === "string" ? [option.option_type_id] : [],
+      ),
     ),
   ]);
   const expireAt = toIsoDateTime(record.auction_info.auction_time_info.expire_at);
@@ -200,16 +202,18 @@ export async function fetchDealerBidDetailForSession(
     submission: dealerBidSubmissionSchema.parse({
       id: record.bid_info.bid_id,
       auctionId,
-      purchaseMethod: record.auction_info.purchase_method,
+      purchaseMethod: normalizePurchaseMethod(record.auction_info.purchase_method),
       monthlyPaymentValue: Math.round(record.bid_info.monthly_payment),
       discountAmountValue: Math.round(record.bid_info.discount_amount ?? 0),
       capitalId: record.bid_info.capital_id ?? null,
       capitalName,
       note: "",
       currentRank: rank?.myRank ?? null,
-      services: record.bid_info.bid_options.map((option) => ({
-        id: option.option_type_id,
-        name: optionTypeMap.get(option.option_type_id) ?? "선택 옵션",
+      services: record.bid_info.bid_options.map((option, index) => ({
+        id: option.option_type_id ?? `service-${index}`,
+        name:
+          (option.option_type_id ? optionTypeMap.get(option.option_type_id) : null) ??
+          "선택 옵션",
         description: option.note ?? "",
       })),
       state: Date.parse(expireAt) > Date.now() ? "bidding" : "closed",
@@ -359,7 +363,7 @@ export async function fetchDealerBidCapitalOptionsForSession(
 
 type SubmitDealerBidInput = {
   auctionId: string;
-  purchaseMethod: "현금" | "할부" | "리스";
+  purchaseMethod: "현금" | "할부" | "리스" | "장기렌트";
   vehiclePrice: number;
   monthlyPaymentValue: number | null;
   discountAmountValue: number;
@@ -468,6 +472,18 @@ async function fetchOptionTypeNameMap(session: DealerSession, optionTypeIds: str
       return [[record.id, record.name] as const];
     }),
   );
+}
+
+function normalizePurchaseMethod(value: string | null | undefined) {
+  if (value === "현금" || value === "할부" || value === "리스" || value === "장기렌트") {
+    return value;
+  }
+
+  if (value?.includes("렌트")) {
+    return "장기렌트" as const;
+  }
+
+  return "현금" as const;
 }
 
 async function fetchLookupNameById(

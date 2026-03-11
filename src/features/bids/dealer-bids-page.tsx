@@ -12,7 +12,10 @@ const BID_PAGE_SIZE = 10;
 
 export function DealerBidsPage() {
   const bidListQuery = useDealerBidListQuery();
-  const bidItems = bidListQuery.data ?? [];
+  const allBidItems = bidListQuery.data ?? [];
+  const bidItems = allBidItems.filter(
+    (item) => item.statusLabel !== "종료" && item.statusLabel !== "출고 완료",
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(bidItems.length / BID_PAGE_SIZE));
   const pagedBidItems = bidItems.slice(
@@ -34,7 +37,6 @@ export function DealerBidsPage() {
     bidding: bidItems.filter((item) => item.statusLabel === "입찰 진행").length,
     contractPending: bidItems.filter((item) => item.statusLabel === "계약 입력 대기")
       .length,
-    completed: bidItems.filter((item) => item.statusLabel === "출고 완료").length,
   };
 
   return (
@@ -47,10 +49,9 @@ export function DealerBidsPage() {
       </header>
 
       <SectionCard title="입찰 대시보드">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <DashboardTile label="입찰 진행" value={summary.bidding} />
           <DashboardTile label="거래 진행" value={summary.contractPending} />
-          <DashboardTile label="출고 완료" value={summary.completed} />
         </div>
       </SectionCard>
 
@@ -70,9 +71,11 @@ export function DealerBidsPage() {
           </p>
         ) : bidItems.length === 0 ? (
           <div className="rounded-[28px] border border-dashed border-line bg-slate-50 px-6 py-12 text-center">
-            <p className="text-lg font-semibold text-slate-900">입찰 내역이 없습니다.</p>
+            <p className="text-lg font-semibold text-slate-900">
+              진행 중인 입찰이 없습니다.
+            </p>
             <p className="mt-2 text-sm text-slate-500">
-              경매 상세에서 입찰을 완료하면 이 목록에 자동으로 추가됩니다.
+              종료된 입찰은 추후 별도 보관 화면에서 확인할 수 있습니다.
             </p>
           </div>
         ) : (
@@ -165,7 +168,7 @@ function getBidStatusTone(statusLabel: string) {
 }
 
 type PurchaseMethodPillProps = {
-  method: "현금" | "할부" | "리스";
+  method: "현금" | "할부" | "리스" | "장기렌트";
 };
 
 function PurchaseMethodPill({ method }: PurchaseMethodPillProps) {
@@ -173,6 +176,7 @@ function PurchaseMethodPill({ method }: PurchaseMethodPillProps) {
     현금: "bg-emerald-50 text-emerald-700",
     할부: "bg-amber-50 text-amber-700",
     리스: "bg-slate-100 text-slate-700",
+    장기렌트: "bg-sky-50 text-sky-700",
   }[method];
 
   return (

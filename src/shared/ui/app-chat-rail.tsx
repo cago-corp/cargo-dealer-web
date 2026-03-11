@@ -1,14 +1,33 @@
 "use client";
 
+import { useEffect } from "react";
 import { DealerChatRoomList } from "@/features/chat/components/dealer-chat-room-list";
 import { DealerChatRoomPanel } from "@/features/chat/components/dealer-chat-room-panel";
+import { useDealerChatSyncStream } from "@/features/chat/hooks/use-dealer-chat-sync-stream";
+import { filterLiveChatRooms } from "@/features/chat/lib/filter-live-chat-rooms";
 import { useDealerChatRoomListQuery } from "@/features/chat/hooks/use-dealer-chat-room-list-query";
 import { useChatRail } from "@/shared/ui/chat-rail-provider";
+import { appRoutes } from "@/shared/config/routes";
+import Link from "next/link";
 
 function ChatRailContent() {
   const roomListQuery = useDealerChatRoomListQuery();
   const { clearSelectedRoom, selectedRoomId, selectRoom } = useChatRail();
-  const rooms = roomListQuery.data;
+  const rooms = filterLiveChatRooms(roomListQuery.data);
+
+  useDealerChatSyncStream(selectedRoomId);
+
+  useEffect(() => {
+    if (!selectedRoomId) {
+      return;
+    }
+
+    const hasSelectedRoom = rooms.some((room) => room.id === selectedRoomId);
+
+    if (!hasSelectedRoom) {
+      clearSelectedRoom();
+    }
+  }, [clearSelectedRoom, rooms, selectedRoomId]);
 
   if (selectedRoomId) {
     return (
@@ -21,7 +40,7 @@ function ChatRailContent() {
   }
 
   return (
-    <>
+    <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
@@ -31,16 +50,26 @@ function ChatRailContent() {
             실시간 채팅
           </h2>
         </div>
-        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-          {(rooms ?? []).length}건 진행 중
-        </span>
+        <div className="flex flex-col items-end gap-2">
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            {rooms.length}건 진행 중
+          </span>
+          <Link
+            className="text-xs font-medium text-slate-500 underline underline-offset-4"
+            href={appRoutes.chatWindow(selectedRoomId ?? undefined)}
+            rel="noreferrer"
+            target="_blank"
+          >
+            새 창으로 보기
+          </Link>
+        </div>
       </div>
 
       <p className="mt-3 text-sm leading-6 text-slate-600">
         현재 진행 중인 고객 대화를 바로 확인하고 필요한 메시지를 즉시 보낼 수 있습니다.
       </p>
 
-      <div className="mt-5 space-y-4">
+      <div className="mt-5 min-h-0 flex-1 overflow-y-auto">
         {roomListQuery.isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (
@@ -56,13 +85,13 @@ function ChatRailContent() {
           </p>
         ) : (
           <DealerChatRoomList
-            rooms={rooms ?? []}
+            rooms={rooms}
             selectedRoomId={selectedRoomId}
             onSelectRoom={selectRoom}
           />
         )}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -72,7 +101,7 @@ export function AppChatRail() {
   return (
     <>
       <aside className="hidden xl:block">
-        <div className="sticky top-4 rounded-[32px] border border-white/70 bg-white/92 p-5 shadow-panel backdrop-blur">
+        <div className="sticky top-4 flex h-[calc(100vh-7.5rem)] min-h-0 flex-col overflow-hidden rounded-[32px] border border-white/70 bg-white/92 p-5 shadow-panel backdrop-blur">
           <ChatRailContent />
         </div>
       </aside>

@@ -22,6 +22,7 @@ const purchaseMethodTone = {
   현금: "bg-emerald-50 text-emerald-700",
   할부: "bg-amber-50 text-amber-700",
   리스: "bg-slate-100 text-slate-600",
+  장기렌트: "bg-sky-50 text-sky-700",
 } as const;
 
 const submissionStateLabel = {

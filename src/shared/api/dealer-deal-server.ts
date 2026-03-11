@@ -234,9 +234,15 @@ function buildDealSteps(statusCode: string | null | undefined): DealerDealStep[]
   }));
 }
 
-function normalizePurchaseMethod(value: string | null | undefined): "현금" | "할부" | "리스" {
-  if (value === "현금" || value === "할부" || value === "리스") {
+function normalizePurchaseMethod(
+  value: string | null | undefined,
+): "현금" | "할부" | "리스" | "장기렌트" {
+  if (value === "현금" || value === "할부" || value === "리스" || value === "장기렌트") {
     return value;
+  }
+
+  if (value?.includes("렌트")) {
+    return "장기렌트";
   }
 
   return "현금";

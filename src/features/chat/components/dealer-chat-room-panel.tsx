@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   DealerChatMessage,
@@ -13,14 +13,20 @@ import {
   dealerChatRoomListQueryKey,
   getDealerChatRoomQueryKey,
 } from "@/features/chat/lib/dealer-chat-query";
-import { sendDealerChatMessage } from "@/shared/api/dealer-marketplace";
+import {
+  markDealerChatRoomReadFromApi,
+  sendDealerChatMessageFromApi,
+} from "@/features/chat/lib/dealer-chat-api";
 import { appRoutes } from "@/shared/config/routes";
+import { CachedImage } from "@/shared/ui/cached-image";
 
 type DealerChatRoomPanelProps = {
   mode: "page" | "rail";
   roomId: string | null;
   onBack?: () => void;
 };
+
+const DEAL_STAGE_STEPPER = ["견적비교", "계약", "배정", "입금", "출고"] as const;
 
 function formatMessageTime(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -54,6 +60,32 @@ function applyRoomPreview(
     .sort((left, right) => Date.parse(right.lastMessageAt) - Date.parse(left.lastMessageAt));
 }
 
+function getDealStageIndex(stageLabel: string) {
+  const normalized = stageLabel.replaceAll(/\s+/g, "");
+
+  if (normalized.includes("견적")) {
+    return 0;
+  }
+
+  if (normalized.includes("계약") || normalized.includes("서류확인")) {
+    return 1;
+  }
+
+  if (normalized.includes("배정")) {
+    return 2;
+  }
+
+  if (normalized.includes("입금") || normalized.includes("결제")) {
+    return 3;
+  }
+
+  if (normalized.includes("출고")) {
+    return 4;
+  }
+
+  return 1;
+}
+
 export function DealerChatRoomPanel({
   mode,
   roomId,
@@ -63,10 +95,13 @@ export function DealerChatRoomPanel({
   const roomQuery = useDealerChatRoomQuery(roomId);
   const [messageInput, setMessageInput] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isStatusExpanded, setIsStatusExpanded] = useState(false);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setMessageInput("");
     setErrorMessage(null);
+    setIsStatusExpanded(false);
   }, [roomId]);
 
   const sendMessageMutation = useMutation({
@@ -75,7 +110,7 @@ export function DealerChatRoomPanel({
         throw new Error("채팅방을 먼저 선택해 주세요.");
       }
 
-      return sendDealerChatMessage({ roomId, body });
+      return sendDealerChatMessageFromApi({ roomId, body });
     },
     onMutate: async (body: string) => {
       if (!roomId) {
@@ -98,6 +133,11 @@ export function DealerChatRoomPanel({
         senderRole: "dealer",
         body: trimmedBody,
         createdAt,
+        editedAt: null,
+        kind: "text",
+        attachment: null,
+        customPayload: null,
+        metadata: null,
       };
 
       const previousRoom = queryClient.getQueryData<DealerChatRoom>(
@@ -160,6 +200,38 @@ export function DealerChatRoomPanel({
   });
 
   const isRailMode = mode === "rail";
+  const lastMessageId = roomQuery.data?.messages.at(-1)?.id ?? null;
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    container.scrollTop = container.scrollHeight;
+  }, [lastMessageId, roomId]);
+
+  useEffect(() => {
+    if (!roomId || !lastMessageId) {
+      return;
+    }
+
+    void markDealerChatRoomReadFromApi({
+      roomId,
+      lastMessageId,
+    })
+      .then(() => {
+        queryClient.setQueryData<DealerChatRoomListItem[]>(
+          dealerChatRoomListQueryKey,
+          (current) =>
+            current?.map((item) =>
+              item.id === roomId ? { ...item, unreadCount: 0 } : item,
+            ) ?? current,
+        );
+      })
+      .catch(() => null);
+  }, [lastMessageId, queryClient, roomId]);
 
   if (!roomId) {
     return (
@@ -217,6 +289,7 @@ export function DealerChatRoomPanel({
   }
 
   const room = roomQuery.data;
+  const currentStageIndex = getDealStageIndex(room.stageLabel);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -231,44 +304,143 @@ export function DealerChatRoomPanel({
   }
 
   return (
-    <section className="flex h-full flex-col rounded-[28px] border border-line bg-white">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-line bg-white">
       <header className="border-b border-line px-5 py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
             {isRailMode && onBack ? (
               <button
-                className="mb-3 rounded-full border border-line px-3 py-1.5 text-sm font-medium text-slate-700"
+                className="rounded-full border border-line px-3 py-1.5 text-sm font-medium text-slate-700"
                 type="button"
                 onClick={onBack}
               >
                 목록으로
               </button>
             ) : null}
-            <p className="truncate text-lg font-semibold text-slate-950">
-              {room.customerName}
-            </p>
+          </div>
+          <Link
+            className="rounded-full border border-line px-3 py-1.5 text-sm font-medium text-slate-700"
+            href={appRoutes.chatWindow(room.id)}
+            rel="noreferrer"
+            target="_blank"
+          >
+            새 창으로 보기
+          </Link>
+        </div>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-lg font-semibold text-slate-950">{room.customerName}</p>
             <p className="mt-1 truncate text-sm text-slate-500">{room.vehicleLabel}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-              {room.stageLabel}
-            </span>
-            <Link
-              className="rounded-full border border-line px-3 py-1 text-xs font-medium text-slate-700"
-              href={appRoutes.dealDetail(room.dealId)}
+          <Link
+            className="rounded-full border border-line px-3 py-1 text-xs font-medium text-slate-700"
+            href={appRoutes.dealDetail(room.dealId)}
             >
-              거래 상세
-            </Link>
-          </div>
+            거래 상세
+          </Link>
         </div>
-        <p className="mt-3 text-sm text-slate-600">{room.stageDescription}</p>
+        <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50">
+          <button
+            className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
+            type="button"
+            onClick={() => setIsStatusExpanded((current) => !current)}
+          >
+            <div className="min-w-0">
+              <p className="text-sm text-slate-700">
+                현재 <span className="font-semibold text-violet-700">{room.stageLabel}</span> 단계입니다.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={
+                  room.isClosed
+                    ? "rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700"
+                    : "rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700"
+                }
+              >
+                {room.isClosed ? "채팅 종료" : "진행 중"}
+              </span>
+              <span className="text-slate-500">{isStatusExpanded ? "⌃" : "⌄"}</span>
+            </div>
+          </button>
+          {isStatusExpanded ? (
+            <div className="border-t border-slate-200 px-4 py-4">
+              <div className="mb-4 flex items-start">
+                {DEAL_STAGE_STEPPER.map((stage, index) => {
+                  const isActive = index === currentStageIndex;
+                  const isPassed = index <= currentStageIndex;
+                  const isLast = index === DEAL_STAGE_STEPPER.length - 1;
+                  const isFirst = index === 0;
+
+                  return (
+                    <div className="min-w-0 flex-1" key={stage}>
+                      <div className="flex min-w-0 flex-col items-center">
+                        <div className="relative flex h-5 w-full items-center justify-center">
+                          <div
+                            className={
+                              isFirst
+                                ? "absolute left-1/2 right-0 top-1/2 h-px -translate-y-1/2 bg-slate-200"
+                                : isLast
+                                  ? "absolute left-0 right-1/2 top-1/2 h-px -translate-y-1/2 bg-slate-200"
+                                  : "absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-slate-200"
+                            }
+                          />
+                          {isFirst ? null : (
+                            <div
+                              className={
+                                isPassed
+                                  ? "absolute left-0 right-1/2 top-1/2 h-px -translate-y-1/2 bg-violet-600"
+                                  : "hidden"
+                              }
+                            />
+                          )}
+                          {isLast ? null : (
+                            <div
+                              className={
+                                index < currentStageIndex
+                                  ? "absolute left-1/2 right-0 top-1/2 h-px -translate-y-1/2 bg-violet-600"
+                                  : "hidden"
+                              }
+                            />
+                          )}
+                          <div
+                            className={
+                              isActive
+                                ? "relative z-10 h-3 w-3 rounded-full border-2 border-violet-600 bg-white"
+                                : isPassed
+                                  ? "relative z-10 h-2.5 w-2.5 rounded-full bg-violet-600"
+                                  : "relative z-10 h-2.5 w-2.5 rounded-full bg-slate-200"
+                            }
+                          />
+                        </div>
+                        <p
+                          className={
+                            isActive
+                              ? "mt-2 text-center text-[11px] font-semibold text-violet-700"
+                              : isPassed
+                                ? "mt-2 text-center text-[11px] font-semibold text-violet-600"
+                                : "mt-2 text-center text-[11px] font-medium text-slate-400"
+                          }
+                        >
+                          {isActive ? room.stageLabel : stage}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-sm text-slate-600">{room.stageDescription}</p>
+            </div>
+          ) : null}
+        </div>
       </header>
 
       <div
+        ref={messagesContainerRef}
         className={
           isRailMode
-            ? "flex-1 space-y-3 overflow-y-auto px-5 py-5"
-            : "flex-1 space-y-3 overflow-y-auto px-6 py-6"
+            ? "min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-5"
+            : "min-h-0 flex-1 space-y-3 overflow-y-auto px-6 py-6"
         }
       >
         {room.messages.map((message) => (
@@ -339,7 +511,28 @@ function MessageBubble({ message }: MessageBubbleProps) {
             : "max-w-[82%] rounded-[24px] rounded-bl-md bg-slate-100 px-4 py-3 text-sm text-slate-800"
         }
       >
-        <p>{message.body}</p>
+        {message.kind === "custom" && message.customPayload ? (
+          <div className={isDealer ? "space-y-2" : "space-y-2"}>
+            <p className={isDealer ? "text-xs text-slate-300" : "text-xs text-slate-500"}>
+              {message.customPayload.type}
+            </p>
+            <p className="font-semibold">
+              {message.customPayload.title ?? message.body}
+            </p>
+            {message.customPayload.description ? (
+              <p>{message.customPayload.description}</p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {(message.kind === "text" || message.kind === "system") && message.body ? (
+          <p>{message.body}</p>
+        ) : null}
+
+        {message.attachment ? (
+          <AttachmentPreview attachment={message.attachment} isDealer={isDealer} />
+        ) : null}
+
         <p
           className={
             isDealer ? "mt-2 text-right text-xs text-slate-300" : "mt-2 text-xs text-slate-500"
@@ -349,5 +542,63 @@ function MessageBubble({ message }: MessageBubbleProps) {
         </p>
       </div>
     </div>
+  );
+}
+
+type AttachmentPreviewProps = {
+  attachment: NonNullable<DealerChatMessage["attachment"]>;
+  isDealer: boolean;
+};
+
+function AttachmentPreview({ attachment, isDealer }: AttachmentPreviewProps) {
+  if (attachment.kind === "image") {
+    return (
+      <a
+        className="mt-2 block overflow-hidden rounded-2xl"
+        href={attachment.url}
+        rel="noreferrer"
+        target="_blank"
+      >
+        <div className="relative h-64 w-full">
+          <CachedImage
+            alt={attachment.fileName ?? "첨부 이미지"}
+            className="object-cover"
+            sizes="(min-width: 1024px) 420px, 80vw"
+            src={attachment.url}
+          />
+        </div>
+      </a>
+    );
+  }
+
+  if (attachment.kind === "video") {
+    return (
+      <div className="mt-2 overflow-hidden rounded-2xl bg-black">
+        <video className="max-h-72 w-full" controls preload="metadata" src={attachment.url} />
+      </div>
+    );
+  }
+
+  return (
+    <a
+      className={
+        isDealer
+          ? "mt-2 flex items-center gap-3 rounded-2xl bg-white/10 px-3 py-3"
+          : "mt-2 flex items-center gap-3 rounded-2xl bg-white px-3 py-3"
+      }
+      href={attachment.url}
+      rel="noreferrer"
+      target="_blank"
+    >
+      <span className="text-lg">↗</span>
+      <span className="min-w-0">
+        <span className="block truncate font-medium">
+          {attachment.fileName ?? "첨부 파일"}
+        </span>
+        <span className={isDealer ? "text-xs text-slate-300" : "text-xs text-slate-500"}>
+          새 창으로 열기
+        </span>
+      </span>
+    </a>
   );
 }

@@ -14,7 +14,12 @@ export const dealerAuctionDealStageSchema = z.enum([
   "출고 준비",
 ]);
 
-export const dealerAuctionPurchaseMethodSchema = z.enum(["현금", "할부", "리스"]);
+export const dealerAuctionPurchaseMethodSchema = z.enum([
+  "현금",
+  "할부",
+  "리스",
+  "장기렌트",
+]);
 
 export const dealerAuctionBriefSchema = z.object({
   id: z.string(),

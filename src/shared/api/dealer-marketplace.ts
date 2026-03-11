@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   dealerAuctionBriefSchema,
+  dealerAuctionPurchaseMethodSchema,
   type DealerAuctionBrief,
 } from "@/entities/auction/schemas/dealer-auction-brief-schema";
 import {
@@ -53,7 +54,7 @@ const rawAuctionRecordSchema = z.object({
   brandName: z.string(),
   modelName: z.string(),
   trimName: z.string(),
-  purchaseMethod: z.enum(["현금", "할부", "리스"]),
+  purchaseMethod: dealerAuctionPurchaseMethodSchema,
   regionLabel: z.string(),
   isFavorited: z.boolean(),
   isImported: z.boolean(),
@@ -719,7 +720,14 @@ function toDealerChatRoomListItem(room: RawChatRoomRecord): DealerChatRoomListIt
 }
 
 function toDealerChatMessage(message: RawChatMessageRecord): DealerChatMessage {
-  return dealerChatMessageSchema.parse(message);
+  return dealerChatMessageSchema.parse({
+    ...message,
+    editedAt: null,
+    kind: message.senderRole === "system" ? "system" : "text",
+    attachment: null,
+    customPayload: null,
+    metadata: null,
+  });
 }
 
 function resolveBidState(record: RawAuctionRecord) {
@@ -1191,6 +1199,11 @@ export async function sendDealerChatMessage({
     senderRole: "dealer",
     body: body.trim(),
     createdAt: new Date().toISOString(),
+    editedAt: null,
+    kind: "text",
+    attachment: null,
+    customPayload: null,
+    metadata: null,
   });
 
   rawChatMessageRecords = [...rawChatMessageRecords, nextMessage];

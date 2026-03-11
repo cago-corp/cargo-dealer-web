@@ -7,6 +7,7 @@ const protectedRoutePrefixes = [
   "/bids",
   "/deals",
   "/chat",
+  "/chat-window",
   "/mypage",
   "/dashboard",
   "/quote",
