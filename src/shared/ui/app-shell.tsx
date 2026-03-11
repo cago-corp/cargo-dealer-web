@@ -5,6 +5,7 @@ import { AppChatRail } from "@/shared/ui/app-chat-rail";
 import { AppSidebarNav } from "@/shared/ui/app-sidebar-nav";
 import { AppUtilityNav } from "@/shared/ui/app-utility-nav";
 import { ChatRailProvider } from "@/shared/ui/chat-rail-provider";
+import { LogoutButton } from "@/shared/ui/logout-button";
 import { SiteFooter } from "@/shared/ui/site-footer";
 
 type AppShellProps = Readonly<{
@@ -28,12 +29,15 @@ export function AppShell({ children, session }: AppShellProps) {
       </header>
       <div className="flex-1 px-4 py-4 md:px-6 md:py-6">
         <div className="mx-auto grid h-full max-w-[1760px] gap-4 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_420px]">
-          <aside className="rounded-[32px] border border-white/70 bg-slate-950 px-5 py-6 text-white shadow-panel">
+          <aside className="flex flex-col rounded-[32px] border border-white/70 bg-slate-950 px-5 py-6 text-white shadow-panel">
             <h1 className="text-2xl font-semibold">Dealer Center</h1>
             <p className="mt-3 text-sm text-slate-300">
               경매, 입찰, 거래 현황을 한 화면에서 빠르게 관리할 수 있습니다.
             </p>
             <AppSidebarNav />
+            <div className="mt-auto pt-6">
+              <LogoutButton variant="ghost" />
+            </div>
           </aside>
           <ChatRailProvider>
             <main className="overflow-hidden rounded-[32px] border border-white/80 bg-white/92 shadow-panel backdrop-blur">

@@ -79,16 +79,16 @@ export function DealerDealsPage() {
           <div className="space-y-3">
             {pagedDealItems.map((item) => (
               <article
-                className="rounded-[24px] border border-line bg-white px-5 py-4 shadow-sm"
+                className="rounded-[22px] border border-line bg-white px-5 py-3.5 shadow-sm"
                 key={item.id}
               >
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-slate-500">
                       {item.customerName}
                     </p>
                     <Link
-                      className="mt-1 block text-lg font-semibold text-slate-950"
+                      className="mt-0.5 block text-lg font-semibold text-slate-950"
                       href={appRoutes.dealDetail(item.id)}
                     >
                       {item.vehicleLabel}
@@ -96,17 +96,6 @@ export function DealerDealsPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      className="rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300"
-                      disabled={
-                        item.chatRoomId.startsWith("pending:") ||
-                        item.stage === "출고 완료"
-                      }
-                      type="button"
-                      onClick={() => openRoom(item.chatRoomId)}
-                    >
-                      채팅
-                    </button>
                     <Link
                       className="inline-flex items-center gap-1 text-sm font-medium text-slate-700 underline underline-offset-4"
                       href={appRoutes.dealDetail(item.id)}
@@ -117,17 +106,30 @@ export function DealerDealsPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
                   <DealStagePill stage={item.stage} />
                   <DealMetaPill>{item.purchaseMethod}</DealMetaPill>
                   <DealMetaPill>{item.deliveryRegion}</DealMetaPill>
                 </div>
 
-                <p className="mt-3 text-sm text-slate-600">{item.statusDescription}</p>
+                <p className="mt-2.5 text-sm text-slate-600">{item.statusDescription}</p>
 
-                <p className="mt-3 text-xs text-slate-400">
-                  최근 업데이트 {formatUpdatedAt(item.updatedAt)}
-                </p>
+                <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between">
+                  <p className="text-xs text-slate-400">
+                    최근 업데이트 {formatUpdatedAt(item.updatedAt)}
+                  </p>
+                  <button
+                    className="w-full rounded-2xl bg-slate-950 px-5 py-3 text-base font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-auto sm:min-w-32"
+                    disabled={
+                      item.chatRoomId.startsWith("pending:") ||
+                      item.stage === "출고 완료"
+                    }
+                    type="button"
+                    onClick={() => openRoom(item.chatRoomId)}
+                  >
+                    채팅
+                  </button>
+                </div>
               </article>
             ))}
 
