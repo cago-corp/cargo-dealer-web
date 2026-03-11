@@ -10,10 +10,7 @@ export function DealerProfileSummary({ profile }: DealerProfileSummaryProps) {
     profile.approvalStatus === "active" ? "운영 가능" : "승인 대기";
 
   return (
-    <SectionCard
-      title="딜러 계정 개요"
-      description="앱의 계정 요약 톤을 유지하면서, 웹에서는 한 번에 읽기 쉬운 정보 행으로 정리했습니다."
-    >
+    <SectionCard title="딜러 계정 개요">
       <dl className="divide-y divide-slate-200 rounded-[24px] bg-slate-50 px-5">
         <ProfileRow label="상호명" value={profile.companyName} />
         <ProfileRow label="대표자" value={profile.ownerName} />

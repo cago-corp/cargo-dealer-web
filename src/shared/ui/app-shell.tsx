@@ -16,7 +16,7 @@ type AppShellProps = Readonly<{
 export function AppShell({ children, session }: AppShellProps) {
   return (
     <div className="flex min-h-screen flex-col bg-slate-100/80">
-      <header className="border-b border-slate-200 bg-white/96 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b-2 border-violet-200 bg-white">
         <div className="mx-auto flex h-16 max-w-[1680px] items-center justify-between px-4 md:px-6">
           <Link
             className="text-base font-bold text-slate-950 transition hover:opacity-80"
@@ -29,14 +29,16 @@ export function AppShell({ children, session }: AppShellProps) {
       </header>
       <div className="flex-1 px-4 py-4 md:px-6 md:py-6">
         <div className="mx-auto grid h-full max-w-[1760px] gap-4 lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_420px]">
-          <aside className="flex flex-col rounded-[32px] border border-white/70 bg-slate-950 px-5 py-6 text-white shadow-panel">
-            <h1 className="text-2xl font-semibold">Dealer Center</h1>
-            <p className="mt-3 text-sm text-slate-300">
-              경매, 입찰, 거래 현황을 한 화면에서 빠르게 관리할 수 있습니다.
-            </p>
-            <AppSidebarNav />
-            <div className="mt-auto pt-6">
-              <LogoutButton variant="ghost" />
+          <aside className="hidden lg:block">
+            <div className="sticky top-4 flex h-[calc(100vh-7.5rem)] min-h-0 flex-col overflow-hidden rounded-[32px] border border-white/70 bg-slate-950 px-5 py-6 text-white shadow-panel">
+              <h1 className="text-2xl font-semibold">Dealer Center</h1>
+              <p className="mt-3 text-sm text-slate-300">
+                경매, 입찰, 거래 현황을 한 화면에서 빠르게 관리할 수 있습니다.
+              </p>
+              <AppSidebarNav />
+              <div className="mt-auto pt-6">
+                <LogoutButton variant="ghost" />
+              </div>
             </div>
           </aside>
           <ChatRailProvider>

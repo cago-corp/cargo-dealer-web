@@ -42,6 +42,35 @@ function getMockRecord(email: string) {
   return mockDealerRecords.get(email.toLowerCase());
 }
 
+export function changeMockDealerPassword(params: {
+  email: string;
+  currentPassword: string;
+  nextPassword: string;
+}) {
+  const normalizedEmail = params.email.toLowerCase();
+  const existingRecord = getMockRecord(normalizedEmail);
+
+  if (existingRecord) {
+    if (existingRecord.password !== params.currentPassword) {
+      throw new DealerAuthError("현재 비밀번호를 확인해 주세요.", 401);
+    }
+
+    mockDealerRecords.set(normalizedEmail, {
+      ...existingRecord,
+      password: params.nextPassword,
+    });
+    return;
+  }
+
+  mockDealerRecords.set(normalizedEmail, {
+    dealerId: `mock-dealer-${String(mockDealerSequence).padStart(3, "0")}`,
+    email: normalizedEmail,
+    password: params.nextPassword,
+    accessState: getDefaultAccessState(normalizedEmail),
+  });
+  mockDealerSequence += 1;
+}
+
 function setMockRecord(payload: DealerSignupPayload) {
   const email = payload.email.toLowerCase();
   const record: MockDealerRecord = {

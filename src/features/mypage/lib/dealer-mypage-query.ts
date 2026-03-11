@@ -3,6 +3,7 @@ import {
   fetchDealerAnnouncementInfo,
   fetchDealerAnnouncementInfoDetail,
   fetchDealerAnnouncementsPage,
+  createDealerInterestedVehicle,
   fetchDealerCustomerService,
   fetchDealerInterestedVehicles,
   fetchDealerMyInfo,
@@ -13,6 +14,11 @@ import {
   fetchDealerTerm,
   fetchDealerTermTypes,
   updateDealerNotificationSettings,
+  removeDealerInterestedVehicle,
+  updateDealerNickname,
+  updateDealerPhone,
+  updateDealerCompanyName,
+  updateDealerRecruiterRegistrationNumber,
 } from "@/shared/api/dealer-mypage";
 
 export const dealerProfileQueryKey = ["dealer-profile"] as const;
@@ -48,6 +54,7 @@ export {
   fetchDealerAnnouncementInfo,
   fetchDealerAnnouncementInfoDetail,
   fetchDealerAnnouncementsPage,
+  createDealerInterestedVehicle,
   fetchDealerCustomerService,
   fetchDealerInterestedVehicles,
   fetchDealerMyInfo,
@@ -57,5 +64,10 @@ export {
   fetchDealerReviewWorkspace,
   fetchDealerTerm,
   fetchDealerTermTypes,
+  removeDealerInterestedVehicle,
   updateDealerNotificationSettings,
+  updateDealerNickname,
+  updateDealerPhone,
+  updateDealerCompanyName,
+  updateDealerRecruiterRegistrationNumber,
 };

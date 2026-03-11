@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { DealerAuctionDetail } from "@/entities/auction/schemas/dealer-auction-detail-schema";
 import { getDealerBidDetailQueryKey } from "@/features/bids/lib/dealer-bid-query";
@@ -192,10 +194,20 @@ function resolvePrimaryAction(auction: DealerAuctionDetail) {
 export function DealerAuctionDetailPage({
   auctionId,
 }: DealerAuctionDetailPageProps) {
+  const [isMounted, setIsMounted] = useState(false);
   const queryClient = useQueryClient();
   const detailQueryKey = getDealerBidDetailQueryKey(auctionId);
   const auctionDetailQueryKey = getDealerAuctionDetailQueryKey(auctionId);
   const auctionDetailQuery = useDealerAuctionDetailQuery(auctionId);
+
+  useEffect(() => {
+    setIsMounted(true);
+
+    return () => {
+      setIsMounted(false);
+    };
+  }, []);
+
   const favoriteMutation = useMutation({
     mutationFn: toggleDealerAuctionFavoriteFromApi,
     onMutate: async () => {
@@ -268,9 +280,38 @@ export function DealerAuctionDetailPage({
   const conditionEntries = buildConditionEntries(auction);
   const auctionInfoEntries = buildAuctionInfoEntries(auction);
   const vehicleLabel = `${auction.modelName} ${auction.trimName}`.trim();
+  const primaryActionBar = (
+    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
+      <div className="pointer-events-auto w-full max-w-[980px] rounded-[28px] border-2 border-line bg-white/95 p-4 shadow-[0_14px_36px_rgba(15,23,42,0.12)] backdrop-blur">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-950">{primaryAction.label}</p>
+            <p className="mt-1 text-xs text-slate-500">{primaryAction.description}</p>
+          </div>
+
+          {primaryAction.disabled ? (
+            <button
+              className="min-h-12 rounded-2xl bg-slate-200 px-5 text-sm font-semibold text-slate-500"
+              disabled
+              type="button"
+            >
+              {primaryAction.label}
+            </button>
+          ) : (
+            <Link
+              className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-violet-700 px-6 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition hover:bg-violet-800"
+              href={primaryAction.href}
+            >
+              {primaryAction.label}
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <section className="mx-auto max-w-[980px] space-y-5 pb-24">
+    <section className="mx-auto max-w-[980px] space-y-5 pb-36">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           className="inline-flex min-h-10 items-center rounded-2xl border border-line px-4 text-sm font-medium text-slate-700"
@@ -290,12 +331,12 @@ export function DealerAuctionDetailPage({
 
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-sm">
-          <div className="relative aspect-square bg-slate-100">
+          <div className="relative aspect-square bg-white">
             <CachedImage
               alt={`${auction.brandName} ${vehicleLabel}`}
               className="object-contain"
               fallback={
-                <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-100 via-white to-slate-200 text-3xl font-semibold tracking-[0.2em] text-slate-300">
+                <div className="flex h-full items-center justify-center bg-white text-3xl font-semibold tracking-[0.2em] text-slate-300">
                   CAR
                 </div>
               }
@@ -398,32 +439,7 @@ export function DealerAuctionDetailPage({
           </div>
         </DetailSection>
       ) : null}
-
-      <div className="sticky bottom-0 z-20 rounded-[28px] border border-violet-100 bg-white/98 p-4 shadow-[0_-20px_40px_rgba(91,33,182,0.14)] backdrop-blur">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-950">{primaryAction.label}</p>
-            <p className="mt-1 text-xs text-slate-500">{primaryAction.description}</p>
-          </div>
-
-          {primaryAction.disabled ? (
-            <button
-              className="min-h-12 rounded-2xl bg-slate-200 px-5 text-sm font-semibold text-slate-500"
-              disabled
-              type="button"
-            >
-              {primaryAction.label}
-            </button>
-          ) : (
-            <Link
-              className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-violet-700 px-6 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(91,33,182,0.28)] transition hover:bg-violet-800"
-              href={primaryAction.href}
-            >
-              {primaryAction.label}
-            </Link>
-          )}
-        </div>
-      </div>
+      {isMounted ? createPortal(primaryActionBar, document.body) : null}
     </section>
   );
 }

@@ -12,7 +12,7 @@ export function SiteFooter({
       >
         <p className="font-semibold text-slate-700">Cargo Co., Ltd.</p>
         <p>
-          대표: 한창훈 | 사업자등록번호: 000-00-00000 | 통신판매업신고:
+          대표: 염 준 | 사업자등록번호: 000-00-00000 | 통신판매업신고:
           2026-서울강남-00000
         </p>
         <p>

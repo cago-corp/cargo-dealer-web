@@ -17,16 +17,26 @@ import {
 } from "@/entities/notification/schemas/dealer-notification-schema";
 import {
   dealerCustomerServiceSchema,
+  dealerInterestedVehicleCreateSchema,
   dealerInterestedVehicleSchema,
   dealerMyInfoSchema,
+  dealerNicknameUpdateSchema,
   dealerNotificationSettingsSchema,
+  dealerPhoneUpdateSchema,
+  dealerCompanyNameUpdateSchema,
+  dealerRecruiterRegistrationUpdateSchema,
   dealerReviewWorkspaceSchema,
   dealerTermSchema,
   dealerTermTypeSchema,
+  type DealerCompanyNameUpdate,
   type DealerCustomerService,
+  type DealerInterestedVehicleCreate,
   type DealerInterestedVehicle,
   type DealerMyInfo,
+  type DealerNicknameUpdate,
   type DealerNotificationSettings,
+  type DealerPhoneUpdate,
+  type DealerRecruiterRegistrationUpdate,
   type DealerReviewWorkspace,
   type DealerTerm,
   type DealerTermType,
@@ -66,6 +76,9 @@ let dealerNotificationSettingsRecord = dealerNotificationSettingsSchema.parse({
 });
 
 let dealerInterestedVehicleRecords = dealerInterestedVehicleSchema.array().parse([]);
+let dealerInterestedVehicleSequence = 1;
+let dealerBusinessCardFileName: string | null = null;
+let dealerRecruiterCertificateFileName: string | null = null;
 
 const dealerTermTypeRecords = dealerTermTypeSchema.array().parse([
   {
@@ -334,6 +347,73 @@ export async function fetchDealerMyInfo(): Promise<DealerMyInfo> {
   return dealerMyInfoRecord;
 }
 
+export async function updateDealerNickname(
+  input: DealerNicknameUpdate,
+): Promise<DealerMyInfo> {
+  await delay(90);
+
+  const parsed = dealerNicknameUpdateSchema.parse(input);
+  dealerMyInfoRecord = dealerMyInfoSchema.parse({
+    ...dealerMyInfoRecord,
+    dealerNickname: parsed.nickname,
+  });
+  dealerProfileRecord = dealerProfileSchema.parse({
+    ...dealerProfileRecord,
+    dealerNickname: parsed.nickname,
+  });
+
+  return dealerMyInfoRecord;
+}
+
+export async function updateDealerPhone(
+  input: DealerPhoneUpdate,
+): Promise<DealerMyInfo> {
+  await delay(90);
+
+  const parsed = dealerPhoneUpdateSchema.parse(input);
+  dealerMyInfoRecord = dealerMyInfoSchema.parse({
+    ...dealerMyInfoRecord,
+    phone: parsed.phone,
+  });
+
+  return dealerMyInfoRecord;
+}
+
+export async function updateDealerCompanyName(
+  input: DealerCompanyNameUpdate,
+): Promise<DealerMyInfo> {
+  await delay(100);
+
+  const parsed = dealerCompanyNameUpdateSchema.parse(input);
+  dealerMyInfoRecord = dealerMyInfoSchema.parse({
+    ...dealerMyInfoRecord,
+    companyName: parsed.companyName,
+  });
+  dealerProfileRecord = dealerProfileSchema.parse({
+    ...dealerProfileRecord,
+    companyName: parsed.companyName,
+  });
+  dealerBusinessCardFileName = parsed.businessCardFileName ?? dealerBusinessCardFileName;
+
+  return dealerMyInfoRecord;
+}
+
+export async function updateDealerRecruiterRegistrationNumber(
+  input: DealerRecruiterRegistrationUpdate,
+): Promise<DealerMyInfo> {
+  await delay(100);
+
+  const parsed = dealerRecruiterRegistrationUpdateSchema.parse(input);
+  dealerMyInfoRecord = dealerMyInfoSchema.parse({
+    ...dealerMyInfoRecord,
+    recruiterRegistrationNumber: parsed.recruiterRegistrationNumber,
+  });
+  dealerRecruiterCertificateFileName =
+    parsed.certificateFileName ?? dealerRecruiterCertificateFileName;
+
+  return dealerMyInfoRecord;
+}
+
 export async function fetchDealerNotificationSettings(): Promise<DealerNotificationSettings> {
   await delay();
 
@@ -355,6 +435,37 @@ export async function fetchDealerInterestedVehicles(): Promise<DealerInterestedV
   return [...dealerInterestedVehicleRecords].sort(
     (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt),
   );
+}
+
+export async function createDealerInterestedVehicle(
+  input: DealerInterestedVehicleCreate,
+): Promise<DealerInterestedVehicle[]> {
+  await delay(90);
+
+  const parsed = dealerInterestedVehicleCreateSchema.parse(input);
+  dealerInterestedVehicleRecords = dealerInterestedVehicleSchema.array().parse([
+    ...dealerInterestedVehicleRecords,
+    {
+      id: `interested-vehicle-${String(dealerInterestedVehicleSequence).padStart(3, "0")}`,
+      label: parsed.label,
+      modelDetail: parsed.modelDetail,
+      category: parsed.category,
+      createdAt: new Date().toISOString(),
+    },
+  ]);
+  dealerInterestedVehicleSequence += 1;
+
+  return fetchDealerInterestedVehicles();
+}
+
+export async function removeDealerInterestedVehicle(vehicleId: string): Promise<DealerInterestedVehicle[]> {
+  await delay(90);
+
+  dealerInterestedVehicleRecords = dealerInterestedVehicleSchema.array().parse(
+    dealerInterestedVehicleRecords.filter((item) => item.id !== vehicleId),
+  );
+
+  return fetchDealerInterestedVehicles();
 }
 
 export async function fetchDealerTermTypes(): Promise<DealerTermType[]> {

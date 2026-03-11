@@ -20,6 +20,7 @@ function getPrimaryAction(item: DealerAuctionBrief) {
   if (item.bidState === "my_bid") {
     return {
       href: appRoutes.bidDetail(item.id),
+      tone: "accent",
       label: "내 입찰",
     };
   }
@@ -27,12 +28,14 @@ function getPrimaryAction(item: DealerAuctionBrief) {
   if (item.bidState === "closed") {
     return {
       href: appRoutes.homeAuctionDetail(item.id),
+      tone: "neutral",
       label: "상세",
     };
   }
 
   return {
     href: appRoutes.homeAuctionDetail(item.id),
+    tone: "neutral",
     label: "상세",
   };
 }
@@ -83,10 +86,16 @@ export function HomeAuctionCard({
             onClick={() => onFavoriteToggle(item.id)}
           />
           <Link
-            className="inline-flex min-h-10 items-center px-1 text-sm font-semibold text-slate-700 underline underline-offset-4"
+            aria-label={primaryAction.label}
+            className={
+              primaryAction.tone === "accent"
+                ? "inline-flex min-h-10 items-center justify-center rounded-full bg-violet-700 px-4 text-sm font-semibold text-white transition hover:bg-violet-800"
+                : "inline-flex min-h-10 items-center justify-center rounded-full border border-line bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            }
             href={primaryAction.href}
+            title={primaryAction.label}
           >
-            {primaryAction.label}
+            {primaryAction.label === "상세" ? "상세보기" : primaryAction.label}
           </Link>
         </div>
       </div>
@@ -108,7 +117,11 @@ function FavoriteButton({
   return (
     <button
       aria-label={isFavorited ? "찜 해제" : "찜하기"}
-      className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-medium text-slate-600"
+      className={
+        isFavorited
+          ? "inline-flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-sm font-medium text-rose-600 transition hover:bg-rose-100"
+          : "inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium text-slate-500 transition hover:bg-slate-100"
+      }
       disabled={disabled}
       type="button"
       onClick={onClick}
