@@ -1,18 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import type { DealerAuctionDetail } from "@/entities/auction/schemas/dealer-auction-detail-schema";
 import { dealerBidListQueryKey, dealerBidDetailQueryRoot } from "@/features/bids/lib/dealer-bid-query";
+import {
+  fetchDealerBidOptionsFromApi,
+  submitDealerBidFromApi,
+} from "@/features/bids/lib/dealer-bid-api";
 import { dealerBidWizardSubmitSchema } from "@/features/bids/schemas/dealer-bid-wizard-submit-schema";
 import { useDealerAuctionDetailQuery } from "@/features/home/hooks/use-dealer-auction-detail-query";
 import { dealerAuctionWorkspaceQueryRoot } from "@/features/home/lib/dealer-auction-workspace-query";
-import {
-  listDealerBidCapitalOptions,
-  listDealerBidServiceOptions,
-  submitDealerBid,
-} from "@/shared/api/dealer-marketplace";
 import { appRoutes } from "@/shared/config/routes";
 
 type DealerBidWizardPageProps = {
@@ -111,8 +110,10 @@ export function DealerBidWizardPage({
   const router = useRouter();
   const queryClient = useQueryClient();
   const auctionDetailQuery = useDealerAuctionDetailQuery(auctionId);
-  const serviceOptions = useMemo(() => listDealerBidServiceOptions(), []);
-  const capitalOptions = useMemo(() => listDealerBidCapitalOptions(), []);
+  const bidOptionsQuery = useQuery({
+    queryKey: ["dealer-bid-options"],
+    queryFn: fetchDealerBidOptionsFromApi,
+  });
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
@@ -124,8 +125,8 @@ export function DealerBidWizardPage({
   const [showMonthlyConfirm, setShowMonthlyConfirm] = useState(false);
 
   const submitMutation = useMutation({
-    mutationFn: submitDealerBid,
-    onSuccess: (submissionId) => {
+    mutationFn: submitDealerBidFromApi,
+    onSuccess: ({ submissionId }) => {
       queryClient.invalidateQueries({ queryKey: dealerAuctionWorkspaceQueryRoot });
       queryClient.invalidateQueries({ queryKey: dealerBidListQueryKey });
       queryClient.invalidateQueries({ queryKey: dealerBidDetailQueryRoot });
@@ -152,7 +153,24 @@ export function DealerBidWizardPage({
     );
   }
 
+  if (bidOptionsQuery.isLoading) {
+    return (
+      <div className="rounded-[28px] border border-line bg-white px-6 py-6">
+        <div className="h-[320px] animate-pulse rounded-[24px] bg-slate-100" />
+      </div>
+    );
+  }
+
+  if (bidOptionsQuery.isError || !bidOptionsQuery.data) {
+    return (
+      <div className="rounded-[28px] border border-line bg-white px-6 py-6">
+        <p className="text-sm text-rose-600">입찰 옵션을 불러오지 못했습니다.</p>
+      </div>
+    );
+  }
+
   const auction = auctionDetailQuery.data;
+  const { serviceOptions, capitalOptions } = bidOptionsQuery.data;
   const steps = buildBidWizardSteps(auction.purchaseMethod);
   const currentStep = steps[currentStepIndex];
   const isPriceStep = currentStep === "monthly" || currentStep === "discount";
@@ -199,6 +217,7 @@ export function DealerBidWizardPage({
     submitMutation.mutate({
       auctionId: auction.id,
       purchaseMethod: auction.purchaseMethod,
+      vehiclePrice: auction.askingPriceValue,
       ...parsed.data,
     });
   }

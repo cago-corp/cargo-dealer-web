@@ -1,4 +1,9 @@
-import { fetchDealerBidDetail, fetchDealerBidList, fetchDealerBidRank, fetchDealerBidSuccess } from "@/shared/api/dealer-marketplace";
+import {
+  fetchDealerBidDetailFromApi,
+  fetchDealerBidListFromApi,
+  fetchDealerBidRankFromApi,
+  fetchDealerBidSuccessFromApi,
+} from "@/features/bids/lib/dealer-bid-api";
 
 export const dealerBidListQueryKey = ["dealer-bids"] as const;
 export const dealerBidDetailQueryRoot = ["dealer-bid-detail"] as const;
@@ -17,8 +22,8 @@ export function getDealerBidRankQueryKey(auctionId: string) {
 }
 
 export {
-  fetchDealerBidDetail,
-  fetchDealerBidList,
-  fetchDealerBidRank,
-  fetchDealerBidSuccess,
+  fetchDealerBidDetailFromApi as fetchDealerBidDetail,
+  fetchDealerBidListFromApi as fetchDealerBidList,
+  fetchDealerBidRankFromApi as fetchDealerBidRank,
+  fetchDealerBidSuccessFromApi as fetchDealerBidSuccess,
 };

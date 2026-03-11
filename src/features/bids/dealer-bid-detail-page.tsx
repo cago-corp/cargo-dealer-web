@@ -1,14 +1,15 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getDealerBidRankQueryKey } from "@/features/bids/lib/dealer-bid-query";
+import {
+  getDealerBidDetailQueryKey,
+  getDealerBidRankQueryKey,
+} from "@/features/bids/lib/dealer-bid-query";
 import { useDealerBidDetailQuery } from "@/features/bids/hooks/use-dealer-bid-detail-query";
 import { dealerAuctionWorkspaceQueryRoot } from "@/features/home/lib/dealer-auction-workspace-query";
 import { dealerAuctionDetailQueryRoot } from "@/features/home/hooks/use-dealer-auction-detail-query";
-import {
-  fetchDealerBidRank,
-  toggleDealerAuctionFavorite,
-} from "@/shared/api/dealer-marketplace";
+import { fetchDealerBidRank } from "@/features/bids/lib/dealer-bid-query";
+import { toggleDealerAuctionFavoriteFromApi } from "@/features/home/lib/dealer-home-api";
 import { formatRemainingTime } from "@/shared/lib/format/format-remaining-time";
 import { CachedImage } from "@/shared/ui/cached-image";
 import { SectionCard } from "@/shared/ui/section-card";
@@ -60,8 +61,21 @@ export function DealerBidDetailPage({
   });
 
   const favoriteMutation = useMutation({
-    mutationFn: toggleDealerAuctionFavorite,
-    onSuccess: () => {
+    mutationFn: toggleDealerAuctionFavoriteFromApi,
+    onSuccess: (result) => {
+      queryClient.setQueryData(getDealerBidDetailQueryKey(auctionId), (currentData: typeof bidDetailQuery.data) => {
+        if (!currentData) {
+          return currentData;
+        }
+
+        return {
+          ...currentData,
+          auction: {
+            ...currentData.auction,
+            isFavorited: result.isFavorited,
+          },
+        };
+      });
       queryClient.invalidateQueries({ queryKey: dealerAuctionWorkspaceQueryRoot });
       queryClient.invalidateQueries({ queryKey: dealerAuctionDetailQueryRoot });
     },
@@ -168,7 +182,7 @@ export function DealerBidDetailPage({
 
           {bidRankQuery.data ? (
             <div className="absolute bottom-5 right-5 rounded-full bg-black/75 px-3 py-1.5 text-sm font-semibold text-white">
-              현재 {bidRankQuery.data}위 / {totalBidders}명
+              현재 {bidRankQuery.data.myRank}위 / {bidRankQuery.data.totalBids}명
             </div>
           ) : null}
         </div>
