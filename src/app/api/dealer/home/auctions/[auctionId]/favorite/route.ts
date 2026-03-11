@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDealerSession } from "@/shared/auth/session";
 import { toggleDealerHomeAuctionFavoriteForSession } from "@/shared/api/dealer-home-server";
+import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
 
 type RouteContext = {
   params: Promise<{
@@ -21,9 +22,9 @@ export async function POST(_request: Request, context: RouteContext) {
     const result = await toggleDealerHomeAuctionFavoriteForSession(session, auctionId);
     return NextResponse.json(result);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "찜 상태를 변경하지 못했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "찜 상태를 변경하지 못했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }

@@ -52,13 +52,10 @@ async function changeSupabaseDealerPassword(input: {
       }),
     },
   );
-
   const verifyJson = await verifyResponse.json().catch(() => null);
+
   if (!verifyResponse.ok) {
-    throw new DealerAuthError(
-      readErrorMessage(verifyJson) ?? "현재 비밀번호를 확인해 주세요.",
-      verifyResponse.status,
-    );
+    throw new DealerAuthError("현재 비밀번호를 확인해 주세요.", verifyResponse.status);
   }
 
   const accessToken =
@@ -83,21 +80,11 @@ async function changeSupabaseDealerPassword(input: {
     }),
   });
 
-  const updateJson = await updateResponse.json().catch(() => null);
   if (!updateResponse.ok) {
-    throw new DealerAuthError(
-      readErrorMessage(updateJson) ?? "비밀번호를 변경하지 못했습니다.",
-      updateResponse.status,
-    );
+    const message =
+      updateResponse.status >= 400 && updateResponse.status < 500
+        ? "새 비밀번호를 다시 확인해 주세요."
+        : "비밀번호를 변경하지 못했습니다.";
+    throw new DealerAuthError(message, updateResponse.status);
   }
-}
-
-function readErrorMessage(payload: unknown) {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const record = payload as Record<string, unknown>;
-  const message = record.msg ?? record.message ?? record.error_description ?? record.error;
-  return typeof message === "string" ? message : null;
 }

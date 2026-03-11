@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDealerSession } from "@/shared/auth/session";
 import { fetchDealerChatRoomListForSession } from "@/shared/api/dealer-chat-server";
+import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
 
 export async function GET() {
   const session = await getDealerSession();
@@ -13,9 +14,9 @@ export async function GET() {
     const items = await fetchDealerChatRoomListForSession(session);
     return NextResponse.json(items);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "채팅 목록을 불러오지 못했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "채팅 목록을 불러오지 못했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }

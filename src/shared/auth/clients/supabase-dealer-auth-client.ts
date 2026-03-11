@@ -159,8 +159,8 @@ async function signInWithPassword(input: {
   const loginJson = await readJson(loginResponse);
   if (!loginResponse.ok) {
     throw new DealerAuthError(
-      getErrorMessage(loginJson) ?? "로그인에 실패했습니다.",
-      loginResponse.status,
+      getSafeSupabaseAuthMessage("login", loginResponse.status, loginJson),
+      normalizeSupabaseAuthStatus(loginResponse.status, 401),
     );
   }
 
@@ -188,8 +188,8 @@ async function signUpWithPassword(input: {
   const signupJson = await readJson(signupResponse);
   if (!signupResponse.ok) {
     throw new DealerAuthError(
-      getErrorMessage(signupJson) ?? "회원가입에 실패했습니다.",
-      signupResponse.status,
+      getSafeSupabaseAuthMessage("signup", signupResponse.status, signupJson),
+      normalizeSupabaseAuthStatus(signupResponse.status, 400),
     );
   }
 
@@ -244,7 +244,7 @@ async function createDealerProfile(input: {
   const profileJson = await readJson(profileResponse);
   if (!profileResponse.ok) {
     throw new DealerAuthError(
-      getErrorMessage(profileJson) ?? "딜러 프로필 생성에 실패했습니다.",
+      "딜러 프로필을 저장하지 못했습니다.",
       profileResponse.status,
     );
   }
@@ -357,4 +357,35 @@ function getErrorMessage(json: unknown) {
   }
 
   return null;
+}
+
+function getSafeSupabaseAuthMessage(
+  action: "login" | "signup",
+  status: number,
+  json: unknown,
+) {
+  const providerMessage = getErrorMessage(json)?.toLowerCase() ?? "";
+
+  if (action === "login") {
+    return "이메일 또는 비밀번호를 확인해 주세요.";
+  }
+
+  if (
+    status === 409 ||
+    providerMessage.includes("already registered") ||
+    providerMessage.includes("already exists") ||
+    providerMessage.includes("duplicate")
+  ) {
+    return "이미 가입된 이메일입니다.";
+  }
+
+  if (status >= 400 && status < 500) {
+    return "가입 정보를 다시 확인해 주세요.";
+  }
+
+  return "회원가입에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+}
+
+function normalizeSupabaseAuthStatus(status: number, fallback: number) {
+  return status >= 400 && status < 500 ? status : fallback;
 }

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { getDealerSession } from "@/shared/auth/session";
 import {
-  DEALER_CHAT_VIDEO_UPLOAD_LIMIT_BYTES,
   sendDealerChatAttachmentForSession,
+  validateDealerChatAttachment,
 } from "@/shared/api/dealer-chat-server";
+import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
 
 type RouteContext = {
   params: Promise<{
@@ -29,9 +30,18 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ message: "비어 있는 파일은 전송할 수 없습니다." }, { status: 400 });
   }
 
-  if (file.type.startsWith("video/") && file.size > DEALER_CHAT_VIDEO_UPLOAD_LIMIT_BYTES) {
+  try {
+    validateDealerChatAttachment({
+      fileName: file.name,
+      mimeType: file.type || "application/octet-stream",
+      size: file.size,
+    });
+  } catch (error) {
     return NextResponse.json(
-      { message: "100MB 이하 영상만 업로드할 수 있습니다." },
+      {
+        message:
+          error instanceof Error ? error.message : "첨부 파일 형식을 다시 확인해 주세요.",
+      },
       { status: 400 },
     );
   }
@@ -49,9 +59,9 @@ export async function POST(request: Request, context: RouteContext) {
 
     return NextResponse.json(message);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "첨부 전송에 실패했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "첨부 전송에 실패했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }

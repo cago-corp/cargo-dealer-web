@@ -228,6 +228,7 @@ export function DealerMypageMyInfoPage() {
             />
             <MyInfoRow
               canEdit
+              description="현재는 데모 입력 화면입니다. 실제 휴대폰 본인 인증 플로우는 추후 구현이 필요합니다."
               label="휴대폰번호"
               value={formatPhoneDisplay(info.phone)}
               onClick={() => setActiveField("phone")}
@@ -687,6 +688,9 @@ function PhoneEditModal({
   const [phone, setPhone] = useState(formatPhoneInput(initialPhone));
   const [error, setError] = useState<string | null>(null);
 
+  // TODO(dealer_mypage): 휴대폰번호 수정은 현재 데모 입력만 지원한다.
+  // 실제 서비스에서는 휴대폰 본인 인증 intro/webview 또는 외부 인증 수단과 연동해
+  // 인증 완료 후 번호를 저장하도록 바꿔야 한다.
   async function handleSave() {
     const parsed = dealerPhoneUpdateSchema.safeParse({ phone });
 
@@ -700,22 +704,28 @@ function PhoneEditModal({
 
   return (
     <FormModalShell
-      description="실제 본인 인증 절차는 추후 연결됩니다. 현재는 연락 가능한 번호를 기록합니다."
+      description="현재는 데모 입력 화면입니다. 실제 서비스에서는 본인 인증 완료 후 번호가 저장되도록 구현해야 합니다."
       title="휴대폰번호 수정"
       onClose={onClose}
     >
-      <div className="space-y-2">
-        <FieldLabel>휴대폰번호</FieldLabel>
-        <TextField
-          error={error}
-          placeholder="010-0000-0000"
-          type="tel"
-          value={phone}
-          onChange={(nextValue) => {
-            setPhone(formatPhoneInput(nextValue));
-            setError(null);
-          }}
-        />
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-800">
+          데모 화면입니다. 현재는 번호를 직접 입력해 저장하지만, 추후 실제 휴대폰 본인 인증
+          플로우로 교체해야 합니다.
+        </div>
+        <div className="space-y-2">
+          <FieldLabel>휴대폰번호</FieldLabel>
+          <TextField
+            error={error}
+            placeholder="010-0000-0000"
+            type="tel"
+            value={phone}
+            onChange={(nextValue) => {
+              setPhone(formatPhoneInput(nextValue));
+              setError(null);
+            }}
+          />
+        </div>
       </div>
 
       <FormActions

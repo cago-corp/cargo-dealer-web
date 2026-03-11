@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getDealerSession } from "@/shared/auth/session";
 import { markDealerChatRoomReadForSession } from "@/shared/api/dealer-chat-server";
+import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
 
 const markChatReadRequestSchema = z.object({
   lastMessageId: z.string().min(1),
@@ -36,9 +37,9 @@ export async function POST(request: Request, context: RouteContext) {
     });
     return NextResponse.json({ success: true });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "읽음 처리에 실패했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "읽음 처리에 실패했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }

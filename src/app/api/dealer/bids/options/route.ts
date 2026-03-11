@@ -4,6 +4,7 @@ import {
   fetchDealerBidCapitalOptionsForSession,
   fetchDealerBidServiceOptionsForSession,
 } from "@/shared/api/dealer-bid-server";
+import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
 
 export async function GET() {
   const session = await getDealerSession();
@@ -23,9 +24,9 @@ export async function GET() {
       capitalOptions,
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "입찰 옵션을 불러오지 못했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "입찰 옵션을 불러오지 못했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }

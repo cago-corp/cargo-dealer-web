@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getDealerSession } from "@/shared/auth/session";
 import { sendDealerChatMessageForSession } from "@/shared/api/dealer-chat-server";
+import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
 
 const sendDealerChatMessageRequestSchema = z.object({
   body: z.string().trim().min(1).max(2000),
@@ -36,9 +37,9 @@ export async function POST(request: Request, context: RouteContext) {
     });
     return NextResponse.json(message);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "메시지 전송에 실패했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "메시지 전송에 실패했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }

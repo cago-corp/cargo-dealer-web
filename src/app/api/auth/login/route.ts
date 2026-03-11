@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       accessState: session.accessState,
     });
 
-    setDealerSessionCookie(response, session);
+    await setDealerSessionCookie(response, session);
     return response;
   } catch (error) {
     const authError =

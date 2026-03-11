@@ -30,7 +30,7 @@ export async function POST() {
       redirectTo: getDealerEntryRoute(refreshedSession.accessState),
     });
 
-    setDealerSessionCookie(response, refreshedSession);
+    await setDealerSessionCookie(response, refreshedSession);
     return response;
   } catch (error) {
     const status =

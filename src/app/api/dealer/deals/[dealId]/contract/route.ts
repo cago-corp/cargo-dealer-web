@@ -5,6 +5,7 @@ import {
   submitDealerFinalContractForSession,
 } from "@/shared/api/dealer-deal-server";
 import { dealerContractSubmitSchema } from "@/entities/deal/schemas/dealer-contract-schema";
+import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
 
 type RouteContext = {
   params: Promise<{
@@ -25,10 +26,10 @@ export async function GET(_request: Request, context: RouteContext) {
     const initData = await fetchDealerContractInitDataForSession(session, dealId);
     return NextResponse.json(initData);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "계약 입력 초기 데이터를 불러오지 못했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "계약 입력 초기 데이터를 불러오지 못했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }
 
@@ -52,9 +53,9 @@ export async function POST(request: Request, context: RouteContext) {
     await submitDealerFinalContractForSession(session, dealId, parsedPayload.data);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "최종 계약 전송에 실패했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "최종 계약 전송에 실패했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }

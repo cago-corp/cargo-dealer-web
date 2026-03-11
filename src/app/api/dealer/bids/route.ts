@@ -7,6 +7,7 @@ import {
   submitDealerBidForSession,
 } from "@/shared/api/dealer-bid-server";
 import { fetchDealerHomeAuctionDetailForSession } from "@/shared/api/dealer-home-server";
+import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
 
 const dealerBidSubmitRequestSchema = dealerBidWizardSubmitSchema.extend({
   auctionId: z.string().min(1),
@@ -23,10 +24,10 @@ export async function GET() {
     const items = await fetchDealerBidListForSession(session);
     return NextResponse.json(items);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "내 입찰 목록을 불러오지 못했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "내 입찰 목록을 불러오지 못했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }
 
@@ -62,9 +63,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ submissionId });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "입찰 제출에 실패했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "입찰 제출에 실패했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }

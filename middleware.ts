@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getDealerEntryRoute, isDealerAuthPath, isDealerLoginPath, isDealerPendingApprovalPath, isDealerProtectedPath, isDealerSignupPath, sanitizeDealerRedirectPath } from "@/shared/auth/auth-routing";
-import { dealerSessionCookieName, dealerSessionSchema } from "@/shared/auth/session-contract";
+import { decodeDealerSessionCookieValue } from "@/shared/auth/session-codec";
+import { dealerSessionCookieName } from "@/shared/auth/session-contract";
 import { appRoutes } from "@/shared/config/routes";
 
 export async function middleware(request: NextRequest) {
@@ -14,7 +15,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = await parseDealerSession(request.cookies.get(dealerSessionCookieName)?.value);
+  const session = await decodeDealerSessionCookieValue(
+    request.cookies.get(dealerSessionCookieName)?.value,
+    getSessionSecret(),
+  );
 
   if (!session) {
     if (isDealerProtectedPath(pathname) || isDealerPendingApprovalPath(pathname)) {
@@ -58,58 +62,6 @@ export async function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-async function parseDealerSession(rawValue?: string | null) {
-  if (!rawValue) {
-    return null;
-  }
-
-  const [payload, signature] = rawValue.split(".");
-
-  if (!payload || !signature) {
-    return null;
-  }
-
-  const isValid = await isValidSignature(payload, signature);
-
-  if (!isValid) {
-    return null;
-  }
-
-  try {
-    const json = JSON.parse(decodeText(base64UrlDecode(payload)));
-    return dealerSessionSchema.parse(json);
-  } catch {
-    return null;
-  }
-}
-
-async function isValidSignature(payload: string, signature: string) {
-  const secret = getSessionSecret();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encodeText(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const expected = new Uint8Array(
-    await crypto.subtle.sign("HMAC", key, encodeText(payload)),
-  );
-  const received = base64UrlDecode(signature);
-
-  if (expected.length !== received.length) {
-    return false;
-  }
-
-  let diff = 0;
-
-  for (let index = 0; index < expected.length; index += 1) {
-    diff |= expected[index] ^ received[index];
-  }
-
-  return diff === 0;
-}
-
 function getSessionSecret() {
   if (process.env.AUTH_SESSION_SECRET) {
     return process.env.AUTH_SESSION_SECRET;
@@ -120,27 +72,6 @@ function getSessionSecret() {
   }
 
   throw new Error("AUTH_SESSION_SECRET is required in production.");
-}
-
-function base64UrlDecode(value: string) {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
-  const binary = atob(`${normalized}${padding}`);
-  const bytes = new Uint8Array(binary.length);
-
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-
-  return bytes;
-}
-
-function encodeText(value: string) {
-  return new TextEncoder().encode(value);
-}
-
-function decodeText(value: Uint8Array) {
-  return new TextDecoder().decode(value);
 }
 
 export const config = {

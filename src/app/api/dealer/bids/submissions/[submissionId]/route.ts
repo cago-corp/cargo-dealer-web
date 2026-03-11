@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDealerSession } from "@/shared/auth/session";
 import { fetchDealerBidSuccessForSession } from "@/shared/api/dealer-bid-server";
+import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
 
 type RouteContext = {
   params: Promise<{
@@ -21,9 +22,9 @@ export async function GET(_request: Request, context: RouteContext) {
     const item = await fetchDealerBidSuccessForSession(session, submissionId);
     return NextResponse.json(item);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "입찰 완료 정보를 불러오지 못했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "입찰 완료 정보를 불러오지 못했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }

@@ -5,6 +5,7 @@ import {
 } from "@/entities/auction/schemas/dealer-auction-workspace-schema";
 import { getDealerSession } from "@/shared/auth/session";
 import { fetchDealerHomeWorkspaceForSession } from "@/shared/api/dealer-home-server";
+import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
 
 export async function GET(request: Request) {
   const session = await getDealerSession();
@@ -36,11 +37,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json(workspace);
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "경매장 홈 데이터를 불러오지 못했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "경매장 홈 데이터를 불러오지 못했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }

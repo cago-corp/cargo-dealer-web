@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       redirectTo: appRoutes.signupComplete(),
     });
 
-    setDealerSessionCookie(response, session);
+    await setDealerSessionCookie(response, session);
     return response;
   } catch (error) {
     const message =

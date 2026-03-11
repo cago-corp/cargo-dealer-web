@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDealerSession } from "@/shared/auth/session";
 import { fetchDealerChatRoomForSession } from "@/shared/api/dealer-chat-server";
+import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
 
 type RouteContext = {
   params: Promise<{
@@ -21,9 +22,9 @@ export async function GET(_request: Request, context: RouteContext) {
     const item = await fetchDealerChatRoomForSession(session, roomId);
     return NextResponse.json(item);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "채팅방을 불러오지 못했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "채팅방을 불러오지 못했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }

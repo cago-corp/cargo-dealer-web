@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getDealerSession } from "@/shared/auth/session";
 import { updateDealerDealStatusForSession } from "@/shared/api/dealer-deal-server";
+import { getSafeRouteErrorMessage, getSafeRouteErrorStatus } from "@/shared/api/route-error";
 
 const updateDealerDealStatusRequestSchema = z.object({
   targetStatusCode: z.string().trim().min(1),
@@ -38,8 +39,9 @@ export async function POST(request: Request, context: RouteContext) {
     });
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "거래 상태 변경에 실패했습니다.";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      { message: getSafeRouteErrorMessage(error, "거래 상태 변경에 실패했습니다.") },
+      { status: getSafeRouteErrorStatus(error, 500) },
+    );
   }
 }

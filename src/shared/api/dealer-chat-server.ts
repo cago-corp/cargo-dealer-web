@@ -56,7 +56,98 @@ const chatReadStateRecordSchema = z.object({
 });
 
 const sendDealerChatMessageResultSchema = z.array(chatMessageRecordSchema).min(1);
+export const DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES = 20 * 1024 * 1024;
 export const DEALER_CHAT_VIDEO_UPLOAD_LIMIT_BYTES = 100 * 1024 * 1024;
+export const DEALER_CHAT_FILE_UPLOAD_LIMIT_BYTES = 20 * 1024 * 1024;
+
+const dealerChatAttachmentSpecMap = {
+  jpg: {
+    category: "image",
+    mimeTypes: ["image/jpeg"],
+    maxSize: DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES,
+  },
+  jpeg: {
+    category: "image",
+    mimeTypes: ["image/jpeg"],
+    maxSize: DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES,
+  },
+  png: {
+    category: "image",
+    mimeTypes: ["image/png"],
+    maxSize: DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES,
+  },
+  webp: {
+    category: "image",
+    mimeTypes: ["image/webp"],
+    maxSize: DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES,
+  },
+  gif: {
+    category: "image",
+    mimeTypes: ["image/gif"],
+    maxSize: DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES,
+  },
+  heic: {
+    category: "image",
+    mimeTypes: ["image/heic", "image/heif"],
+    maxSize: DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES,
+  },
+  heif: {
+    category: "image",
+    mimeTypes: ["image/heif", "image/heic"],
+    maxSize: DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES,
+  },
+  mp4: {
+    category: "video",
+    mimeTypes: ["video/mp4"],
+    maxSize: DEALER_CHAT_VIDEO_UPLOAD_LIMIT_BYTES,
+  },
+  mov: {
+    category: "video",
+    mimeTypes: ["video/quicktime"],
+    maxSize: DEALER_CHAT_VIDEO_UPLOAD_LIMIT_BYTES,
+  },
+  webm: {
+    category: "video",
+    mimeTypes: ["video/webm"],
+    maxSize: DEALER_CHAT_VIDEO_UPLOAD_LIMIT_BYTES,
+  },
+  pdf: {
+    category: "file",
+    mimeTypes: ["application/pdf", "application/octet-stream"],
+    maxSize: DEALER_CHAT_FILE_UPLOAD_LIMIT_BYTES,
+  },
+  doc: {
+    category: "file",
+    mimeTypes: ["application/msword", "application/octet-stream"],
+    maxSize: DEALER_CHAT_FILE_UPLOAD_LIMIT_BYTES,
+  },
+  docx: {
+    category: "file",
+    mimeTypes: [
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/octet-stream",
+    ],
+    maxSize: DEALER_CHAT_FILE_UPLOAD_LIMIT_BYTES,
+  },
+  xls: {
+    category: "file",
+    mimeTypes: ["application/vnd.ms-excel", "application/octet-stream"],
+    maxSize: DEALER_CHAT_FILE_UPLOAD_LIMIT_BYTES,
+  },
+  xlsx: {
+    category: "file",
+    mimeTypes: [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/octet-stream",
+    ],
+    maxSize: DEALER_CHAT_FILE_UPLOAD_LIMIT_BYTES,
+  },
+  txt: {
+    category: "file",
+    mimeTypes: ["text/plain", "application/octet-stream"],
+    maxSize: DEALER_CHAT_FILE_UPLOAD_LIMIT_BYTES,
+  },
+} as const;
 
 type ChatRoomRecord = z.output<typeof chatRoomRecordSchema>;
 type ChatMessageRecord = z.output<typeof chatMessageRecordSchema>;
@@ -268,9 +359,11 @@ export async function sendDealerChatAttachmentForSession(
     throw new Error("Spring dealer chat backend is not implemented yet.");
   }
 
-  if (input.mimeType.startsWith("video/") && input.size > DEALER_CHAT_VIDEO_UPLOAD_LIMIT_BYTES) {
-    throw new Error("100MB 이하 영상만 업로드할 수 있습니다.");
-  }
+  validateDealerChatAttachment({
+    fileName: input.fileName,
+    mimeType: input.mimeType,
+    size: input.size,
+  });
 
   const room = await fetchChatRoomById(session, input.roomId);
 
@@ -522,13 +615,13 @@ async function toDealerChatMessage(
     parseMetadata(record.metadata),
     parseAttachmentDescriptor(record.content),
   );
-  const attachment = record.file_url
-    ? buildAttachment(
-        record.file_url,
-        metadata,
-        await createSignedChatAttachmentUrl(session, record.file_url),
-      )
+  const resolvedAttachmentUrl = record.file_url
+    ? await createSignedChatAttachmentUrl(session, record.file_url)
     : null;
+  const attachment =
+    record.file_url && resolvedAttachmentUrl
+      ? buildAttachment(record.file_url, metadata, resolvedAttachmentUrl)
+      : null;
   const inferredKind = inferMessageKind(record, metadata, attachment);
   const customPayload = inferredKind === "custom" ? buildCustomPayload(metadata) : null;
   const body = getMessageBody(record, metadata, inferredKind);
@@ -576,6 +669,10 @@ function inferMessageKind(
 
   if (attachment) {
     return attachment.kind;
+  }
+
+  if (record.file_url) {
+    return buildAttachment(record.file_url, metadata).kind;
   }
 
   const customType = typeof metadata?.customType === "string" ? metadata.customType : metadata?.type;
@@ -660,7 +757,7 @@ async function createSignedChatAttachmentUrl(
       : `${env.SUPABASE_URL}/storage/v1${responseJson.signedURL}`;
   }
 
-  return `${env.SUPABASE_URL}/storage/v1/object/public/chat-attached-files/${encodedPath}`;
+  return null;
 }
 
 function buildCustomPayload(metadata: Record<string, unknown> | null) {
@@ -952,6 +1049,43 @@ function getFileExtension(fileName: string, mimeType: string) {
 
   const mimeExtension = mimeType.split("/").at(-1)?.trim().toLowerCase();
   return mimeExtension || "";
+}
+
+export function validateDealerChatAttachment(input: {
+  fileName: string;
+  mimeType: string;
+  size: number;
+}) {
+  const extension = input.fileName.split(".").at(-1)?.trim().toLowerCase();
+
+  if (!extension || !(extension in dealerChatAttachmentSpecMap)) {
+    throw new Error("지원하지 않는 첨부 형식입니다.");
+  }
+
+  const spec = dealerChatAttachmentSpecMap[extension as keyof typeof dealerChatAttachmentSpecMap];
+  const normalizedMimeType = input.mimeType.trim().toLowerCase();
+
+  if (!normalizedMimeType || !spec.mimeTypes.includes(normalizedMimeType as never)) {
+    throw new Error("첨부 파일 형식을 다시 확인해 주세요.");
+  }
+
+  if (input.size > spec.maxSize) {
+    if (spec.category === "video") {
+      throw new Error("100MB 이하 영상만 업로드할 수 있습니다.");
+    }
+
+    if (spec.category === "image") {
+      throw new Error("20MB 이하 이미지만 업로드할 수 있습니다.");
+    }
+
+    throw new Error("20MB 이하 파일만 업로드할 수 있습니다.");
+  }
+
+  return {
+    category: spec.category,
+    extension,
+    mimeType: normalizedMimeType,
+  };
 }
 
 function getRequiredSupabaseDataEnv(session: DealerSession) {
