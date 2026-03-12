@@ -42,7 +42,7 @@ export function AppShell({ children, session }: AppShellProps) {
             </div>
           </aside>
           <ChatRailProvider>
-            <main className="overflow-visible rounded-none border-0 bg-transparent shadow-none backdrop-blur-0 lg:overflow-hidden lg:rounded-[32px] lg:border lg:border-white/80 lg:bg-white/92 lg:shadow-panel lg:backdrop-blur">
+            <main className="overflow-visible rounded-none border-0 bg-transparent shadow-none backdrop-blur-0 lg:overflow-hidden lg:rounded-[32px] lg:border lg:border-white/80 lg:bg-white lg:shadow-panel lg:backdrop-blur">
               <div className="px-0 py-0 md:px-0 md:py-0 lg:px-8 lg:py-8">
                 {session.accessState !== "active" ? (
                   <div className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
