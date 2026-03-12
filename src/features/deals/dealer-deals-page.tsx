@@ -6,7 +6,6 @@ import { useDealerDealListQuery } from "@/features/deals/hooks/use-dealer-deal-l
 import { appRoutes } from "@/shared/config/routes";
 import { PaginationControls } from "@/shared/ui/pagination-controls";
 import { useChatRail } from "@/shared/ui/chat-rail-provider";
-import { SectionCard } from "@/shared/ui/section-card";
 
 const DEAL_PAGE_SIZE = 10;
 
@@ -38,28 +37,29 @@ export function DealerDealsPage() {
   };
 
   return (
-    <section className="space-y-6">
-      <header className="space-y-1">
-        <p className="text-sm font-medium uppercase tracking-[0.2em] text-teal-700">
-          Deals
-        </p>
-        <h1 className="text-3xl font-semibold text-slate-950">내 거래</h1>
-      </header>
-
-      <SectionCard title="거래 현황">
-        <div className="grid gap-4 md:grid-cols-3">
-          <SummaryTile label="서류 확인" value={summary.document} />
-          <SummaryTile label="계약 입력 대기" value={summary.contract} />
-          <SummaryTile label="출고 준비" value={summary.delivery} />
+    <section className="space-y-4 sm:space-y-6">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-lg font-semibold text-slate-950 sm:text-xl">내 거래</h1>
         </div>
-      </SectionCard>
+        <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+          <InlineSummaryItem label="서류 확인" value={summary.document} />
+          <span className="text-slate-300">|</span>
+          <InlineSummaryItem label="계약 입력 대기" value={summary.contract} />
+          <span className="text-slate-300">|</span>
+          <InlineSummaryItem label="출고 준비" value={summary.delivery} />
+        </div>
+      </section>
 
-      <SectionCard title="거래 목록">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-950 sm:text-xl">내 거래 목록</h2>
+        </div>
         {dealListQuery.isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (
               <div
-                className="h-[160px] animate-pulse rounded-[28px] bg-slate-100"
+                className="h-[140px] animate-pulse rounded-[24px] bg-slate-100 sm:h-[160px] sm:rounded-[28px]"
                 key={`deal-skeleton-${index}`}
               />
             ))}
@@ -79,47 +79,44 @@ export function DealerDealsPage() {
           <div className="space-y-3">
             {pagedDealItems.map((item) => (
               <article
-                className="rounded-[22px] border border-line bg-white px-5 py-3.5 shadow-sm"
+                className="rounded-[20px] border border-line bg-white px-4 py-3 shadow-sm sm:rounded-[22px] sm:px-5 sm:py-3.5"
                 key={item.id}
               >
-                <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-500">
-                      {item.customerName}
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-medium text-slate-500 sm:text-sm">
+                    {item.customerName}
+                  </p>
+                  <Link
+                    className="mt-0.5 block text-base font-semibold text-slate-950 sm:text-lg"
+                    href={appRoutes.dealDetail(item.id)}
+                  >
+                    {item.vehicleLabel}
+                  </Link>
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:mt-2.5 sm:gap-2">
+                  <DealStagePill stage={item.stage} />
+                  <DealMetaPill>{item.purchaseMethod}</DealMetaPill>
+                  <DealMetaPill>{item.deliveryRegion}</DealMetaPill>
+                </div>
+
+                <p className="mt-2 text-sm text-slate-600 sm:mt-2.5">{item.statusDescription}</p>
+
+                <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-400">
+                      최근 업데이트 {formatUpdatedAt(item.updatedAt)}
                     </p>
                     <Link
-                      className="mt-0.5 block text-lg font-semibold text-slate-950"
-                      href={appRoutes.dealDetail(item.id)}
-                    >
-                      {item.vehicleLabel}
-                    </Link>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      className="inline-flex items-center gap-1 text-sm font-medium text-slate-700 underline underline-offset-4"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 sm:text-sm"
                       href={appRoutes.dealDetail(item.id)}
                     >
                       상세보기
                       <span aria-hidden="true">›</span>
                     </Link>
                   </div>
-                </div>
-
-                <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                  <DealStagePill stage={item.stage} />
-                  <DealMetaPill>{item.purchaseMethod}</DealMetaPill>
-                  <DealMetaPill>{item.deliveryRegion}</DealMetaPill>
-                </div>
-
-                <p className="mt-2.5 text-sm text-slate-600">{item.statusDescription}</p>
-
-                <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between">
-                  <p className="text-xs text-slate-400">
-                    최근 업데이트 {formatUpdatedAt(item.updatedAt)}
-                  </p>
                   <button
-                    className="w-full rounded-2xl bg-slate-950 px-5 py-3 text-base font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-auto sm:min-w-32"
+                    className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-auto sm:min-w-32 sm:px-5 sm:text-base"
                     disabled={
                       item.chatRoomId.startsWith("pending:") ||
                       item.stage === "출고 완료"
@@ -143,21 +140,21 @@ export function DealerDealsPage() {
             />
           </div>
         )}
-      </SectionCard>
+      </section>
     </section>
   );
 }
 
-type SummaryTileProps = {
+type InlineSummaryItemProps = {
   label: string;
   value: number;
 };
 
-function SummaryTile({ label, value }: SummaryTileProps) {
+function InlineSummaryItem({ label, value }: InlineSummaryItemProps) {
   return (
-    <div className="rounded-3xl bg-slate-950 px-5 py-5 text-white">
-      <p className="text-sm text-slate-300">{label}</p>
-      <p className="mt-3 text-3xl font-semibold">{value}</p>
+    <div className="flex items-center gap-1.5">
+      <span className="text-xs font-medium text-slate-500 sm:text-sm">{label}</span>
+      <span className="text-base font-semibold text-slate-950 sm:text-lg">{value}</span>
     </div>
   );
 }
@@ -175,7 +172,9 @@ function DealStagePill({ stage }: DealStagePillProps) {
   }[stage];
 
   return (
-    <span className={`rounded-full px-3 py-1 text-xs font-medium ${toneClassName}`}>
+    <span
+      className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium sm:px-3 sm:py-1 sm:text-xs ${toneClassName}`}
+    >
       {stage}
     </span>
   );
@@ -187,7 +186,7 @@ type DealMetaPillProps = {
 
 function DealMetaPill({ children }: DealMetaPillProps) {
   return (
-    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-medium text-slate-700 sm:px-3 sm:py-1 sm:text-xs">
       {children}
     </span>
   );

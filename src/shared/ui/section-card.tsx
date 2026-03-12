@@ -4,6 +4,7 @@ type SectionCardProps = Readonly<{
   headerAction?: React.ReactNode;
   className?: string;
   contentClassName?: string;
+  titleClassName?: string;
   children: React.ReactNode;
 }>;
 
@@ -13,6 +14,7 @@ export function SectionCard({
   headerAction,
   className,
   contentClassName,
+  titleClassName,
   children,
 }: SectionCardProps) {
   return (
@@ -22,7 +24,9 @@ export function SectionCard({
       <header className="mb-5">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <h2 className="text-xl font-semibold text-slate-950">{title}</h2>
+            <h2 className={`text-xl font-semibold text-slate-950 ${titleClassName ?? ""}`.trim()}>
+              {title}
+            </h2>
             {description ? (
               <p className="text-sm text-slate-600">{description}</p>
             ) : null}

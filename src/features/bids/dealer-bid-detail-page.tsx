@@ -10,8 +10,8 @@ import { dealerAuctionWorkspaceQueryRoot } from "@/features/home/lib/dealer-auct
 import { dealerAuctionDetailQueryRoot } from "@/features/home/hooks/use-dealer-auction-detail-query";
 import { fetchDealerBidRank } from "@/features/bids/lib/dealer-bid-query";
 import { toggleDealerAuctionFavoriteFromApi } from "@/features/home/lib/dealer-home-api";
-import { formatRemainingTime } from "@/shared/lib/format/format-remaining-time";
 import { CachedImage } from "@/shared/ui/cached-image";
+import { LiveCountdownText } from "@/shared/ui/live-countdown-text";
 import { SectionCard } from "@/shared/ui/section-card";
 
 type DealerBidDetailPageProps = {
@@ -106,6 +106,10 @@ export function DealerBidDetailPage({
     submission.purchaseMethod === "현금"
       ? formatWon(submission.discountAmountValue)
       : formatWon(submission.monthlyPaymentValue);
+  const colorMetadata = [
+    auction.vehicleExteriorColorName ?? null,
+    auction.vehicleInteriorColorName ?? null,
+  ].filter(Boolean);
   const conditionRows = [
     {
       label: submission.purchaseMethod === "현금" ? "공채용 지역" : "기간",
@@ -124,13 +128,6 @@ export function DealerBidDetailPage({
           : formatWon(auction.advanceDownPaymentAmount),
     },
     {
-      label: submission.purchaseMethod === "현금" ? "컬러" : "보증금",
-      value:
-        submission.purchaseMethod === "현금"
-          ? `${auction.vehicleExteriorColorName ?? "색상 무관"} / ${auction.vehicleInteriorColorName ?? "색상 무관"}`
-          : formatWon(auction.depositDownPaymentAmount),
-    },
-    {
       label: submission.purchaseMethod === "현금" ? "희망 출고일" : "연간 주행거리",
       value:
         submission.purchaseMethod === "현금"
@@ -147,23 +144,32 @@ export function DealerBidDetailPage({
           : auction.customerType ?? "-",
     },
     {
-      label: submission.purchaseMethod === "현금" ? "연료" : "컬러",
+      label: submission.purchaseMethod === "현금" ? "연료" : "보증금",
       value:
         submission.purchaseMethod === "현금"
           ? auction.fuelType
-          : `${auction.vehicleExteriorColorName ?? "색상 무관"} / ${auction.vehicleInteriorColorName ?? "색상 무관"}`,
+          : formatWon(auction.depositDownPaymentAmount),
+    },
+  ];
+  const auctionInfoRows = [
+    { label: "입찰 시각", value: formatCompactDate(submission.submittedAt) },
+    { label: "현재 상태", value: submissionStateLabel[submission.state] },
+    { label: "입찰 수", value: `${auction.bidCount}명` },
+    {
+      label: "현재 순위",
+      value: submission.currentRank ? `${submission.currentRank}위` : "-",
     },
   ];
 
   return (
-    <section className="mx-auto max-w-[960px] space-y-6">
-      <div className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-sm">
-        <div className="relative h-[220px] bg-slate-100">
+    <section className="mx-auto max-w-[960px] space-y-4 sm:space-y-6">
+      <div className="overflow-hidden rounded-[24px] border border-white/80 bg-white shadow-sm sm:rounded-[32px]">
+        <div className="relative h-[190px] bg-white sm:h-[220px]">
           <CachedImage
             alt={`${auction.brandName} ${auction.modelName}`}
-            className="object-cover"
+            className="object-contain"
             fallback={
-              <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-100 via-white to-slate-200 text-3xl font-semibold tracking-[0.2em] text-slate-300">
+              <div className="flex h-full items-center justify-center bg-white text-3xl font-semibold tracking-[0.2em] text-slate-300">
                 CAR
               </div>
             }
@@ -173,7 +179,7 @@ export function DealerBidDetailPage({
           />
 
           <button
-            className="absolute right-5 top-5 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/92 text-lg text-slate-700 shadow-sm"
+            className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/92 text-lg text-slate-700 shadow-sm sm:right-5 sm:top-5 sm:h-11 sm:w-11"
             disabled={favoriteMutation.isPending}
             type="button"
             onClick={() => favoriteMutation.mutate(auction.id)}
@@ -182,59 +188,77 @@ export function DealerBidDetailPage({
           </button>
 
           {bidRankQuery.data ? (
-            <div className="absolute bottom-5 right-5 rounded-full bg-black/75 px-3 py-1.5 text-sm font-semibold text-white">
+            <div className="absolute bottom-4 right-4 rounded-full bg-black/75 px-3 py-1.5 text-xs font-semibold text-white sm:bottom-5 sm:right-5 sm:text-sm">
               현재 {bidRankQuery.data.myRank}위 / {bidRankQuery.data.totalBids}명
             </div>
           ) : null}
         </div>
 
-        <div className="px-6 py-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="px-4 py-4 sm:px-6 sm:py-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-slate-700 sm:gap-2 sm:text-sm">
                   <span className="text-slate-500">남은 시간</span>
-                  <span className="text-violet-700">{formatRemainingTime(auction.deadlineAt)}</span>
+                  <LiveCountdownText
+                    className="tabular-nums text-violet-700"
+                    targetAt={auction.expireAt}
+                  />
                 </div>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600 sm:px-3 sm:py-1 sm:text-xs">
                   {auction.bidCount}명 입찰
                 </span>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600 sm:px-3 sm:py-1 sm:text-xs">
                   {submissionStateLabel[submission.state]}
                 </span>
               </div>
 
-              <div className="mt-5 flex items-center gap-2 text-sm text-slate-500">
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px] font-bold text-slate-500">
-                  {auction.brandName.slice(0, 1)}
-                </span>
+              <div className="mt-4 flex items-center gap-2 text-xs text-slate-500 sm:mt-5 sm:text-sm">
+                <div className="relative h-5 w-5 overflow-hidden rounded-full bg-slate-100 sm:h-6 sm:w-6">
+                  <CachedImage
+                    alt={auction.brandName}
+                    className="object-cover"
+                    fallback={
+                      <div className="flex h-full items-center justify-center text-[10px] font-semibold text-slate-400">
+                        {auction.brandName.slice(0, 1)}
+                      </div>
+                    }
+                    sizes="24px"
+                    src={auction.brandLogoImageUrl}
+                  />
+                </div>
                 <span>{auction.brandName}</span>
               </div>
-              <h1 className="mt-2 text-2xl font-semibold text-slate-950">
+              <h1 className="mt-2 text-xl font-semibold text-slate-950 sm:text-2xl">
                 {auction.modelName} {auction.trimName}
               </h1>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-1.5 text-sm text-slate-600 sm:mt-2">
                 {auction.yearLabel} · {auction.fuelType} · {auction.userRegion}
               </p>
+              {colorMetadata.length > 0 ? (
+                <p className="mt-1 text-sm text-slate-600 sm:mt-1.5">
+                  {colorMetadata.join(" · ")}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="h-3 rounded-full bg-slate-100" />
+      <div className="h-2 rounded-full bg-slate-100 sm:h-3" />
 
-      <div className="rounded-[32px] border border-white/80 bg-white px-6 py-6 shadow-sm">
+      <div className="rounded-[24px] border border-white/80 bg-white px-4 py-4 shadow-sm sm:rounded-[32px] sm:px-6 sm:py-6">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-semibold text-slate-500">{primaryPriceLabel}</span>
-          <span className="text-2xl font-semibold text-slate-950">{primaryPriceValue}</span>
+          <span className="text-xs font-semibold text-slate-500 sm:text-sm">{primaryPriceLabel}</span>
+          <span className="text-xl font-semibold text-slate-950 sm:text-2xl">{primaryPriceValue}</span>
           <span
-            className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${purchaseMethodTone[submission.purchaseMethod]}`}
+            className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold sm:px-2.5 sm:py-1 sm:text-xs ${purchaseMethodTone[submission.purchaseMethod]}`}
           >
             {submission.purchaseMethod}
           </span>
         </div>
 
-        <div className="mt-4 space-y-2 text-sm text-slate-700">
+        <div className="mt-3 space-y-2 text-sm text-slate-700 sm:mt-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium text-slate-500">차량가</span>
             <span>{auction.askingPriceLabel}</span>
@@ -247,20 +271,29 @@ export function DealerBidDetailPage({
           </div>
         </div>
 
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold text-slate-950">
+        <div className="mt-6 sm:mt-8">
+          <h2 className="text-lg font-semibold text-slate-950 sm:text-xl">
             {submission.purchaseMethod} 조건
           </h2>
-          <div className="mt-5 grid gap-x-6 gap-y-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 md:mt-5 md:grid-cols-3 md:gap-x-6 md:gap-y-4 xl:grid-cols-4">
             {conditionRows.map((row) => (
               <ConditionItem key={row.label} label={row.label} value={row.value} />
             ))}
           </div>
         </div>
 
-        <div className="mt-8 rounded-[24px] bg-slate-50 px-5 py-5">
+        <div className="mt-6 sm:mt-8">
+          <h2 className="text-lg font-semibold text-slate-950 sm:text-xl">경매 정보</h2>
+          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 md:mt-5 md:grid-cols-3 md:gap-x-6 md:gap-y-4 xl:grid-cols-4">
+            {auctionInfoRows.map((row) => (
+              <ConditionItem key={row.label} label={row.label} value={row.value} />
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-[20px] bg-slate-50 px-4 py-4 sm:mt-8 sm:rounded-[24px] sm:px-5 sm:py-5">
           <p className="text-base font-semibold text-slate-950">출고서비스</p>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
+          <p className="mt-3 text-sm leading-6 text-slate-600 sm:leading-7">
             {submission.services.length === 0
               ? "없음"
               : submission.services.map((service) => `• ${service.name}`).join("  ")}
@@ -273,18 +306,11 @@ export function DealerBidDetailPage({
           ) : null}
         </div>
 
-        <div className="mt-8 grid gap-x-6 gap-y-5 md:grid-cols-2">
-          <ConditionItem label="입찰 시각" value={formatCompactDate(submission.submittedAt)} />
-          <ConditionItem
-            label="현재 상태"
-            value={submissionStateLabel[submission.state]}
-          />
-        </div>
       </div>
 
-      <div className="sticky bottom-4 z-10 rounded-[24px] border border-white/80 bg-white/95 p-4 shadow-lg backdrop-blur">
+      <div className="sticky bottom-3 z-10 rounded-[20px] border border-white/80 bg-white/95 p-3 shadow-lg backdrop-blur sm:bottom-4 sm:rounded-[24px] sm:p-4">
         <button
-          className="w-full rounded-2xl bg-slate-950 px-4 py-4 text-base font-semibold text-white"
+          className="w-full rounded-2xl bg-slate-950 px-4 py-3.5 text-sm font-semibold text-white sm:py-4 sm:text-base"
           disabled={bidRankQuery.isFetching}
           type="button"
           onClick={() => {
@@ -306,8 +332,10 @@ type ConditionItemProps = {
 function ConditionItem({ label, value }: ConditionItemProps) {
   return (
     <div>
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-2 text-base font-semibold text-slate-950">{value}</p>
+      <p className="text-xs text-slate-500 sm:text-sm">{label}</p>
+      <p className="mt-1 text-sm font-semibold leading-5 text-slate-950 sm:mt-1.5 sm:text-base">
+        {value}
+      </p>
     </div>
   );
 }
