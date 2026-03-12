@@ -71,7 +71,7 @@ export function HomeAuctionListSection({
 
   return (
     <SectionCard
-      title={mode === "favorites" ? "찜한 차량" : "경매 목록"}
+      title={mode === "favorites" ? "찜한 차 목록" : "경매 목록"}
       headerAction={
         <button
           className="inline-flex rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-slate-700 sm:hidden"

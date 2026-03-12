@@ -35,7 +35,7 @@ const modeCopy = {
   },
   favorites: {
     title: "찜한 차",
-    description: "찜한 차량만 모아 현재 상태와 다음 액션을 빠르게 확인합니다.",
+    description: "찜한 차량만 빠르게 모아 보고 상태를 확인합니다.",
     refreshLabel: "찜 상태 즉시 반영",
   },
 } as const;
@@ -262,14 +262,30 @@ export function DealerHomeWorkspace({
           </div>
         </div>
         <div className="mt-3 grid grid-cols-4 gap-2 sm:mt-4">
-            {stats.map((stat) => (
+          {mode === "favorites" ? (
+            <div className="col-span-4 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+              <span>
+                찜한 차량 <strong className="text-slate-950">{summary.favoriteAuctions.toLocaleString("ko-KR")}대</strong>
+              </span>
+              <span className="text-slate-300">|</span>
+              <span>
+                내 입찰 <strong className="text-slate-950">{summary.bidCount.toLocaleString("ko-KR")}건</strong>
+              </span>
+              <span className="text-slate-300">|</span>
+              <span>
+                내 거래 <strong className="text-slate-950">{summary.dealCount.toLocaleString("ko-KR")}건</strong>
+              </span>
+            </div>
+          ) : (
+            stats.map((stat) => (
               <div className="text-center" key={stat.label}>
                 <p className="text-[10px] font-medium text-slate-500 sm:text-[11px]">{stat.label}</p>
                 <p className="mt-1 text-sm font-semibold text-slate-950 sm:text-base">
                   {stat.value}
                 </p>
               </div>
-            ))}
+            ))
+          )}
         </div>
       </header>
 
