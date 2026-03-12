@@ -59,16 +59,17 @@ const sendDealerChatMessageResultSchema = z.array(chatMessageRecordSchema).min(1
 export const DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES = 20 * 1024 * 1024;
 export const DEALER_CHAT_VIDEO_UPLOAD_LIMIT_BYTES = 100 * 1024 * 1024;
 export const DEALER_CHAT_FILE_UPLOAD_LIMIT_BYTES = 20 * 1024 * 1024;
+const signedChatAttachmentUrlCache = new Map<string, { url: string; expiresAt: number }>();
 
 const dealerChatAttachmentSpecMap = {
   jpg: {
     category: "image",
-    mimeTypes: ["image/jpeg"],
+    mimeTypes: ["image/jpeg", "image/jpg"],
     maxSize: DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES,
   },
   jpeg: {
     category: "image",
-    mimeTypes: ["image/jpeg"],
+    mimeTypes: ["image/jpeg", "image/jpg"],
     maxSize: DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES,
   },
   png: {
@@ -88,12 +89,12 @@ const dealerChatAttachmentSpecMap = {
   },
   heic: {
     category: "image",
-    mimeTypes: ["image/heic", "image/heif"],
+    mimeTypes: ["image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence"],
     maxSize: DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES,
   },
   heif: {
     category: "image",
-    mimeTypes: ["image/heif", "image/heic"],
+    mimeTypes: ["image/heif", "image/heic", "image/heif-sequence", "image/heic-sequence"],
     maxSize: DEALER_CHAT_IMAGE_UPLOAD_LIMIT_BYTES,
   },
   mp4: {
@@ -359,7 +360,7 @@ export async function sendDealerChatAttachmentForSession(
     throw new Error("Spring dealer chat backend is not implemented yet.");
   }
 
-  validateDealerChatAttachment({
+  const validatedAttachment = validateDealerChatAttachment({
     fileName: input.fileName,
     mimeType: input.mimeType,
     size: input.size,
@@ -375,14 +376,14 @@ export async function sendDealerChatAttachmentForSession(
     roomId: input.roomId,
     dealId: room.deal_id,
     fileName: input.fileName,
-    mimeType: input.mimeType,
+    mimeType: validatedAttachment.mimeType,
     bytes: input.bytes,
   });
 
   const metadataJson = JSON.stringify({
     name: input.fileName,
     size: input.size,
-    mime: input.mimeType,
+    mime: validatedAttachment.mimeType,
   });
 
   const env = getRequiredSupabaseDataEnv(session);
@@ -726,6 +727,11 @@ async function createSignedChatAttachmentUrl(
     return path;
   }
 
+  const cachedEntry = signedChatAttachmentUrlCache.get(path);
+  if (cachedEntry && cachedEntry.expiresAt - Date.now() > 60 * 1000) {
+    return cachedEntry.url;
+  }
+
   const env = getRequiredSupabaseDataEnv(session);
   const encodedPath = path
     .split("/")
@@ -752,9 +758,14 @@ async function createSignedChatAttachmentUrl(
     "signedURL" in responseJson &&
     typeof responseJson.signedURL === "string"
   ) {
-    return responseJson.signedURL.startsWith("http")
+    const nextUrl = responseJson.signedURL.startsWith("http")
       ? responseJson.signedURL
       : `${env.SUPABASE_URL}/storage/v1${responseJson.signedURL}`;
+    signedChatAttachmentUrlCache.set(path, {
+      url: nextUrl,
+      expiresAt: Date.now() + expiresIn * 1000,
+    });
+    return nextUrl;
   }
 
   return null;
@@ -1063,7 +1074,7 @@ export function validateDealerChatAttachment(input: {
   }
 
   const spec = dealerChatAttachmentSpecMap[extension as keyof typeof dealerChatAttachmentSpecMap];
-  const normalizedMimeType = input.mimeType.trim().toLowerCase();
+  const normalizedMimeType = normalizeAttachmentMimeType(extension, input.mimeType);
 
   if (!normalizedMimeType || !spec.mimeTypes.includes(normalizedMimeType as never)) {
     throw new Error("첨부 파일 형식을 다시 확인해 주세요.");
@@ -1086,6 +1097,46 @@ export function validateDealerChatAttachment(input: {
     extension,
     mimeType: normalizedMimeType,
   };
+}
+
+function normalizeAttachmentMimeType(extension: string, rawMimeType: string) {
+  const normalizedMimeType = rawMimeType.trim().toLowerCase();
+  const canonicalMimeTypeByExtension: Record<string, string> = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    gif: "image/gif",
+    heic: "image/heic",
+    heif: "image/heif",
+    mp4: "video/mp4",
+    mov: "video/quicktime",
+    webm: "video/webm",
+    pdf: "application/pdf",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xls: "application/vnd.ms-excel",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    txt: "text/plain",
+  };
+
+  if (!normalizedMimeType || normalizedMimeType === "application/octet-stream") {
+    return canonicalMimeTypeByExtension[extension] ?? normalizedMimeType;
+  }
+
+  if (normalizedMimeType === "image/heic-sequence") {
+    return "image/heic";
+  }
+
+  if (normalizedMimeType === "image/heif-sequence") {
+    return "image/heif";
+  }
+
+  if (normalizedMimeType === "image/jpg") {
+    return "image/jpeg";
+  }
+
+  return normalizedMimeType;
 }
 
 function getRequiredSupabaseDataEnv(session: DealerSession) {

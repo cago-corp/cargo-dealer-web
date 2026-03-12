@@ -10,5 +10,8 @@ export function useDealerChatRoomListQuery() {
   return useQuery({
     queryKey: dealerChatRoomListQueryKey,
     queryFn: fetchDealerChatRoomList,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }

@@ -965,6 +965,36 @@ type AttachmentPreviewProps = {
   isDealer: boolean;
 };
 
+function logVideoDebugEvent(
+  phase: string,
+  attachment: NonNullable<DealerChatMessage["attachment"]>,
+  event: React.SyntheticEvent<HTMLVideoElement>,
+) {
+  if (process.env.NODE_ENV === "production") {
+    return;
+  }
+
+  const target = event.currentTarget;
+  const mediaError = target.error;
+  const errorCode = mediaError?.code ?? null;
+
+  console.info("[chat-video]", {
+    phase,
+    fileName: attachment.fileName,
+    url: attachment.url,
+    mimeType: attachment.mimeType,
+    readyState: target.readyState,
+    networkState: target.networkState,
+    currentSrc: target.currentSrc,
+    errorCode,
+    errorMessage: mediaError?.message ?? null,
+  });
+}
+
+function getVideoPreviewUrl(url: string) {
+  return url.includes("#") ? url : `${url}#t=0.001`;
+}
+
 function AttachmentPreview({ attachment, isDealer }: AttachmentPreviewProps) {
   if (attachment.kind === "image") {
     return (
@@ -985,9 +1015,38 @@ function AttachmentPreview({ attachment, isDealer }: AttachmentPreviewProps) {
   }
 
   if (attachment.kind === "video") {
+    const videoPreviewUrl = getVideoPreviewUrl(attachment.url);
+
     return (
       <div className="mt-2 overflow-hidden rounded-2xl bg-black">
-        <video className="max-h-72 w-full" controls preload="metadata" src={attachment.url} />
+        <video
+          className="max-h-72 w-full object-contain"
+          controls
+          poster={attachment.thumbnailUrl ?? undefined}
+          playsInline
+          preload="metadata"
+          onAbort={(event) => logVideoDebugEvent("abort", attachment, event)}
+          onCanPlay={(event) => logVideoDebugEvent("canplay", attachment, event)}
+          onError={(event) => logVideoDebugEvent("error", attachment, event)}
+          onLoadStart={(event) => logVideoDebugEvent("loadstart", attachment, event)}
+          onLoadedMetadata={(event) => logVideoDebugEvent("loadedmetadata", attachment, event)}
+          onStalled={(event) => logVideoDebugEvent("stalled", attachment, event)}
+          onSuspend={(event) => logVideoDebugEvent("suspend", attachment, event)}
+          onWaiting={(event) => logVideoDebugEvent("waiting", attachment, event)}
+        >
+          <source
+            src={videoPreviewUrl}
+            type={attachment.mimeType ?? undefined}
+          />
+        </video>
+        <a
+          className="flex items-center justify-end border-t border-white/10 px-3 py-2 text-xs font-medium text-white/80"
+          href={attachment.url}
+          rel="noreferrer"
+          target="_blank"
+        >
+          새 창으로 열기
+        </a>
       </div>
     );
   }

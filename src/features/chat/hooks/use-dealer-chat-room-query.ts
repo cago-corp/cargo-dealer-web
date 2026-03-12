@@ -11,5 +11,8 @@ export function useDealerChatRoomQuery(roomId: string | null) {
     queryKey: roomId ? getDealerChatRoomQueryKey(roomId) : ["dealer-chat-room", "empty"],
     queryFn: () => fetchDealerChatRoom(roomId ?? ""),
     enabled: Boolean(roomId),
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
