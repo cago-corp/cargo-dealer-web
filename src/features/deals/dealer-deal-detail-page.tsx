@@ -59,66 +59,62 @@ export function DealerDealDetailPage({ dealId }: DealerDealDetailPageProps) {
   }
 
   const detail = dealDetailQuery.data;
+  const headerMetadata = [
+    detail.purchaseMethod,
+    detail.deliveryRegion,
+    `최근 업데이트 ${formatDateLabel(detail.updatedAt)}`,
+  ].filter(Boolean);
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-4 sm:space-y-6">
       {showContractUpdatedNotice ? (
-        <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
+        <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 sm:rounded-[28px] sm:px-5 sm:py-4">
           최종 계약이 전송되었습니다. 고객 계약 전까지는 언제든 다시 열어 수정할 수 있습니다.
         </div>
       ) : null}
 
-      <header className="rounded-[32px] border border-white/80 bg-white px-6 py-6 shadow-sm">
+      <header className="rounded-[24px] border border-white/80 bg-white px-4 py-4 shadow-sm sm:rounded-[32px] sm:px-6 sm:py-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-slate-500">{detail.customerName}</p>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-950">
+            <p className="text-xs font-medium text-slate-500 sm:text-sm">{detail.customerName}</p>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">
               {detail.vehicleLabel}
             </h1>
-            <p className="mt-2 text-sm text-slate-600">
-              {detail.purchaseMethod} · {detail.deliveryRegion} · 최근 업데이트{" "}
-              {formatDateLabel(detail.updatedAt)}
+            <p className="mt-1.5 text-sm text-slate-600 sm:mt-2">{headerMetadata.join(" · ")}</p>
+            <p className="mt-1 text-sm text-slate-600">
+              {(detail.vehicleExteriorColorName ?? "외장 무관")} · {(detail.vehicleInteriorColorName ?? "내장 무관")}
             </p>
           </div>
-          <span className="rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white">
+          <span className="rounded-full bg-slate-950 px-3 py-1.5 text-xs font-medium text-white sm:px-4 sm:py-2 sm:text-sm">
             {detail.stage}
           </span>
         </div>
-        <p className="mt-4 text-sm leading-6 text-slate-600">
-          {detail.statusDescription}
-        </p>
       </header>
 
       <div className="space-y-6">
-        <SectionCard
-          title="진행 단계"
-          description="현재 거래 상태와 다음으로 처리해야 할 업무를 바로 확인할 수 있습니다."
-        >
-          <div className="space-y-5">
+        <DetailSection title="진행 단계">
+          <div className="space-y-4 sm:space-y-5">
             <DealerDealStepper statusCode={detail.statusCode} />
             <DealerDealActionPanel detail={detail} />
           </div>
-        </SectionCard>
+        </DetailSection>
 
-        <SectionCard
-          title={`${detail.purchaseMethod} 조건`}
-          description="고객 요청 조건과 현재 제안 내용을 함께 볼 수 있습니다."
-        >
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <Metric label="차량가" value={detail.askingPriceLabel} />
-            <Metric
+        <DetailSection title={`${detail.purchaseMethod} 조건`}>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 md:grid-cols-3 xl:grid-cols-4">
+            <DetailField label="차량가" value={detail.askingPriceLabel} />
+            <DetailField
               label="계약 기간"
               value={detail.contractMonths ? `${detail.contractMonths}개월` : "-"}
             />
-            <Metric
+            <DetailField
               label="선납금"
               value={formatWon(detail.advanceDownPaymentAmount)}
             />
-            <Metric
+            <DetailField
               label="보증금"
               value={formatWon(detail.depositDownPaymentAmount)}
             />
-            <Metric
+            <DetailField
               label="연간 주행거리"
               value={
                 detail.annualMileage
@@ -126,61 +122,71 @@ export function DealerDealDetailPage({ dealId }: DealerDealDetailPageProps) {
                   : "-"
               }
             />
-            <Metric label="고객 구분" value={detail.customerType ?? "-"} />
+            <DetailField label="고객 구분" value={detail.customerType ?? "-"} />
           </div>
-        </SectionCard>
+        </DetailSection>
 
-        <SectionCard
-          title="출고 서비스 및 메모"
-          description="거래 진행 중 필요한 서비스와 전달 메모를 확인하세요."
-        >
-          <div className="space-y-4 rounded-3xl bg-slate-50 p-5">
+        <DetailSection title="출고 서비스 및 메모">
+          <div className="space-y-4">
             {detail.services.length === 0 ? (
               <p className="text-sm text-slate-500">선택된 서비스가 없습니다.</p>
             ) : (
-              detail.services.map((service) => (
-                <div key={service.id}>
-                  <p className="text-sm font-semibold text-slate-950">{service.name}</p>
-                  <p className="mt-1 text-sm text-slate-500">{service.description}</p>
-                </div>
-              ))
+              <div className="grid gap-3 md:grid-cols-2">
+                {detail.services.map((service) => (
+                  <div className="rounded-2xl bg-slate-50 px-4 py-4" key={service.id}>
+                    <p className="text-sm font-semibold text-slate-950">{service.name}</p>
+                    <p className="mt-1 text-sm text-slate-500">{service.description}</p>
+                  </div>
+                ))}
+              </div>
             )}
             <div className="border-t border-slate-200 pt-4">
               <p className="text-sm font-semibold text-slate-950">메모</p>
               <p className="mt-2 text-sm leading-6 text-slate-600">{detail.note}</p>
             </div>
           </div>
-        </SectionCard>
+        </DetailSection>
 
-        <SectionCard
-          title="고객 정보"
-          description="연락과 출고 조율에 필요한 기본 정보를 확인할 수 있습니다."
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            <Metric label="고객명" value={detail.customerName} />
-            <Metric label="연락처" value={detail.customerPhone ?? "-"} />
-            <Metric
-              label="외장 / 내장 컬러"
-              value={`${detail.vehicleExteriorColorName ?? "무관"} / ${detail.vehicleInteriorColorName ?? "무관"}`}
-            />
-            <Metric label="입찰 제출 시각" value={formatDateLabel(detail.submittedAt)} />
+        <DetailSection title="거래 정보">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 md:grid-cols-3 xl:grid-cols-4">
+            <DetailField label="고객명" value={detail.customerName} />
+            <DetailField label="연락처" value={detail.customerPhone ?? "-"} />
+            <DetailField label="외장 컬러" value={detail.vehicleExteriorColorName ?? "무관"} />
+            <DetailField label="내장 컬러" value={detail.vehicleInteriorColorName ?? "무관"} />
+            <DetailField label="입찰 제출 시각" value={formatDateLabel(detail.submittedAt)} />
           </div>
-        </SectionCard>
+        </DetailSection>
       </div>
     </section>
   );
 }
 
-type MetricProps = {
+type DetailSectionProps = {
+  title: string;
+  children: React.ReactNode;
+};
+
+function DetailSection({ title, children }: DetailSectionProps) {
+  return (
+    <section className="rounded-[24px] border border-white/80 bg-white px-4 py-4 shadow-sm sm:rounded-[32px] sm:px-6 sm:py-6">
+      <h2 className="text-lg font-semibold text-slate-950 sm:text-xl">{title}</h2>
+      <div className="mt-4 sm:mt-5">{children}</div>
+    </section>
+  );
+}
+
+type DetailFieldProps = {
   label: string;
   value: string;
 };
 
-function Metric({ label, value }: MetricProps) {
+function DetailField({ label, value }: DetailFieldProps) {
   return (
-    <div className="rounded-2xl bg-slate-50 px-4 py-4">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-2 text-base font-semibold text-slate-950">{value}</p>
+    <div>
+      <p className="text-xs text-slate-500 sm:text-sm">{label}</p>
+      <p className="mt-1 text-sm font-semibold leading-5 text-slate-950 sm:mt-1.5 sm:text-base">
+        {value}
+      </p>
     </div>
   );
 }

@@ -82,41 +82,21 @@ export function DealerDealsPage() {
                 className="rounded-[20px] border border-line bg-white px-4 py-3 shadow-sm sm:rounded-[22px] sm:px-5 sm:py-3.5"
                 key={item.id}
               >
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-medium text-slate-500 sm:text-sm">
-                    {item.customerName}
-                  </p>
-                  <Link
-                    className="mt-0.5 block text-base font-semibold text-slate-950 sm:text-lg"
-                    href={appRoutes.dealDetail(item.id)}
-                  >
-                    {item.vehicleLabel}
-                  </Link>
-                </div>
-
-                <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:mt-2.5 sm:gap-2">
-                  <DealStagePill stage={item.stage} />
-                  <DealMetaPill>{item.purchaseMethod}</DealMetaPill>
-                  <DealMetaPill>{item.deliveryRegion}</DealMetaPill>
-                </div>
-
-                <p className="mt-2 text-sm text-slate-600 sm:mt-2.5">{item.statusDescription}</p>
-
-                <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-xs text-slate-400">
-                      최근 업데이트 {formatUpdatedAt(item.updatedAt)}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-medium text-slate-500 sm:text-sm">
+                      {item.customerName}
                     </p>
                     <Link
-                      className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 sm:text-sm"
+                      className="mt-0.5 block text-base font-semibold text-slate-950 sm:text-lg"
                       href={appRoutes.dealDetail(item.id)}
                     >
-                      상세보기
-                      <span aria-hidden="true">›</span>
+                      {item.vehicleLabel}
                     </Link>
                   </div>
+
                   <button
-                    className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-auto sm:min-w-32 sm:px-5 sm:text-base"
+                    className="inline-flex h-[52px] shrink-0 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300 sm:h-[56px] sm:px-5 sm:text-base"
                     disabled={
                       item.chatRoomId.startsWith("pending:") ||
                       item.stage === "출고 완료"
@@ -126,6 +106,29 @@ export function DealerDealsPage() {
                   >
                     채팅
                   </button>
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 sm:mt-2.5">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <DealStagePill stage={item.stage} />
+                    <DealMetaPill>{item.purchaseMethod}</DealMetaPill>
+                    <DealMetaPill>{item.deliveryRegion}</DealMetaPill>
+                  </div>
+                  <Link
+                    className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 sm:text-sm"
+                    href={appRoutes.dealDetail(item.id)}
+                  >
+                    상세보기
+                    <span aria-hidden="true">›</span>
+                  </Link>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+                  <div className="hidden space-y-1 xl:block">
+                    <p className="text-xs text-slate-400">
+                      최근 업데이트 {formatUpdatedAt(item.updatedAt)}
+                    </p>
+                  </div>
                 </div>
               </article>
             ))}
