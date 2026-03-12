@@ -29,6 +29,7 @@
 html {
   min-height: 100%;
   background: #fafafb;
+  color-scheme: light;
 }
 
 body {

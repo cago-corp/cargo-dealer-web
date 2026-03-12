@@ -71,6 +71,9 @@ Forbidden:
 - Global shell state and feature business state must stay separate.
 - A feature must not depend on another feature's internal implementation.
 - Avoid copying Flutter screen structure 1:1 when web UX needs a different layout.
+- Dealer web is light-mode only.
+- Do not add dark mode variants, theme toggles, or `prefers-color-scheme` behavior
+  unless the user explicitly requests it.
 
 ## Data / State Rules
 
