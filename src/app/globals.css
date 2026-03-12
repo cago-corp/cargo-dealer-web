@@ -3,16 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --surface: 248 250 252;
-  --ink: 15 23 42;
-  --line: 203 213 225;
-  --accent: 13 148 136;
-  --accent-soft: 204 251 241;
-  --success: 22 163 74;
-  --warning: 217 119 6;
+  --surface: 255 255 255;
+  --surface-soft: 243 244 246;
+  --ink: 42 43 47;
+  --ink-soft: 98 102 109;
+  --line: 231 232 236;
+  --line-strong: 213 215 220;
+  --accent: 90 42 235;
+  --accent-strong: 76 34 201;
+  --accent-soft: 245 243 255;
+  --success: 44 182 125;
+  --success-soft: 230 255 243;
+  --warning: 255 183 77;
+  --warning-soft: 255 246 230;
   --background:
-    radial-gradient(circle at top left, rgba(13, 148, 136, 0.12), transparent 32%),
-    linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    radial-gradient(circle at top left, rgba(90, 42, 235, 0.08), transparent 28%),
+    radial-gradient(circle at top right, rgba(168, 150, 255, 0.12), transparent 22%),
+    linear-gradient(180deg, #fafafb 0%, #f3f4f6 100%);
 }
 
 * {
@@ -21,7 +28,7 @@
 
 html {
   min-height: 100%;
-  background: #eef2f7;
+  background: #fafafb;
 }
 
 body {
@@ -29,7 +36,15 @@ body {
   margin: 0;
   color: rgb(var(--ink));
   background: var(--background);
-  font-family: var(--font-sans, "Segoe UI", "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif);
+  font-family:
+    var(--font-pretendard),
+    "Pretendard Variable",
+    "Pretendard",
+    "Apple SD Gothic Neo",
+    "Noto Sans KR",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -45,5 +60,5 @@ select {
 }
 
 ::selection {
-  background: rgba(13, 148, 136, 0.18);
+  background: rgba(90, 42, 235, 0.16);
 }

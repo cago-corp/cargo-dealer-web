@@ -1,5 +1,6 @@
-import { DealerDashboardPage } from "@/features/dashboard/dealer-dashboard-page";
+import { redirect } from "next/navigation";
+import { appRoutes } from "@/shared/config/routes";
 
-export default function DashboardRoutePage() {
-  return <DealerDashboardPage />;
+export default function DashboardLegacyRoutePage() {
+  redirect(appRoutes.home());
 }

@@ -17,6 +17,9 @@ The goal of this file is to make agent behavior predictable:
 This file defines hard rules.
 Detailed examples and workflows live in `docs/`.
 
+Security, validation, and trust-boundary rules are defined in
+`docs/frontend-agent-rules.md` and must be followed for all external input.
+
 ## Core Stack (Approval Required to Change)
 
 - Next.js App Router
@@ -77,6 +80,7 @@ Forbidden:
   and does not belong to the URL or TanStack Query cache.
 - Validate external payloads with Zod at the boundary.
 - Treat API contracts as the source of truth, not Flutter widget behavior.
+- Follow security and runtime validation rules defined in `docs/frontend-agent-rules.md`.
 
 ## Dependency Version Policy
 
@@ -136,6 +140,7 @@ Forbidden:
 - `docs/GIT_WORKFLOW.md`
 - `docs/DEPENDENCY_POLICY.md`
 - `docs/FEATURE_TEMPLATE.md`
+- `docs/frontend-agent-rules.md`
 
 ## Scope
 

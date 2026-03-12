@@ -1,25 +1,21 @@
-import { dealerProfileSchema } from "@/entities/dealer/schemas/dealer-profile-schema";
+import type { DealerProfile } from "@/entities/dealer/schemas/dealer-profile-schema";
 import { SectionCard } from "@/shared/ui/section-card";
 
-const mockDealerProfile = dealerProfileSchema.parse({
-  id: "dealer-001",
-  companyName: "Cargo Auto Lounge",
-  ownerName: "한창훈",
-  approvalStatus: "active",
-  branchCount: 3,
-});
+type DealerProfileSummaryProps = {
+  profile: DealerProfile;
+};
 
-export function DealerProfileSummary() {
+export function DealerProfileSummary({ profile }: DealerProfileSummaryProps) {
+  const approvalStatusLabel =
+    profile.approvalStatus === "active" ? "운영 가능" : "승인 대기";
+
   return (
-    <SectionCard
-      title="딜러 계정 개요"
-      description="entity schema를 통해 profile 경계를 먼저 고정해둔 상태입니다."
-    >
-      <dl className="grid gap-4 md:grid-cols-2">
-        <ProfileRow label="상호명" value={mockDealerProfile.companyName} />
-        <ProfileRow label="대표자" value={mockDealerProfile.ownerName} />
-        <ProfileRow label="승인 상태" value={mockDealerProfile.approvalStatus} />
-        <ProfileRow label="지점 수" value={`${mockDealerProfile.branchCount}개`} />
+    <SectionCard title="딜러 계정 개요">
+      <dl className="divide-y divide-slate-200 rounded-[24px] bg-slate-50 px-5">
+        <ProfileRow label="상호명" value={profile.companyName} />
+        <ProfileRow label="대표자" value={profile.ownerName} />
+        <ProfileRow label="승인 상태" value={approvalStatusLabel} valueTone={profile.approvalStatus} />
+        <ProfileRow label="지점 수" value={`${profile.branchCount}개`} />
       </dl>
     </SectionCard>
   );
@@ -28,13 +24,20 @@ export function DealerProfileSummary() {
 type ProfileRowProps = {
   label: string;
   value: string;
+  valueTone?: DealerProfile["approvalStatus"] | "default";
 };
 
-function ProfileRow({ label, value }: ProfileRowProps) {
+function ProfileRow({ label, value, valueTone = "default" }: ProfileRowProps) {
+  const toneClassName = {
+    default: "text-slate-950",
+    active: "text-emerald-700",
+    pending: "text-amber-700",
+  }[valueTone];
+
   return (
-    <div className="rounded-3xl border border-line bg-white p-5">
+    <div className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between">
       <dt className="text-sm text-slate-500">{label}</dt>
-      <dd className="mt-2 text-lg font-semibold text-slate-950">{value}</dd>
+      <dd className={`text-base font-semibold ${toneClassName}`}>{value}</dd>
     </div>
   );
 }

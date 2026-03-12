@@ -14,6 +14,22 @@
 - web 경로: `/Users/hanchanghun/AndroidStudioProjects/cargo-web`
 - 분석 일자: 2026-03-10
 
+## Web IA 확정 사항
+
+2026-03-10 기준으로 dealer web의 좌측 메인 내비는 다음으로 확정했다.
+
+- `경매장 홈`
+- `찜한 차`
+- `내 입찰`
+- `내 거래`
+- `마이 페이지`
+
+추가 원칙:
+- Flutter `home`의 `전체 / 찜한 차`는 web에서 `경매장 홈 / 찜한 차`로 분리한다.
+- Flutter `quote`의 `내 입찰 / 내 거래`는 web에서 별도 진입으로 분리한다.
+- chat은 좌측 메인 내비에서 제외하고 우측 고정 채팅 레일 + 전용 페이지로 유지한다.
+- dealer 업무 리스트(`경매장 홈`, `찜한 차`, `내 입찰`, `내 거래`)는 web에서 번호형 페이지네이션을 기본으로 하고, 공지처럼 읽기 중심 피드만 무한 스크롤을 유지한다.
+
 ## 1. 최상위 상태 머신
 
 Flutter dealer 앱의 진입 흐름은 단순 로그인 여부가 아니라 다음 상태 전이를 가진다.
@@ -307,11 +323,11 @@ web 이식 시 주의:
 
 web 이식 시 주의:
 - 사용자가 이미 채팅 도크를 원한다고 정했으므로 shell state와 room data를 분리해야 한다.
-- full page `/chat`와 floating dock가 공존하더라도 동일한 room data source를 공유해야 한다.
+- full page `/chat`와 우측 채팅 레일이 공존하더라도 동일한 room data source를 공유해야 한다.
 - file upload, optimistic send, closed-room input lock은 반드시 동일해야 한다.
 
 확정된 web 방향:
-- chat은 protected route 우측 floating dock를 기본 진입점으로 둔다.
+- chat은 protected route 우측 고정 채팅 레일을 기본 진입점으로 둔다.
 - 좌측 메인 navigation에는 chat을 넣지 않는다.
 - `/chat` full-page route는 유지하되 dock CTA와 deal/quote deep link로 진입한다.
 
@@ -404,7 +420,7 @@ web 이식 시 주의:
    - pending approval
 2. home / auction / bid flow
 3. quote dashboard / bid / deal
-4. floating chat dock + full page chat + contract input
+4. 우측 고정 채팅 레일 + full page chat + contract input
 5. mypage 전체
 
 이 순서를 권장하는 이유:
@@ -423,10 +439,10 @@ web 이식 시 주의:
    - 현재 web skeleton은 좌측 shell
    - Flutter는 하단 탭 + 상세 push 구조
    - navigation 위치는 다르더라도 정보 구조와 tab ownership은 같게 가져갈지 확인 필요
-3. floating chat dock 노출 범위
-   - 모든 protected route에 항상 노출
+3. 우측 고정 채팅 레일 노출 범위
+   - 데스크톱 protected route에 항상 노출
    - 좌측 메인 navigation에는 포함하지 않음
-   - wizard, contract input, mypage 세부 화면에서도 항상 떠있을지 여부는 추가 확인 필요
+   - 작은 화면에서는 compact toggle fallback 허용
 4. phone verification / webview 기반 화면
    - 별도 브라우저 팝업
    - in-app page
@@ -452,5 +468,5 @@ web 이식 시 주의:
 1. auth route를 Flutter 상태 머신에 맞춰 세분화
 2. `/home` route와 `전체/찜한 차` 탭 구조를 Flutter 기준으로 재구성
 3. `/quote`를 dashboard + `내 입찰/내 거래` 탭 구조로 교체
-4. floating chat dock를 실제 chat list data와 연결
+4. 우측 고정 채팅 레일을 실제 chat list data와 연결
 5. 누락 screen을 체크리스트로 분할해 순차 이식

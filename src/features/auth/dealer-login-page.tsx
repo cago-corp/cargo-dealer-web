@@ -1,64 +1,83 @@
 import Link from "next/link";
+import Image from "next/image";
+import { DealerAuthVisualPanel } from "@/features/auth/components/dealer-auth-visual-panel";
 import { DealerLoginForm } from "@/features/auth/components/dealer-login-form";
+import { DealerAuthScaffold } from "@/features/auth/dealer-auth-scaffold";
+import { appRoutes } from "@/shared/config/routes";
+import { SiteFooter } from "@/shared/ui/site-footer";
 
 export function DealerLoginPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-10">
-      <section className="grid w-full gap-10 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-[32px] border border-white/60 bg-slate-950 px-8 py-10 text-white shadow-panel">
-          <p className="text-sm uppercase tracking-[0.3em] text-teal-300">
-            Cargo Dealer
-          </p>
-          <h1 className="mt-6 max-w-xl text-4xl font-semibold leading-tight">
-            Flutter dealer 앱 기능을 웹 워크플로우 기준으로 다시 조립하는 시작점
-          </h1>
-          <p className="mt-4 max-w-2xl text-base text-slate-300">
-            로그인 이후 대시보드, 견적, 채팅, 마이페이지 흐름을 App Router 기준으로
-            분리해 확장할 수 있도록 최소 골격을 먼저 준비했습니다.
-          </p>
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            <FeatureMarker label="Dashboard" description="홈/운영 요약" />
-            <FeatureMarker label="Quotes" description="입찰/거래 흐름" />
-            <FeatureMarker label="Chat" description="페이지 또는 도크 확장" />
+    <DealerAuthScaffold
+      fullBleed
+      mainClassName="px-0 py-0"
+      footerContainerClassName="max-w-6xl"
+      showFooter={false}
+    >
+      <section className="relative min-h-screen w-full flex-1 overflow-hidden bg-[linear-gradient(180deg,#6d28d9_0%,#5b21b6_42%,#4c1d95_100%)] lg:grid lg:bg-slate-100 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_42%)] lg:hidden" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 lg:hidden">
+          <div className="relative mx-auto aspect-[1.72/1] w-[110%] max-w-none">
+            <Image
+              alt="CARGO 로그인 차량 이미지"
+              className="absolute -bottom-20 left-1/2 h-auto w-[105%] max-w-none -translate-x-1/2 object-contain object-bottom sm:-bottom-24 md:-bottom-28"
+              height={1088}
+              priority
+              src="/images/dealer-login-hero.png"
+              width={1560}
+            />
           </div>
         </div>
-        <div className="rounded-[32px] border border-white/70 bg-white/90 p-8 shadow-panel backdrop-blur">
-          <p className="text-sm font-medium text-slate-500">Dealer Sign In</p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-            초기 로그인 연동
-          </h2>
-          <p className="mt-3 text-sm text-slate-600">
-            현재 로그인은 `shared/auth`의 backend adapter 뒤에서 동작합니다.
-            Flutter dealer 앱의 Supabase 연결 정보를 재사용하되, 이후 Spring 전환 시
-            feature UI와 route shell은 그대로 두고 adapter만 교체할 수 있게
-            분리했습니다.
-          </p>
-          <div className="mt-8">
-            <DealerLoginForm />
+
+        <div className="hidden lg:block">
+          <DealerAuthVisualPanel />
+        </div>
+
+        <div className="relative z-10 flex min-h-screen w-full flex-col bg-transparent lg:bg-slate-100">
+          <div className="flex flex-1 items-center justify-center px-5 pb-10 pt-8 sm:px-6 sm:pt-10 md:px-8 md:pt-12 lg:px-12 lg:pt-10 2xl:px-16">
+            <div className="mx-auto w-full max-w-[560px]">
+              <div className="mb-6 text-center text-white lg:hidden">
+                <Image
+                  alt="CARGO 로고"
+                  className="mx-auto h-auto w-[168px] drop-shadow-[0_10px_18px_rgba(15,23,42,0.18)] sm:w-[180px]"
+                  height={178}
+                  priority
+                  src="/images/dealer-login-logo.png"
+                  width={623}
+                />
+                <p className="mx-auto mt-5 max-w-[420px] text-xl font-semibold leading-[1.45] tracking-[-0.02em] text-white sm:text-2xl">
+                  우리는 오직 견적만으로 싸운다.
+                  <br />
+                  대체 불가능한 조건으로 시장을 선점하라!
+                </p>
+              </div>
+
+              <div className="rounded-[32px] border border-white/80 bg-white p-7 shadow-panel sm:p-8 lg:border-white/70 lg:bg-white/92">
+                <p className="text-sm font-medium text-slate-500">딜러 계정 로그인</p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+                  로그인
+                </h2>
+                <p className="mt-3 text-sm text-slate-600">
+                  등록된 딜러 계정으로 로그인하고 현재 진행 중인 경매와 거래를 확인하세요.
+                </p>
+                <div className="mt-8">
+                  <DealerLoginForm />
+                </div>
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
+                  <p>승인 완료 계정은 로그인 후 바로 경매장 홈으로 이동합니다.</p>
+                  <Link
+                    className="font-medium text-slate-700 underline-offset-4 hover:underline"
+                    href={appRoutes.signupTerms()}
+                  >
+                    회원가입 시작
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
-          <p className="mt-6 text-sm text-slate-500">
-            참고 라우트:
-            {" "}
-            <Link className="font-medium text-teal-700" href="/dashboard">
-              /dashboard
-            </Link>
-          </p>
+          <SiteFooter containerClassName="max-w-full" />
         </div>
       </section>
-    </main>
-  );
-}
-
-type FeatureMarkerProps = {
-  label: string;
-  description: string;
-};
-
-function FeatureMarker({ label, description }: FeatureMarkerProps) {
-  return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-      <p className="text-sm font-semibold">{label}</p>
-      <p className="mt-2 text-sm text-slate-300">{description}</p>
-    </div>
+    </DealerAuthScaffold>
   );
 }
