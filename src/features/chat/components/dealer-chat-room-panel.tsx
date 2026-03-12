@@ -314,6 +314,16 @@ export function DealerChatRoomPanel({
     container.scrollTop = container.scrollHeight;
   }, []);
 
+  const handleMediaReady = useCallback(() => {
+    if (!shouldStickToBottomRef.current) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      scrollMessagesToBottom();
+    });
+  }, [scrollMessagesToBottom]);
+
   useEffect(() => {
     const element = messagesContainerRef.current;
 
@@ -724,6 +734,7 @@ export function DealerChatRoomPanel({
             ? "min-h-0 flex-1 overflow-y-auto px-5 py-5"
             : "min-h-0 flex-1 overflow-y-auto px-6 py-6"
         }
+        style={{ overflowAnchor: "none" }}
       >
         <div className="space-y-3" ref={messagesContentRef}>
           {room.messages.map((message) => (
@@ -734,6 +745,7 @@ export function DealerChatRoomPanel({
               })}
               detailHref={appRoutes.dealDetail(room.dealId)}
               key={message.id}
+              onMediaReady={handleMediaReady}
               message={message}
               room={room}
             />
@@ -902,10 +914,17 @@ type MessageBubbleProps = {
   contractHref: string;
   detailHref: string;
   message: DealerChatMessage;
+  onMediaReady: () => void;
   room: Pick<DealerChatRoom, "dealId" | "id" | "vehicleLabel">;
 };
 
-function MessageBubble({ message, room, contractHref, detailHref }: MessageBubbleProps) {
+function MessageBubble({
+  message,
+  room,
+  contractHref,
+  detailHref,
+  onMediaReady,
+}: MessageBubbleProps) {
   if (message.senderRole === "system") {
     return (
       <div className="flex justify-center">
@@ -917,6 +936,7 @@ function MessageBubble({ message, room, contractHref, detailHref }: MessageBubbl
   }
 
   const isDealer = message.senderRole === "dealer";
+  const bubbleWidthClass = message.attachment ? "w-[70%] max-w-[70%]" : "max-w-[82%]";
 
   if (message.kind === "custom" && message.customPayload) {
     return (
@@ -936,8 +956,8 @@ function MessageBubble({ message, room, contractHref, detailHref }: MessageBubbl
       <div
         className={
           isDealer
-            ? "max-w-[82%] rounded-[24px] rounded-br-md bg-slate-950 px-4 py-3 text-sm text-white"
-            : "max-w-[82%] rounded-[24px] rounded-bl-md bg-slate-100 px-4 py-3 text-sm text-slate-800"
+            ? `${bubbleWidthClass} rounded-[24px] rounded-br-md bg-slate-950 px-4 py-3 text-sm text-white`
+            : `${bubbleWidthClass} rounded-[24px] rounded-bl-md bg-slate-100 px-4 py-3 text-sm text-slate-800`
         }
       >
         {(message.kind === "text" || message.kind === "system") && message.body ? (
@@ -945,7 +965,11 @@ function MessageBubble({ message, room, contractHref, detailHref }: MessageBubbl
         ) : null}
 
         {message.attachment ? (
-          <AttachmentPreview attachment={message.attachment} isDealer={isDealer} />
+          <AttachmentPreview
+            attachment={message.attachment}
+            isDealer={isDealer}
+            onMediaReady={onMediaReady}
+          />
         ) : null}
 
         <p
@@ -963,6 +987,7 @@ function MessageBubble({ message, room, contractHref, detailHref }: MessageBubbl
 type AttachmentPreviewProps = {
   attachment: NonNullable<DealerChatMessage["attachment"]>;
   isDealer: boolean;
+  onMediaReady: () => void;
 };
 
 function logVideoDebugEvent(
@@ -995,50 +1020,139 @@ function getVideoPreviewUrl(url: string) {
   return url.includes("#") ? url : `${url}#t=0.001`;
 }
 
-function AttachmentPreview({ attachment, isDealer }: AttachmentPreviewProps) {
+function getAspectRatio(width: number, height: number, fallback: string) {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return fallback;
+  }
+
+  return `${width} / ${height}`;
+}
+
+function AttachmentPreview({ attachment, isDealer, onMediaReady }: AttachmentPreviewProps) {
+  const [imageAspectRatio, setImageAspectRatio] = useState("4 / 3");
+  const [videoAspectRatio, setVideoAspectRatio] = useState("16 / 9");
+  const [canInlinePlayVideo, setCanInlinePlayVideo] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (attachment.kind !== "video") {
+      setCanInlinePlayVideo(null);
+      return;
+    }
+
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const video = document.createElement("video");
+    const mimeType = attachment.mimeType ?? "";
+    const supportLevel = mimeType ? video.canPlayType(mimeType) : "maybe";
+
+    setCanInlinePlayVideo(Boolean(supportLevel));
+  }, [attachment.kind, attachment.mimeType]);
+
   if (attachment.kind === "image") {
     return (
       <a
-        className="mt-2 inline-flex max-w-[70%] overflow-hidden rounded-2xl bg-slate-50"
+        className="mt-2 block w-full overflow-hidden rounded-2xl bg-slate-50"
         href={attachment.url}
         rel="noreferrer"
         target="_blank"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          alt={attachment.fileName ?? "첨부 이미지"}
-          className="block max-h-[360px] w-auto max-w-full object-contain"
-          src={attachment.url}
-        />
+        <div
+          className="relative w-full bg-slate-100"
+          style={{ aspectRatio: imageAspectRatio }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt={attachment.fileName ?? "첨부 이미지"}
+            className="absolute inset-0 h-full w-full object-contain"
+            loading="lazy"
+            src={attachment.url}
+            onLoad={(event) => {
+              setImageAspectRatio(
+                getAspectRatio(
+                  event.currentTarget.naturalWidth,
+                  event.currentTarget.naturalHeight,
+                  "4 / 3",
+                ),
+              );
+              onMediaReady();
+            }}
+          />
+        </div>
       </a>
     );
   }
 
   if (attachment.kind === "video") {
+    if (canInlinePlayVideo === false) {
+      return (
+        <a
+          className={
+            isDealer
+              ? "mt-2 flex items-center gap-3 rounded-2xl bg-white/10 px-3 py-3"
+              : "mt-2 flex items-center gap-3 rounded-2xl bg-white px-3 py-3"
+          }
+          href={attachment.url}
+          rel="noreferrer"
+          target="_blank"
+        >
+          <span className="text-lg">▶</span>
+          <span className="min-w-0">
+            <span className="block truncate font-medium">
+              {attachment.fileName ?? "동영상 파일"}
+            </span>
+            <span className={isDealer ? "text-xs text-slate-300" : "text-xs text-slate-500"}>
+              브라우저 미리보기 제한 · 새 창으로 열기
+            </span>
+          </span>
+        </a>
+      );
+    }
+
     const videoPreviewUrl = getVideoPreviewUrl(attachment.url);
 
     return (
-      <div className="mt-2 overflow-hidden rounded-2xl bg-black">
-        <video
-          className="max-h-72 w-full object-contain"
-          controls
-          poster={attachment.thumbnailUrl ?? undefined}
-          playsInline
-          preload="metadata"
-          onAbort={(event) => logVideoDebugEvent("abort", attachment, event)}
-          onCanPlay={(event) => logVideoDebugEvent("canplay", attachment, event)}
-          onError={(event) => logVideoDebugEvent("error", attachment, event)}
-          onLoadStart={(event) => logVideoDebugEvent("loadstart", attachment, event)}
-          onLoadedMetadata={(event) => logVideoDebugEvent("loadedmetadata", attachment, event)}
-          onStalled={(event) => logVideoDebugEvent("stalled", attachment, event)}
-          onSuspend={(event) => logVideoDebugEvent("suspend", attachment, event)}
-          onWaiting={(event) => logVideoDebugEvent("waiting", attachment, event)}
+      <div className="mt-2 w-full overflow-hidden rounded-2xl bg-black">
+        <div
+          className="relative w-full bg-black"
+          style={{ aspectRatio: videoAspectRatio }}
         >
-          <source
-            src={videoPreviewUrl}
-            type={attachment.mimeType ?? undefined}
-          />
-        </video>
+          <video
+            className="absolute inset-0 h-full w-full object-contain"
+            controls
+            poster={attachment.thumbnailUrl ?? undefined}
+            playsInline
+            preload="metadata"
+            onAbort={(event) => logVideoDebugEvent("abort", attachment, event)}
+            onCanPlay={(event) => {
+              logVideoDebugEvent("canplay", attachment, event);
+              onMediaReady();
+            }}
+            onError={(event) => logVideoDebugEvent("error", attachment, event)}
+            onLoadStart={(event) => logVideoDebugEvent("loadstart", attachment, event)}
+            onLoadedData={onMediaReady}
+            onLoadedMetadata={(event) => {
+              logVideoDebugEvent("loadedmetadata", attachment, event);
+              setVideoAspectRatio(
+                getAspectRatio(
+                  event.currentTarget.videoWidth,
+                  event.currentTarget.videoHeight,
+                  "16 / 9",
+                ),
+              );
+              onMediaReady();
+            }}
+            onStalled={(event) => logVideoDebugEvent("stalled", attachment, event)}
+            onSuspend={(event) => logVideoDebugEvent("suspend", attachment, event)}
+            onWaiting={(event) => logVideoDebugEvent("waiting", attachment, event)}
+          >
+            <source
+              src={videoPreviewUrl}
+              type={attachment.mimeType ?? undefined}
+            />
+          </video>
+        </div>
         <a
           className="flex items-center justify-end border-t border-white/10 px-3 py-2 text-xs font-medium text-white/80"
           href={attachment.url}
