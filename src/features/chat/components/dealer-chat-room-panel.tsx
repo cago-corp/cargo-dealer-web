@@ -556,7 +556,7 @@ export function DealerChatRoomPanel({
           {allowPopout ? (
             <button
               aria-label="새 창으로 보기"
-              className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               title="새 창으로 보기"
               type="button"
               onClick={() => openChatPopout(room.id)}

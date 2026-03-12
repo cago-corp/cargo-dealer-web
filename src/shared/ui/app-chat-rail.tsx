@@ -95,7 +95,7 @@ function ChatRailContent() {
           </span>
           <button
             aria-label="새 창으로 보기"
-            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             title="새 창으로 보기"
             type="button"
             onClick={() => {
@@ -176,25 +176,18 @@ export function AppChatRail() {
 
       <div className="pointer-events-none fixed bottom-6 right-6 z-50 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-3 xl:hidden">
         {isCompactOpen ? (
-          <section className="pointer-events-auto w-[320px] rounded-[28px] border border-slate-200/80 bg-white/96 p-4 shadow-2xl backdrop-blur">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-700">
-                  Live Chat
-                </p>
-                <h2 className="mt-1 text-lg font-semibold text-slate-950">
-                  채팅 열기
-                </h2>
-              </div>
-              <button
-                className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-600"
-                type="button"
-                onClick={closeCompact}
-              >
-                닫기
-              </button>
+          <button
+            aria-label="채팅 닫기"
+            className="pointer-events-auto fixed inset-0 z-0 bg-slate-950/50"
+            type="button"
+            onClick={closeCompact}
+          />
+        ) : null}
+        {isCompactOpen ? (
+          <section className="pointer-events-auto fixed right-0 top-0 z-10 flex h-full w-[90vw] flex-col overflow-hidden border-l border-slate-200/90 bg-white p-3 shadow-2xl sm:w-[min(88vw,560px)] sm:p-4">
+            <div className="min-h-0 flex-1 overflow-hidden bg-white">
+              <ChatRailContent />
             </div>
-            <ChatRailContent />
           </section>
         ) : null}
 
