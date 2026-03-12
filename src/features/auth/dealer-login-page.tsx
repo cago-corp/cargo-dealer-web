@@ -16,26 +16,14 @@ export function DealerLoginPage() {
     >
       <section className="relative min-h-screen w-full flex-1 overflow-hidden bg-[linear-gradient(180deg,#6d28d9_0%,#5b21b6_42%,#4c1d95_100%)] lg:grid lg:bg-slate-100 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_42%)] lg:hidden" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 lg:hidden">
-          <div className="relative mx-auto aspect-[1.72/1] w-[110%] max-w-none">
-            <Image
-              alt="CARGO 로그인 차량 이미지"
-              className="absolute -bottom-20 left-1/2 h-auto w-[105%] max-w-none -translate-x-1/2 object-contain object-bottom sm:-bottom-24 md:-bottom-28"
-              height={1088}
-              priority
-              src="/images/dealer-login-hero.png"
-              width={1560}
-            />
-          </div>
-        </div>
 
         <div className="hidden lg:block">
           <DealerAuthVisualPanel />
         </div>
 
         <div className="relative z-10 flex min-h-screen w-full flex-col bg-transparent lg:bg-slate-100">
-          <div className="flex flex-1 items-center justify-center px-5 pb-10 pt-8 sm:px-6 sm:pt-10 md:px-8 md:pt-12 lg:px-12 lg:pt-10 2xl:px-16">
-            <div className="mx-auto w-full max-w-[560px]">
+          <div className="relative flex flex-1 items-center justify-center px-5 pb-28 pt-8 sm:px-6 sm:pb-32 sm:pt-10 md:px-8 md:pt-12 lg:px-12 lg:pb-10 lg:pt-10 2xl:px-16">
+            <div className="relative z-10 mx-auto w-full max-w-[560px]">
               <div className="mb-6 text-center text-white lg:hidden">
                 <Image
                   alt="CARGO 로고"
@@ -74,8 +62,22 @@ export function DealerLoginPage() {
                 </div>
               </div>
             </div>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 lg:hidden">
+              <div className="relative mx-auto aspect-[1.72/1] w-[112%] max-w-none">
+                <Image
+                  alt="CARGO 로그인 차량 이미지"
+                  className="absolute -bottom-6 left-1/2 h-auto w-[104%] max-w-none -translate-x-1/2 object-contain object-bottom sm:-bottom-10"
+                  height={1088}
+                  priority
+                  src="/images/dealer-login-hero.png"
+                  width={1560}
+                />
+              </div>
+            </div>
           </div>
-          <SiteFooter containerClassName="max-w-full" />
+          <div className="relative z-10">
+            <SiteFooter containerClassName="max-w-full" />
+          </div>
         </div>
       </section>
     </DealerAuthScaffold>

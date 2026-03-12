@@ -35,7 +35,7 @@ const modeCopy = {
   },
   favorites: {
     title: "찜한 차",
-    description: "찜한 차량만 모아 현재 상태와 다음 액션을 빠르게 확인합니다.",
+    description: "찜한 차량만 빠르게 모아 보고 상태를 확인합니다.",
     refreshLabel: "찜 상태 즉시 반영",
   },
 } as const;
@@ -237,47 +237,55 @@ export function DealerHomeWorkspace({
   }
 
   return (
-    <section className="space-y-4">
-      <header className="rounded-[28px] border border-line bg-white/90 px-5 py-5 shadow-sm">
-        <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-start 2xl:justify-between">
+    <section className="space-y-3 sm:space-y-4">
+      <header className="rounded-[24px] border border-line bg-white/90 px-4 py-3 shadow-sm sm:rounded-[28px] sm:px-5 sm:py-5">
+        <div className="flex items-start justify-between gap-3 sm:items-center 2xl:items-start">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-950">{copy.title}</h1>
-            <p className="mt-2 text-sm text-slate-600">{copy.description}</p>
+            <h1 className="text-lg font-semibold text-slate-950 sm:text-2xl">{copy.title}</h1>
+            <p className="mt-1.5 hidden text-sm text-slate-600 sm:mt-2 sm:block">{copy.description}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs">
+          <div className="flex shrink-0 items-center gap-2.5 text-[10px] text-slate-500 sm:gap-4 sm:text-xs">
             {mode === "home" ? (
               <button
-                className="group inline-flex items-center gap-2 rounded-full bg-slate-950 px-3 py-1.5 font-medium text-white transition hover:bg-slate-800"
+                aria-label={copy.refreshLabel}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-line bg-slate-950 text-sm text-white transition hover:bg-slate-800"
                 type="button"
                 onClick={handleRefreshNow}
               >
-                <span>{refreshCountdown}초 후 새로고침</span>
-                <span className="text-[11px] opacity-0 transition group-hover:opacity-100">
-                  ↻
-                </span>
+                ↻
               </button>
             ) : (
-              <span className="rounded-full bg-slate-950 px-3 py-1.5 font-medium text-white">
-                {copy.refreshLabel}
-              </span>
+              <span className="font-medium text-slate-600">{copy.refreshLabel}</span>
             )}
-            <span className="rounded-full border border-line bg-slate-50 px-3 py-1.5 text-slate-600">
-              마지막 갱신 {formatUpdatedAt(dataUpdatedAt)}
-            </span>
-            <span className="rounded-full border border-line bg-slate-50 px-3 py-1.5 text-slate-600">
-              정렬 최신순
-            </span>
+            <span>갱신 {formatUpdatedAt(dataUpdatedAt)}</span>
+            <span>정렬 최신순</span>
           </div>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
-          {stats.map((stat) => (
-            <div className="rounded-2xl bg-slate-50 px-4 py-3" key={stat.label}>
-              <p className="text-xs font-medium text-slate-500">{stat.label}</p>
-              <p className="mt-2 text-lg font-semibold text-slate-950">
-                {stat.value}
-              </p>
+        <div className="mt-3 grid grid-cols-4 gap-2 sm:mt-4">
+          {mode === "favorites" ? (
+            <div className="col-span-4 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+              <span>
+                찜한 차량 <strong className="text-slate-950">{summary.favoriteAuctions.toLocaleString("ko-KR")}대</strong>
+              </span>
+              <span className="text-slate-300">|</span>
+              <span>
+                내 입찰 <strong className="text-slate-950">{summary.bidCount.toLocaleString("ko-KR")}건</strong>
+              </span>
+              <span className="text-slate-300">|</span>
+              <span>
+                내 거래 <strong className="text-slate-950">{summary.dealCount.toLocaleString("ko-KR")}건</strong>
+              </span>
             </div>
-          ))}
+          ) : (
+            stats.map((stat) => (
+              <div className="text-center" key={stat.label}>
+                <p className="text-[10px] font-medium text-slate-500 sm:text-[11px]">{stat.label}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-950 sm:text-base">
+                  {stat.value}
+                </p>
+              </div>
+            ))
+          )}
         </div>
       </header>
 
@@ -309,9 +317,6 @@ export function DealerHomeWorkspace({
         }}
         onSearchInputChange={setSearchInput}
         onSearchSubmit={handleSearchSubmit}
-        onSortToggle={() => {
-          setPendingMessage("정렬 기능은 준비 중입니다.");
-        }}
       />
     </section>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { DealerAuctionDetail } from "@/entities/auction/schemas/dealer-auction-detail-schema";
@@ -195,6 +195,8 @@ export function DealerAuctionDetailPage({
   auctionId,
 }: DealerAuctionDetailPageProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [isInlineActionVisible, setIsInlineActionVisible] = useState(false);
+  const actionAnchorRef = useRef<HTMLDivElement | null>(null);
   const queryClient = useQueryClient();
   const detailQueryKey = getDealerBidDetailQueryKey(auctionId);
   const auctionDetailQueryKey = getDealerAuctionDetailQueryKey(auctionId);
@@ -207,6 +209,31 @@ export function DealerAuctionDetailPage({
       setIsMounted(false);
     };
   }, []);
+
+  useEffect(() => {
+    const anchor = actionAnchorRef.current;
+
+    if (!anchor || !isMounted) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInlineActionVisible(entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: "0px 0px -140px 0px",
+        threshold: 0,
+      },
+    );
+
+    observer.observe(anchor);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isMounted]);
 
   const favoriteMutation = useMutation({
     mutationFn: toggleDealerAuctionFavoriteFromApi,
@@ -247,7 +274,7 @@ export function DealerAuctionDetailPage({
         </div>
         <div className="grid gap-5 xl:grid-cols-2">
           <div className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-sm">
-            <div className="aspect-square animate-pulse bg-slate-100" />
+            <div className="aspect-[6/5] animate-pulse bg-slate-100" />
           </div>
           <div className="rounded-[32px] border border-white/80 bg-white px-5 py-5 shadow-sm md:px-6 md:py-6">
             <div className="space-y-4">
@@ -280,38 +307,42 @@ export function DealerAuctionDetailPage({
   const conditionEntries = buildConditionEntries(auction);
   const auctionInfoEntries = buildAuctionInfoEntries(auction);
   const vehicleLabel = `${auction.modelName} ${auction.trimName}`.trim();
-  const primaryActionBar = (
-    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
-      <div className="pointer-events-auto w-full max-w-[980px] rounded-[28px] border-2 border-line bg-white/95 p-4 shadow-[0_14px_36px_rgba(15,23,42,0.12)] backdrop-blur">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-950">{primaryAction.label}</p>
-            <p className="mt-1 text-xs text-slate-500">{primaryAction.description}</p>
-          </div>
-
-          {primaryAction.disabled ? (
-            <button
-              className="min-h-12 rounded-2xl bg-slate-200 px-5 text-sm font-semibold text-slate-500"
-              disabled
-              type="button"
-            >
-              {primaryAction.label}
-            </button>
-          ) : (
-            <Link
-              className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-violet-700 px-6 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition hover:bg-violet-800"
-              href={primaryAction.href}
-            >
-              {primaryAction.label}
-            </Link>
-          )}
+  const primaryActionCard = (
+    <div className="pointer-events-auto w-full max-w-[980px] rounded-[28px] border-2 border-line bg-white/95 p-4 shadow-[0_14px_36px_rgba(15,23,42,0.12)] backdrop-blur">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-950">{primaryAction.label}</p>
+          <p className="mt-1 text-xs text-slate-500">{primaryAction.description}</p>
         </div>
+
+        {primaryAction.disabled ? (
+          <button
+            className="min-h-12 rounded-2xl bg-slate-200 px-5 text-sm font-semibold text-slate-500"
+            disabled
+            type="button"
+          >
+            {primaryAction.label}
+          </button>
+        ) : (
+          <Link
+            className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-violet-700 px-6 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition hover:bg-violet-800"
+            href={primaryAction.href}
+          >
+            {primaryAction.label}
+          </Link>
+        )}
       </div>
     </div>
   );
 
+  const primaryActionBar = (
+    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
+      {primaryActionCard}
+    </div>
+  );
+
   return (
-    <section className="mx-auto max-w-[980px] space-y-5 pb-36">
+    <section className="mx-auto max-w-[980px] space-y-5 pb-4 sm:pb-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           className="inline-flex min-h-10 items-center rounded-2xl border border-line px-4 text-sm font-medium text-slate-700"
@@ -329,9 +360,9 @@ export function DealerAuctionDetailPage({
         </button>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         <section className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-sm">
-          <div className="relative aspect-square bg-white">
+          <div className="relative aspect-[6/5] bg-white">
             <CachedImage
               alt={`${auction.brandName} ${vehicleLabel}`}
               className="object-contain"
@@ -347,7 +378,7 @@ export function DealerAuctionDetailPage({
           </div>
         </section>
 
-        <section className="rounded-[32px] border border-white/80 bg-white px-5 py-5 shadow-sm md:px-6 md:py-6">
+        <section className="flex h-full flex-col justify-between rounded-[32px] border border-white/80 bg-white px-4 py-4 shadow-sm md:px-5 md:py-5">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <span className="inline-flex items-center gap-2 font-semibold text-violet-700">
               <span className="h-2 w-2 rounded-full bg-violet-600" />
@@ -362,7 +393,7 @@ export function DealerAuctionDetailPage({
             </span>
           </div>
 
-          <div className="mt-5 flex items-center gap-2 text-sm text-slate-600">
+          <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
             <div className="relative h-6 w-6 overflow-hidden rounded-full bg-slate-100">
               <CachedImage
                 alt={auction.brandName}
@@ -384,10 +415,10 @@ export function DealerAuctionDetailPage({
           </h1>
 
           {headerMetadata.length > 0 ? (
-            <p className="mt-2 text-sm text-slate-600">{headerMetadata.join(" · ")}</p>
+            <p className="mt-1.5 text-sm text-slate-600">{headerMetadata.join(" · ")}</p>
           ) : null}
 
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             <span
               className={`rounded-md px-2 py-1 text-xs font-semibold ${purchaseMethodTone[auction.purchaseMethod]}`}
             >
@@ -406,7 +437,7 @@ export function DealerAuctionDetailPage({
       </div>
 
       <DetailSection title={`${auction.purchaseMethod} 조건`}>
-        <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3 md:grid-cols-3 xl:grid-cols-4">
           {conditionEntries.map((entry) => (
             <DetailField key={entry.label} label={entry.label} value={entry.value ?? "-"} />
           ))}
@@ -425,7 +456,7 @@ export function DealerAuctionDetailPage({
       </DetailSection>
 
       <DetailSection title="경매 정보">
-        <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3 md:grid-cols-3 xl:grid-cols-4">
           {auctionInfoEntries.map((entry) => (
             <DetailField key={entry.label} label={entry.label} value={entry.value ?? "-"} />
           ))}
@@ -439,7 +470,9 @@ export function DealerAuctionDetailPage({
           </div>
         </DetailSection>
       ) : null}
-      {isMounted ? createPortal(primaryActionBar, document.body) : null}
+      <div className="h-px w-full" ref={actionAnchorRef} />
+      {isInlineActionVisible ? primaryActionCard : null}
+      {isMounted && !isInlineActionVisible ? createPortal(primaryActionBar, document.body) : null}
     </section>
   );
 }
@@ -451,9 +484,9 @@ type DetailSectionProps = {
 
 function DetailSection({ children, title }: DetailSectionProps) {
   return (
-    <section className="rounded-[28px] border border-white/80 bg-white px-5 py-5 shadow-sm md:px-6 md:py-6">
+    <section className="rounded-[28px] border border-white/80 bg-white px-4 py-4 shadow-sm md:px-5 md:py-5">
       <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
-      <div className="mt-5">{children}</div>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
@@ -465,9 +498,11 @@ type DetailFieldProps = {
 
 function DetailField({ label, value }: DetailFieldProps) {
   return (
-    <div>
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-base font-semibold text-slate-950">{value}</p>
+    <div className="min-w-0">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-1 line-clamp-2 break-words text-sm font-semibold leading-5 text-slate-950 sm:text-[15px]">
+        {value}
+      </p>
     </div>
   );
 }

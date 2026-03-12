@@ -6,7 +6,6 @@ import { useDealerBidListQuery } from "@/features/bids/hooks/use-dealer-bid-list
 import { appRoutes } from "@/shared/config/routes";
 import { formatRemainingTime } from "@/shared/lib/format/format-remaining-time";
 import { PaginationControls } from "@/shared/ui/pagination-controls";
-import { SectionCard } from "@/shared/ui/section-card";
 
 const BID_PAGE_SIZE = 10;
 
@@ -40,27 +39,27 @@ export function DealerBidsPage() {
   };
 
   return (
-    <section className="space-y-6">
-      <header className="space-y-1">
-        <p className="text-sm font-medium uppercase tracking-[0.2em] text-teal-700">
-          Bids
-        </p>
-        <h1 className="text-3xl font-semibold text-slate-950">내 입찰</h1>
-      </header>
-
-      <SectionCard title="입찰 대시보드">
-        <div className="grid gap-4 md:grid-cols-2">
-          <DashboardTile label="입찰 진행" value={summary.bidding} />
-          <DashboardTile label="거래 진행" value={summary.contractPending} />
+    <section className="space-y-4 sm:space-y-6">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-lg font-semibold text-slate-950 sm:text-xl">내 입찰</h1>
         </div>
-      </SectionCard>
+        <div className="flex items-center gap-4 text-sm text-slate-600">
+          <InlineSummaryItem label="입찰 진행" value={summary.bidding} />
+          <span className="text-slate-300">|</span>
+          <InlineSummaryItem label="거래 진행" value={summary.contractPending} />
+        </div>
+      </section>
 
-      <SectionCard title="내 입찰 목록">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-950 sm:text-xl">내 입찰 목록</h2>
+        </div>
         {bidListQuery.isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (
               <div
-                className="h-[120px] animate-pulse rounded-[28px] bg-slate-100"
+                className="h-[104px] animate-pulse rounded-[24px] bg-slate-100 sm:h-[120px] sm:rounded-[28px]"
                 key={`bid-skeleton-${index}`}
               />
             ))}
@@ -82,45 +81,45 @@ export function DealerBidsPage() {
           <div className="space-y-3">
             {pagedBidItems.map((item) => (
               <Link
-                className="block rounded-[24px] border border-line bg-white px-5 py-4 transition hover:border-slate-300 hover:shadow-sm"
+                className="block rounded-[20px] border border-line bg-white px-4 py-3 transition hover:border-slate-300 hover:shadow-sm sm:rounded-[24px] sm:px-5 sm:py-4"
                 href={appRoutes.bidDetail(item.auctionId)}
                 key={item.submissionId}
               >
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="truncate text-lg font-semibold text-slate-950">
-                        {item.vehicleLabel}
-                      </h2>
-                      {item.statusLabel === "입찰 진행" ? (
-                        <StatusPill tone="timer">
-                          {formatRemainingTime(item.deadlineAt)}
-                        </StatusPill>
-                      ) : null}
-                    </div>
-
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                      <PurchaseMethodPill method={item.purchaseMethod} />
-                      <span className="whitespace-nowrap">{item.yearLabel}</span>
-                      <span className="text-slate-300">•</span>
-                      <span className="whitespace-nowrap">{item.fuelType}</span>
-                    </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="truncate text-base font-semibold text-slate-950 sm:text-lg">
+                      {item.vehicleLabel}
+                    </h2>
+                    {item.statusLabel === "입찰 진행" ? (
+                      <StatusPill tone="timer">
+                        {formatRemainingTime(item.deadlineAt)}
+                      </StatusPill>
+                    ) : null}
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <span className="font-medium text-slate-700">상세보기</span>
-                    <span aria-hidden="true">›</span>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-600 sm:mt-2 sm:text-sm">
+                    <PurchaseMethodPill method={item.purchaseMethod} />
+                    <span className="whitespace-nowrap">{item.yearLabel}</span>
+                    <span className="text-slate-300">•</span>
+                    <span className="whitespace-nowrap">{item.fuelType}</span>
                   </div>
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <StatusPill tone={getBidStatusTone(item.statusLabel)}>
-                    {item.statusLabel}
-                  </StatusPill>
-                  <StatusPill tone="neutral">{item.bidCount}명 입찰</StatusPill>
-                  {item.currentRank ? (
-                    <StatusPill tone="neutral">현재 {item.currentRank}위</StatusPill>
-                  ) : null}
+                <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 sm:mt-3">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <StatusPill tone={getBidStatusTone(item.statusLabel)}>
+                      {item.statusLabel}
+                    </StatusPill>
+                    <StatusPill tone="neutral">{item.bidCount}명 입찰</StatusPill>
+                    {item.currentRank ? (
+                      <StatusPill tone="neutral">현재 {item.currentRank}위</StatusPill>
+                    ) : null}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 sm:gap-2 sm:text-sm">
+                    <span className="font-medium text-slate-700">상세보기</span>
+                    <span aria-hidden="true">›</span>
+                  </div>
                 </div>
               </Link>
             ))}
@@ -135,21 +134,21 @@ export function DealerBidsPage() {
             />
           </div>
         )}
-      </SectionCard>
+      </section>
     </section>
   );
 }
 
-type DashboardTileProps = {
+type InlineSummaryItemProps = {
   label: string;
   value: number;
 };
 
-function DashboardTile({ label, value }: DashboardTileProps) {
+function InlineSummaryItem({ label, value }: InlineSummaryItemProps) {
   return (
-    <div className="rounded-3xl bg-slate-950 px-5 py-5 text-white">
-      <p className="text-sm text-slate-300">{label}</p>
-      <p className="mt-3 text-3xl font-semibold">{value}</p>
+    <div className="flex items-center gap-1.5">
+      <span className="text-xs font-medium text-slate-500 sm:text-sm">{label}</span>
+      <span className="text-base font-semibold text-slate-950 sm:text-lg">{value}</span>
     </div>
   );
 }
@@ -180,7 +179,9 @@ function PurchaseMethodPill({ method }: PurchaseMethodPillProps) {
   }[method];
 
   return (
-    <span className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${toneClassName}`}>
+    <span
+      className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold sm:px-2.5 sm:py-1 sm:text-xs ${toneClassName}`}
+    >
       {method}
     </span>
   );
@@ -201,7 +202,9 @@ function StatusPill({ children, tone }: StatusPillProps) {
   }[tone];
 
   return (
-    <span className={`rounded-full px-3 py-1 text-xs font-medium ${toneClassName}`}>
+    <span
+      className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium sm:px-3 sm:py-1 sm:text-xs ${toneClassName}`}
+    >
       {children}
     </span>
   );

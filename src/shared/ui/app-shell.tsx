@@ -42,8 +42,8 @@ export function AppShell({ children, session }: AppShellProps) {
             </div>
           </aside>
           <ChatRailProvider>
-            <main className="overflow-hidden rounded-[32px] border border-white/80 bg-white/92 shadow-panel backdrop-blur">
-              <div className="px-6 py-6 md:px-8 md:py-8">
+            <main className="overflow-visible rounded-none border-0 bg-transparent shadow-none backdrop-blur-0 lg:overflow-hidden lg:rounded-[32px] lg:border lg:border-white/80 lg:bg-white lg:shadow-panel lg:backdrop-blur">
+              <div className="px-0 py-0 md:px-0 md:py-0 lg:px-8 lg:py-8">
                 {session.accessState !== "active" ? (
                   <div className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
                     관리자 승인 전까지 일부 기능이 제한될 수 있습니다.

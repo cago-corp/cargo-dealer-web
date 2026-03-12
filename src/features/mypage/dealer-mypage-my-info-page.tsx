@@ -23,21 +23,16 @@ import {
   dealerMyInfoQueryKey,
   dealerProfileQueryKey,
   fetchDealerMyInfo,
-  updateDealerCompanyName,
   updateDealerNickname,
-  updateDealerPhone,
-  updateDealerRecruiterRegistrationNumber,
 } from "@/features/mypage/lib/dealer-mypage-query";
 import { LogoutButton } from "@/shared/ui/logout-button";
 import { SectionCard } from "@/shared/ui/section-card";
 
 type EditableField = "nickname" | "phone" | "company" | "recruiter" | "password";
 
-type SaveMyInfoPayload =
-  | { kind: "nickname"; payload: DealerNicknameUpdate }
-  | { kind: "phone"; payload: DealerPhoneUpdate }
-  | { kind: "company"; payload: DealerCompanyNameUpdate }
-  | { kind: "recruiter"; payload: DealerRecruiterRegistrationUpdate };
+const mobileSectionClassName =
+  "-mx-4 bg-white px-4 py-4 sm:-mx-5 sm:px-5 lg:-mx-8 lg:px-8 xl:hidden";
+const mobileSectionDividerClassName = "-mx-4 h-3 bg-slate-100 sm:-mx-5 lg:-mx-8 xl:hidden";
 
 function formatJoinedAt(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -101,19 +96,8 @@ export function DealerMypageMyInfoPage() {
   const [activeField, setActiveField] = useState<EditableField | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const saveMyInfoMutation = useMutation({
-    mutationFn: async (input: SaveMyInfoPayload) => {
-      switch (input.kind) {
-        case "nickname":
-          return updateDealerNickname(input.payload);
-        case "phone":
-          return updateDealerPhone(input.payload);
-        case "company":
-          return updateDealerCompanyName(input.payload);
-        case "recruiter":
-          return updateDealerRecruiterRegistrationNumber(input.payload);
-      }
-    },
+  const saveNicknameMutation = useMutation({
+    mutationFn: updateDealerNickname,
     onSuccess: (nextInfo) => {
       queryClient.setQueryData<DealerMyInfo>(dealerMyInfoQueryKey, dealerMyInfoSchema.parse(nextInfo));
       queryClient.setQueryData(dealerProfileQueryKey, (current: unknown) => {
@@ -155,9 +139,13 @@ export function DealerMypageMyInfoPage() {
     <>
       <section className="space-y-6">
         <header className="space-y-2">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-teal-700">My Info</p>
-          <h1 className="text-3xl font-semibold text-slate-950">내정보 관리</h1>
-          <p className="text-sm text-slate-600">계정 정보와 업체 정보를 확인하고 수정합니다.</p>
+          <p className="hidden text-sm font-medium uppercase tracking-[0.18em] text-teal-700 xl:block">
+            My Info
+          </p>
+          <h1 className="text-2xl font-semibold text-slate-950 xl:text-3xl">내정보 관리</h1>
+          <p className="hidden text-sm text-slate-600 xl:block">
+            계정 정보와 업체 정보를 확인하고 수정합니다.
+          </p>
         </header>
 
         {statusMessage ? (
@@ -166,9 +154,9 @@ export function DealerMypageMyInfoPage() {
           </div>
         ) : null}
 
-        {saveMyInfoMutation.error instanceof Error ? (
+        {saveNicknameMutation.error instanceof Error ? (
           <div className="rounded-[28px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
-            {saveMyInfoMutation.error.message}
+            {saveNicknameMutation.error.message}
           </div>
         ) : null}
 
@@ -178,9 +166,9 @@ export function DealerMypageMyInfoPage() {
           </div>
         ) : null}
 
-        <SectionCard title="프로필">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-5">
+        <div className="space-y-0 xl:space-y-6">
+          <section className={mobileSectionClassName}>
+            <div className="flex items-center gap-4">
               <button
                 className="relative flex h-24 w-24 items-center justify-center rounded-full bg-slate-100 text-4xl font-semibold text-slate-400 transition hover:bg-slate-200"
                 type="button"
@@ -201,96 +189,181 @@ export function DealerMypageMyInfoPage() {
                   </svg>
                 </span>
               </button>
-              <div>
-                <p className="text-2xl font-semibold text-slate-950">{info.dealerName} 님</p>
-                <p className="mt-2 text-base font-semibold text-violet-700">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-2xl font-semibold text-slate-950">
+                  {info.dealerName} 님
+                </p>
+                <p className="mt-1 truncate text-xl font-semibold text-violet-700">
                   {info.dealerNickname ?? "닉네임 미등록"}
                 </p>
-                <p className="mt-3 text-sm text-slate-500">
-                  가입일 {formatJoinedAt(info.joinedAt)}
-                </p>
+                <p className="mt-2 text-sm text-slate-500">가입일 {formatJoinedAt(info.joinedAt)}</p>
               </div>
             </div>
-            <div className="text-sm leading-6 text-slate-500">
-              프로필 사진 업로드는 추후 연결됩니다.
+          </section>
+
+          <section className={mobileSectionClassName}>
+            <div className="divide-y divide-slate-200">
+              <MyInfoRow label="이름" value={info.dealerName} />
+              <MyInfoRow
+                canEdit
+                label="닉네임"
+                value={info.dealerNickname ?? "닉네임 미등록"}
+                onClick={() => setActiveField("nickname")}
+              />
+              <MyInfoRow
+                canEdit
+                label="휴대폰번호"
+                value={formatPhoneDisplay(info.phone)}
+                onClick={() => setActiveField("phone")}
+              />
+              <MyInfoRow
+                canEdit
+                label="업체명"
+                value={info.companyName}
+                onClick={() => setActiveField("company")}
+              />
+              <MyInfoRow
+                canEdit
+                description="모집인 번호가 없으면 할부, 리스 견적을 입찰할 수 없습니다."
+                label="모집인 등록번호"
+                value={info.recruiterRegistrationNumber ?? "확인 필요"}
+                valueTone={info.recruiterRegistrationNumber ? "default" : "muted"}
+                onClick={() => setActiveField("recruiter")}
+              />
+              <MyInfoActionRow label="비밀번호 변경" onClick={() => setActiveField("password")} />
             </div>
-          </div>
-        </SectionCard>
+          </section>
 
-        <SectionCard title="기본 정보">
-          <div className="divide-y divide-slate-200">
-            <MyInfoRow label="이름" value={info.dealerName} />
-            <MyInfoRow
-              canEdit
-              label="닉네임"
-              value={info.dealerNickname ?? "닉네임 미등록"}
-              onClick={() => setActiveField("nickname")}
-            />
-            <MyInfoRow
-              canEdit
-              description="현재는 데모 입력 화면입니다. 실제 휴대폰 본인 인증 플로우는 추후 구현이 필요합니다."
-              label="휴대폰번호"
-              value={formatPhoneDisplay(info.phone)}
-              onClick={() => setActiveField("phone")}
-            />
-            <MyInfoRow label="이메일" value={info.email ?? "이메일 미등록"} />
-          </div>
-        </SectionCard>
+          <div className={mobileSectionDividerClassName} />
 
-        <SectionCard title="업체 / 승인 정보">
-          <div className="divide-y divide-slate-200">
-            <MyInfoRow
-              canEdit
-              label="업체명"
-              value={info.companyName}
-              onClick={() => setActiveField("company")}
-            />
-            <MyInfoRow
-              canEdit
-              description="모집인 번호가 없으면 할부, 리스 견적을 입찰할 수 없습니다."
-              label="모집인 등록번호"
-              value={info.recruiterRegistrationNumber ?? "확인 필요"}
-              valueTone={info.recruiterRegistrationNumber ? "default" : "muted"}
-              onClick={() => setActiveField("recruiter")}
-            />
-            <MyInfoRow
-              label="승인 상태"
-              value={info.approvalStatus === "active" ? "승인 완료" : "승인 대기"}
-              valueTone={info.approvalStatus === "active" ? "positive" : "warning"}
-            />
-          </div>
-        </SectionCard>
+          <section className={mobileSectionClassName}>
+            <div className="divide-y divide-slate-200">
+              <div className="py-4">
+                <LogoutButton className="text-left text-slate-950" variant="text" />
+              </div>
+              <MyInfoActionRow
+                label="회원탈퇴"
+                onClick={() => {
+                  setStatusMessage("회원탈퇴 기능은 준비 중입니다.");
+                }}
+              />
+            </div>
+          </section>
 
-        <SectionCard title="보안">
-          <PasswordActionRow onClick={() => setActiveField("password")} />
-        </SectionCard>
+          <section className="hidden xl:block">
+            <SectionCard title="프로필">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex items-center gap-5">
+                  <button
+                    className="relative flex h-24 w-24 items-center justify-center rounded-full bg-slate-100 text-4xl font-semibold text-slate-400 transition hover:bg-slate-200"
+                    type="button"
+                    onClick={() => {
+                      setStatusMessage("프로필 사진 등록 기능은 준비 중입니다.");
+                    }}
+                  >
+                    {info.dealerName.slice(0, 1)}
+                    <span className="absolute bottom-0 right-0 flex h-9 w-9 items-center justify-center rounded-full border border-white bg-slate-900 text-white shadow-sm">
+                      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <path
+                          d="M4 8.5A2.5 2.5 0 0 1 6.5 6h2.1l1.1-1.3c.28-.34.7-.53 1.14-.53h2.38c.44 0 .86.2 1.14.53L15.5 6h2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-8ZM12 9a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.7"
+                        />
+                      </svg>
+                    </span>
+                  </button>
+                  <div>
+                    <p className="text-2xl font-semibold text-slate-950">{info.dealerName} 님</p>
+                    <p className="mt-2 text-base font-semibold text-violet-700">
+                      {info.dealerNickname ?? "닉네임 미등록"}
+                    </p>
+                    <p className="mt-3 text-sm text-slate-500">
+                      가입일 {formatJoinedAt(info.joinedAt)}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-sm leading-6 text-slate-500">
+                  프로필 사진 업로드는 추후 연결됩니다.
+                </div>
+              </div>
+            </SectionCard>
+          </section>
 
-        <SectionCard title="계정 관리">
-          <div className="space-y-4">
-            <LogoutButton className="text-left text-rose-600" variant="text" />
-            <button
-              className="text-left text-sm font-medium text-slate-400 transition hover:text-slate-600"
-              type="button"
-              onClick={() => {
-                setStatusMessage("회원탈퇴 기능은 준비 중입니다.");
-              }}
-            >
-              회원탈퇴
-            </button>
-          </div>
-        </SectionCard>
+          <section className="hidden xl:block">
+            <SectionCard title="기본 정보">
+              <div className="divide-y divide-slate-200">
+                <MyInfoRow label="이름" value={info.dealerName} />
+              <MyInfoRow
+                canEdit
+                label="닉네임"
+                value={info.dealerNickname ?? "닉네임 미등록"}
+                onClick={() => setActiveField("nickname")}
+              />
+              <MyInfoRow
+                canEdit
+                label="휴대폰번호"
+                value={formatPhoneDisplay(info.phone)}
+                onClick={() => setActiveField("phone")}
+              />
+              </div>
+            </SectionCard>
+          </section>
+
+          <section className="hidden xl:block">
+            <SectionCard title="업체 정보">
+              <div className="divide-y divide-slate-200">
+                <MyInfoRow
+                  canEdit
+                  label="업체명"
+                  value={info.companyName}
+                  onClick={() => setActiveField("company")}
+                />
+                <MyInfoRow
+                  canEdit
+                  description="모집인 번호가 없으면 할부, 리스 견적을 입찰할 수 없습니다."
+                  label="모집인 등록번호"
+                  value={info.recruiterRegistrationNumber ?? "확인 필요"}
+                  valueTone={info.recruiterRegistrationNumber ? "default" : "muted"}
+                  onClick={() => setActiveField("recruiter")}
+                />
+              </div>
+            </SectionCard>
+          </section>
+
+          <section className="hidden xl:block">
+            <SectionCard title="보안">
+              <PasswordActionRow onClick={() => setActiveField("password")} />
+            </SectionCard>
+          </section>
+
+          <section className="hidden xl:block">
+            <SectionCard title="계정 관리">
+              <div className="space-y-4">
+                <LogoutButton className="text-left text-rose-600" variant="text" />
+                <button
+                  className="text-left text-sm font-medium text-slate-400 transition hover:text-slate-600"
+                  type="button"
+                  onClick={() => {
+                    setStatusMessage("회원탈퇴 기능은 준비 중입니다.");
+                  }}
+                >
+                  회원탈퇴
+                </button>
+              </div>
+            </SectionCard>
+          </section>
+        </div>
       </section>
 
       {activeField === "nickname" ? (
         <NicknameEditModal
           initialNickname={info.dealerNickname ?? ""}
-          isBusy={saveMyInfoMutation.isPending}
+          isBusy={saveNicknameMutation.isPending}
           onClose={() => setActiveField(null)}
           onSave={async (payload) => {
-            await saveMyInfoMutation.mutateAsync({
-              kind: "nickname",
-              payload,
-            });
+            await saveNicknameMutation.mutateAsync(payload);
             setStatusMessage("닉네임이 변경되었습니다.");
           }}
         />
@@ -299,14 +372,11 @@ export function DealerMypageMyInfoPage() {
       {activeField === "phone" ? (
         <PhoneEditModal
           initialPhone={info.phone ?? ""}
-          isBusy={saveMyInfoMutation.isPending}
+          isBusy={false}
           onClose={() => setActiveField(null)}
-          onSave={async (payload) => {
-            await saveMyInfoMutation.mutateAsync({
-              kind: "phone",
-              payload,
-            });
-            setStatusMessage("휴대폰번호가 업데이트되었습니다.");
+          onSave={async (_payload) => {
+            setActiveField(null);
+            setStatusMessage("휴대폰 본인 인증 기능은 준비 중입니다. 앱과 같은 인증 진입 플로우로 추후 교체합니다.");
           }}
         />
       ) : null}
@@ -314,14 +384,11 @@ export function DealerMypageMyInfoPage() {
       {activeField === "company" ? (
         <CompanyEditModal
           initialCompanyName={info.companyName}
-          isBusy={saveMyInfoMutation.isPending}
+          isBusy={false}
           onClose={() => setActiveField(null)}
-          onSave={async (payload) => {
-            await saveMyInfoMutation.mutateAsync({
-              kind: "company",
-              payload,
-            });
-            setStatusMessage("업체 정보가 반영되었습니다.");
+          onSave={async (_payload) => {
+            setActiveField(null);
+            setStatusMessage("업체 정보 변경 신청 기능은 준비 중입니다. 운영 정책과 제출 API가 확정되면 연결합니다.");
           }}
         />
       ) : null}
@@ -329,14 +396,11 @@ export function DealerMypageMyInfoPage() {
       {activeField === "recruiter" ? (
         <RecruiterEditModal
           initialRegistrationNumber={info.recruiterRegistrationNumber ?? ""}
-          isBusy={saveMyInfoMutation.isPending}
+          isBusy={false}
           onClose={() => setActiveField(null)}
-          onSave={async (payload) => {
-            await saveMyInfoMutation.mutateAsync({
-              kind: "recruiter",
-              payload,
-            });
-            setStatusMessage("모집인 등록번호가 업데이트되었습니다.");
+          onSave={async (_payload) => {
+            setActiveField(null);
+            setStatusMessage("모집인 정보 변경 신청 기능은 준비 중입니다. 운영 정책과 제출 API가 확정되면 연결합니다.");
           }}
         />
       ) : null}
@@ -393,6 +457,25 @@ function MyInfoRow({
         <p className={`text-base font-semibold ${toneClassName}`}>{value}</p>
         {canEdit ? <span className="text-2xl leading-none text-slate-300">›</span> : null}
       </div>
+    </button>
+  );
+}
+
+function MyInfoActionRow({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className="flex w-full items-center justify-between gap-4 py-4 text-left"
+      type="button"
+      onClick={onClick}
+    >
+      <span className="text-base font-semibold text-slate-950">{label}</span>
+      <span className="text-2xl leading-none text-slate-300">›</span>
     </button>
   );
 }
