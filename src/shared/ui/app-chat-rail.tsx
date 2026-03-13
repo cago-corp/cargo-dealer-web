@@ -196,8 +196,59 @@ function ChatRailContent() {
   );
 }
 
+function useCompactChatScrollLock(isLocked: boolean) {
+  useEffect(() => {
+    if (!isLocked) {
+      return undefined;
+    }
+
+    const { body, documentElement } = document;
+    const scrollY = window.scrollY;
+    const previousBodyStyles = {
+      left: body.style.left,
+      overflow: body.style.overflow,
+      overscrollBehavior: body.style.overscrollBehavior,
+      position: body.style.position,
+      right: body.style.right,
+      top: body.style.top,
+      width: body.style.width,
+    };
+    const previousHtmlStyles = {
+      overflow: documentElement.style.overflow,
+      overscrollBehavior: documentElement.style.overscrollBehavior,
+    };
+
+    documentElement.style.overflow = "hidden";
+    documentElement.style.overscrollBehavior = "none";
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overscrollBehavior = "none";
+
+    return () => {
+      documentElement.style.overflow = previousHtmlStyles.overflow;
+      documentElement.style.overscrollBehavior =
+        previousHtmlStyles.overscrollBehavior;
+      body.style.left = previousBodyStyles.left;
+      body.style.overflow = previousBodyStyles.overflow;
+      body.style.overscrollBehavior =
+        previousBodyStyles.overscrollBehavior;
+      body.style.position = previousBodyStyles.position;
+      body.style.right = previousBodyStyles.right;
+      body.style.top = previousBodyStyles.top;
+      body.style.width = previousBodyStyles.width;
+      window.scrollTo({ top: scrollY, behavior: "auto" });
+    };
+  }, [isLocked]);
+}
+
 export function AppChatRail() {
   const { closeCompact, isCompactOpen, toggleCompact } = useChatRail();
+
+  useCompactChatScrollLock(isCompactOpen);
 
   return (
     <>
@@ -217,8 +268,8 @@ export function AppChatRail() {
           />
         ) : null}
         {isCompactOpen ? (
-          <section className="pointer-events-auto fixed right-0 top-0 z-10 flex h-full w-[90vw] flex-col overflow-hidden border-l border-slate-200/90 bg-white p-3 shadow-2xl sm:w-[min(88vw,560px)] sm:p-4">
-            <div className="min-h-0 flex-1 overflow-hidden bg-white">
+          <section className="pointer-events-auto fixed right-0 top-0 z-10 flex h-full w-[90vw] flex-col overflow-hidden overscroll-y-contain border-l border-slate-200/90 bg-white p-3 shadow-2xl sm:w-[min(88vw,560px)] sm:p-4">
+            <div className="min-h-0 flex-1 overflow-hidden overscroll-y-contain bg-white">
               <ChatRailContent />
             </div>
           </section>
