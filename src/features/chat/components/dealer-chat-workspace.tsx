@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { DealerChatRoomList } from "@/features/chat/components/dealer-chat-room-list";
+import { useDealerChatAttentionSignals } from "@/features/chat/hooks/use-dealer-chat-attention-signals";
 import { useDealerChatSyncStream } from "@/features/chat/hooks/use-dealer-chat-sync-stream";
 import { filterLiveChatRooms } from "@/features/chat/lib/filter-live-chat-rooms";
 import { DealerChatRoomPanel } from "@/features/chat/components/dealer-chat-room-panel";
@@ -175,6 +176,13 @@ export function DealerChatWorkspace({
     needsAction: rooms.filter((room) => room.unreadCount > 0).length,
   };
 
+  const { totalUnreadCount } = useDealerChatAttentionSignals({
+    disabled: !isWindowVariant,
+    rooms,
+    selectedRoomId,
+    onOpenRoom: handleSelectRoom,
+  });
+
   if (isWindowVariant) {
     const header = (
       <header className="rounded-[24px] border border-white/80 bg-white px-4 py-3 shadow-sm">
@@ -215,6 +223,7 @@ export function DealerChatWorkspace({
             {selectedRoomId ? (
               <DealerChatRoomPanel
                 allowPopout={false}
+                backBadgeCount={totalUnreadCount}
                 density="compact"
                 mode="rail"
                 roomId={selectedRoomId}
@@ -288,6 +297,7 @@ export function DealerChatWorkspace({
           <div className={detailPanelClassName}>
             <DealerChatRoomPanel
               allowPopout={false}
+              backBadgeCount={totalUnreadCount}
               density="compact"
               mode="page"
               roomId={selectedRoomId}

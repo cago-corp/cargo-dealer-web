@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { DealerChatRoomList } from "@/features/chat/components/dealer-chat-room-list";
 import { DealerChatRoomPanel } from "@/features/chat/components/dealer-chat-room-panel";
+import { useDealerChatAttentionSignals } from "@/features/chat/hooks/use-dealer-chat-attention-signals";
 import { useDealerChatSyncStream } from "@/features/chat/hooks/use-dealer-chat-sync-stream";
 import { filterLiveChatRooms } from "@/features/chat/lib/filter-live-chat-rooms";
 import { useDealerChatRoomListQuery } from "@/features/chat/hooks/use-dealer-chat-room-list-query";
@@ -15,10 +16,33 @@ function ChatRailContent() {
     clearSelectedRoom,
     isPoppedOutModule,
     markPoppedOutModule,
+    openRoom,
+    releasePoppedOutModule,
     selectedRoomId,
     selectRoom,
   } = useChatRail();
   const rooms = filterLiveChatRooms(roomListQuery.data);
+  const [isXlUp, setIsXlUp] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1280px)");
+    const update = () => setIsXlUp(mediaQuery.matches);
+
+    update();
+    mediaQuery.addEventListener("change", update);
+
+    return () => {
+      mediaQuery.removeEventListener("change", update);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isXlUp || !isPoppedOutModule) {
+      return;
+    }
+
+    releasePoppedOutModule();
+  }, [isPoppedOutModule, isXlUp, releasePoppedOutModule]);
 
   useDealerChatSyncStream(selectedRoomId);
 
@@ -34,7 +58,13 @@ function ChatRailContent() {
     }
   }, [clearSelectedRoom, rooms, selectedRoomId]);
 
-  if (isPoppedOutModule) {
+  const { totalUnreadCount } = useDealerChatAttentionSignals({
+    rooms,
+    selectedRoomId,
+    onOpenRoom: openRoom,
+  });
+
+  if (isPoppedOutModule && isXlUp) {
     return (
       <div className="flex h-full min-h-0 flex-col justify-between">
         <div>
@@ -71,6 +101,7 @@ function ChatRailContent() {
   if (selectedRoomId) {
     return (
       <DealerChatRoomPanel
+        backBadgeCount={totalUnreadCount}
         mode="rail"
         roomId={selectedRoomId}
         onBack={clearSelectedRoom}
@@ -93,43 +124,45 @@ function ChatRailContent() {
           <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
             {rooms.length}건 진행 중
           </span>
-          <button
-            aria-label="새 창으로 보기"
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            title="새 창으로 보기"
-            type="button"
-            onClick={() => {
-              markPoppedOutModule();
-              window.open(
-                appRoutes.chatWindow(selectedRoomId ?? undefined),
-                "_blank",
-                "popup=yes,width=1280,height=900,resizable=yes,scrollbars=yes",
-              );
-            }}
-          >
-            <span>새 창</span>
-            <svg
-              aria-hidden="true"
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
+          {isXlUp ? (
+            <button
+              aria-label="새 창으로 보기"
+              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              title="새 창으로 보기"
+              type="button"
+              onClick={() => {
+                markPoppedOutModule();
+                window.open(
+                  appRoutes.chatWindow(selectedRoomId ?? undefined),
+                  "_blank",
+                  "popup=yes,width=1280,height=900,resizable=yes,scrollbars=yes",
+                );
+              }}
             >
-              <path
-                d="M14 5h5v5M19 5l-8 8"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-              />
-              <path
-                d="M10 7H7.8A2.8 2.8 0 0 0 5 9.8v6.4A2.8 2.8 0 0 0 7.8 19h6.4a2.8 2.8 0 0 0 2.8-2.8V14"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="1.8"
-              />
-            </svg>
-          </button>
+              <span>새 창</span>
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M14 5h5v5M19 5l-8 8"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.8"
+                />
+                <path
+                  d="M10 7H7.8A2.8 2.8 0 0 0 5 9.8v6.4A2.8 2.8 0 0 0 7.8 19h6.4a2.8 2.8 0 0 0 2.8-2.8V14"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.8"
+                />
+              </svg>
+            </button>
+          ) : null}
         </div>
       </div>
 
