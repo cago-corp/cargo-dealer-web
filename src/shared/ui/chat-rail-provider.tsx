@@ -10,6 +10,8 @@ import {
 } from "react";
 
 const CHAT_POPOUT_ACTIVE_STORAGE_KEY = "cargo-web:chat-popout-active";
+const CHAT_POPOUT_STALE_MS = 8000;
+const CHAT_POPOUT_POLL_MS = 2000;
 
 type ChatRailContextValue = {
   isCompactOpen: boolean;
@@ -37,21 +39,26 @@ export function ChatRailProvider({ children }: ChatRailProviderProps) {
   const [isPoppedOutModule, setIsPoppedOutModule] = useState(false);
 
   useEffect(() => {
-    const nextValue = window.localStorage.getItem(CHAT_POPOUT_ACTIVE_STORAGE_KEY);
-    setIsPoppedOutModule(nextValue === "true");
+    const syncPoppedOutModuleState = () => {
+      setIsPoppedOutModule(readIsPoppedOutModuleActive());
+    };
+
+    syncPoppedOutModuleState();
 
     function handleStorage(event: StorageEvent) {
       if (event.key !== CHAT_POPOUT_ACTIVE_STORAGE_KEY) {
         return;
       }
 
-      setIsPoppedOutModule(event.newValue === "true");
+      syncPoppedOutModuleState();
     }
 
     window.addEventListener("storage", handleStorage);
+    const intervalId = window.setInterval(syncPoppedOutModuleState, CHAT_POPOUT_POLL_MS);
 
     return () => {
       window.removeEventListener("storage", handleStorage);
+      window.clearInterval(intervalId);
     };
   }, []);
 
@@ -68,7 +75,13 @@ export function ChatRailProvider({ children }: ChatRailProviderProps) {
   }, []);
 
   const markPoppedOutModule = useCallback(() => {
-    window.localStorage.setItem(CHAT_POPOUT_ACTIVE_STORAGE_KEY, "true");
+    window.localStorage.setItem(
+      CHAT_POPOUT_ACTIVE_STORAGE_KEY,
+      JSON.stringify({
+        active: true,
+        lastSeenAt: Date.now(),
+      }),
+    );
     setIsPoppedOutModule(true);
   }, []);
 
@@ -120,6 +133,28 @@ export function ChatRailProvider({ children }: ChatRailProviderProps) {
   );
 
   return <ChatRailContext.Provider value={value}>{children}</ChatRailContext.Provider>;
+}
+
+function readIsPoppedOutModuleActive() {
+  const raw = window.localStorage.getItem(CHAT_POPOUT_ACTIVE_STORAGE_KEY);
+  if (!raw) {
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as { active?: unknown; lastSeenAt?: unknown };
+    if (parsed.active !== true) {
+      return false;
+    }
+
+    if (typeof parsed.lastSeenAt !== "number") {
+      return false;
+    }
+
+    return Date.now() - parsed.lastSeenAt < CHAT_POPOUT_STALE_MS;
+  } catch {
+    return raw === "true";
+  }
 }
 
 export function useChatRail() {

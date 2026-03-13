@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { DealerChatRoomList } from "@/features/chat/components/dealer-chat-room-list";
+import { useDealerChatAttentionSignals } from "@/features/chat/hooks/use-dealer-chat-attention-signals";
 import { useDealerChatSyncStream } from "@/features/chat/hooks/use-dealer-chat-sync-stream";
 import { filterLiveChatRooms } from "@/features/chat/lib/filter-live-chat-rooms";
 import { DealerChatRoomPanel } from "@/features/chat/components/dealer-chat-room-panel";
@@ -129,16 +130,20 @@ export function DealerChatWorkspace({
   }, [clearSelectedRoom, rooms, selectedRoomId]);
 
   useEffect(() => {
-    if (!isWindowVariant || !selectedRoomId) {
+    if (!isWindowVariant) {
       return;
     }
 
     markPoppedOutModule();
+    const heartbeatId = window.setInterval(() => {
+      markPoppedOutModule();
+    }, 2000);
 
     return () => {
+      window.clearInterval(heartbeatId);
       releasePoppedOutModule();
     };
-  }, [isWindowVariant, markPoppedOutModule, releasePoppedOutModule, selectedRoomId]);
+  }, [isWindowVariant, markPoppedOutModule, releasePoppedOutModule]);
 
   useEffect(() => {
     if (!isWindowVariant) {
@@ -149,10 +154,16 @@ export function DealerChatWorkspace({
       releasePoppedOutModule();
     }
 
+    function handlePageHide() {
+      releasePoppedOutModule();
+    }
+
     window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("pagehide", handlePageHide);
 
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("pagehide", handlePageHide);
     };
   }, [isWindowVariant, releasePoppedOutModule]);
 
@@ -164,6 +175,13 @@ export function DealerChatWorkspace({
     ),
     needsAction: rooms.filter((room) => room.unreadCount > 0).length,
   };
+
+  const { totalUnreadCount } = useDealerChatAttentionSignals({
+    disabled: !isWindowVariant,
+    rooms,
+    selectedRoomId,
+    onOpenRoom: handleSelectRoom,
+  });
 
   if (isWindowVariant) {
     const header = (
@@ -205,6 +223,7 @@ export function DealerChatWorkspace({
             {selectedRoomId ? (
               <DealerChatRoomPanel
                 allowPopout={false}
+                backBadgeCount={totalUnreadCount}
                 density="compact"
                 mode="rail"
                 roomId={selectedRoomId}
@@ -278,6 +297,7 @@ export function DealerChatWorkspace({
           <div className={detailPanelClassName}>
             <DealerChatRoomPanel
               allowPopout={false}
+              backBadgeCount={totalUnreadCount}
               density="compact"
               mode="page"
               roomId={selectedRoomId}

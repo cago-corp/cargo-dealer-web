@@ -26,6 +26,7 @@ type DealerHomeWorkspaceProps = {
 
 const HOME_PAGE_SIZE = 10;
 const HOME_REFRESH_SECONDS = 10;
+const HOME_REFRESH_SPIN_MIN_MS = 900;
 
 const modeCopy = {
   home: {
@@ -111,10 +112,11 @@ export function DealerHomeWorkspace({
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [refreshCountdown, setRefreshCountdown] = useState(HOME_REFRESH_SECONDS);
+  const [isRefreshAnimating, setIsRefreshAnimating] = useState(false);
   const currentQueryKey = getDealerAuctionWorkspaceQueryKey(mode, filters);
 
   const workspaceQuery = useDealerAuctionWorkspaceQuery(mode, filters);
-  const { dataUpdatedAt, refetch } = workspaceQuery;
+  const { dataUpdatedAt, isFetching, refetch } = workspaceQuery;
   const favoriteMutation = useMutation({
     mutationFn: toggleDealerAuctionFavoriteFromApi,
     onMutate: async (auctionId: string) => {
@@ -187,6 +189,31 @@ export function DealerHomeWorkspace({
     void refetch();
   }, [mode, refreshCountdown, refetch]);
 
+  useEffect(() => {
+    if (mode !== "home") {
+      return;
+    }
+
+    let timeoutId: number | undefined;
+
+    if (isFetching) {
+      setIsRefreshAnimating(true);
+      return;
+    }
+
+    if (isRefreshAnimating) {
+      timeoutId = window.setTimeout(() => {
+        setIsRefreshAnimating(false);
+      }, HOME_REFRESH_SPIN_MIN_MS);
+    }
+
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [isFetching, isRefreshAnimating, mode]);
+
   const queryData = workspaceQuery.data;
   const filteredItems = queryData?.items ?? [];
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / HOME_PAGE_SIZE));
@@ -252,7 +279,7 @@ export function DealerHomeWorkspace({
                 type="button"
                 onClick={handleRefreshNow}
               >
-                ↻
+                <span className={isRefreshAnimating ? "animate-spin" : ""}>↻</span>
               </button>
             ) : (
               <span className="font-medium text-slate-600">{copy.refreshLabel}</span>

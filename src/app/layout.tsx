@@ -11,7 +11,7 @@ const pretendard = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Cargo Dealer Web",
+  title: "카고 딜러",
   description: "Dealer workflow shell for the Cargo web platform.",
 };
 

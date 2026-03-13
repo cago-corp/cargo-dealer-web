@@ -11,6 +11,10 @@ import type {
 import { DealerChatCustomMessageCard } from "@/features/chat/components/dealer-chat-custom-message-card";
 import { useDealerChatRoomQuery } from "@/features/chat/hooks/use-dealer-chat-room-query";
 import {
+  playIncomingChatSound,
+  showChatBrowserNotification,
+} from "@/features/chat/lib/chat-attention";
+import {
   dealerChatRoomListQueryKey,
   getDealerChatRoomQueryKey,
 } from "@/features/chat/lib/dealer-chat-query";
@@ -23,6 +27,7 @@ import { appRoutes } from "@/shared/config/routes";
 import { useChatRail } from "@/shared/ui/chat-rail-provider";
 
 type DealerChatRoomPanelProps = {
+  backBadgeCount?: number;
   mode: "page" | "rail";
   roomId: string | null;
   onBack?: () => void;
@@ -120,6 +125,7 @@ function formatFileSize(size: number) {
 }
 
 export function DealerChatRoomPanel({
+  backBadgeCount = 0,
   mode,
   roomId,
   onBack,
@@ -141,6 +147,23 @@ export function DealerChatRoomPanel({
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const previousVisibleIncomingMessageIdRef = useRef<string | null>(null);
+  const [isXlUp, setIsXlUp] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1280px)");
+    const update = () => setIsXlUp(mediaQuery.matches);
+
+    update();
+    mediaQuery.addEventListener("change", update);
+
+    return () => {
+      mediaQuery.removeEventListener("change", update);
+    };
+  }, []);
+
+  const isFlatMobilePanel = !isXlUp;
 
   useEffect(() => {
     setMessageInput("");
@@ -149,6 +172,7 @@ export function DealerChatRoomPanel({
     setIsAttachmentMenuOpen(false);
     setPendingAttachment(null);
     shouldStickToBottomRef.current = true;
+    previousVisibleIncomingMessageIdRef.current = null;
   }, [roomId]);
 
   useEffect(() => {
@@ -314,6 +338,28 @@ export function DealerChatRoomPanel({
     container.scrollTop = container.scrollHeight;
   }, []);
 
+  const resizeMessageInput = useCallback(() => {
+    const input = messageInputRef.current;
+
+    if (!input) {
+      return;
+    }
+
+    input.style.height = "0px";
+    const nextHeight = Math.min(Math.max(input.scrollHeight, 44), 104);
+    input.style.height = `${nextHeight}px`;
+  }, []);
+
+  const handleMediaReady = useCallback(() => {
+    if (!shouldStickToBottomRef.current) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      scrollMessagesToBottom();
+    });
+  }, [scrollMessagesToBottom]);
+
   useEffect(() => {
     const element = messagesContainerRef.current;
 
@@ -341,6 +387,10 @@ export function DealerChatRoomPanel({
   useEffect(() => {
     scrollMessagesToBottom();
   }, [lastMessageId, roomId, scrollMessagesToBottom]);
+
+  useEffect(() => {
+    resizeMessageInput();
+  }, [messageInput, resizeMessageInput, roomId]);
 
   useEffect(() => {
     const content = messagesContentRef.current;
@@ -387,9 +437,57 @@ export function DealerChatRoomPanel({
       .catch(() => null);
   }, [lastMessageId, queryClient, roomId]);
 
+  useEffect(() => {
+    if (!roomQuery.data) {
+      return;
+    }
+
+    const lastMessage = roomQuery.data.messages.at(-1);
+
+    if (!lastMessage) {
+      previousVisibleIncomingMessageIdRef.current = null;
+      return;
+    }
+
+    if (!previousVisibleIncomingMessageIdRef.current) {
+      previousVisibleIncomingMessageIdRef.current = lastMessage.id;
+      return;
+    }
+
+    if (previousVisibleIncomingMessageIdRef.current === lastMessage.id) {
+      return;
+    }
+
+    previousVisibleIncomingMessageIdRef.current = lastMessage.id;
+
+    if (lastMessage.senderRole === "dealer") {
+      return;
+    }
+
+    void playIncomingChatSound();
+
+    if (!document.hidden) {
+      return;
+    }
+
+    showChatBrowserNotification({
+      roomId: roomQuery.data.id,
+      title: `${roomQuery.data.customerName} · ${roomQuery.data.vehicleLabel}`,
+      body: lastMessage.body,
+    });
+  }, [roomQuery.data]);
+
+  const backButtonLabel = backBadgeCount > 0 ? `목록으로 ${backBadgeCount}` : "목록으로";
+
   if (!roomId) {
     return (
-      <div className="flex h-full min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-line bg-slate-50 px-6 py-12 text-center">
+      <div
+        className={
+          isFlatMobilePanel
+            ? "flex h-full min-h-[320px] items-center justify-center bg-white px-6 py-12 text-center"
+            : "flex h-full min-h-[320px] items-center justify-center rounded-[28px] border border-dashed border-line bg-slate-50 px-6 py-12 text-center"
+        }
+      >
         <div>
           <p className="text-lg font-semibold text-slate-900">대화할 고객을 선택해 주세요.</p>
           <p className="mt-2 text-sm text-slate-500">
@@ -402,7 +500,7 @@ export function DealerChatRoomPanel({
 
   if (roomQuery.isLoading) {
     return (
-      <section className="rounded-[28px] border border-line bg-white">
+      <section className={isFlatMobilePanel ? "bg-white" : "rounded-[28px] border border-line bg-white"}>
         {isRailMode && onBack ? (
           <header className="border-b border-line px-5 py-4">
             <button
@@ -411,7 +509,7 @@ export function DealerChatRoomPanel({
               onClick={onBack}
             >
               <span aria-hidden="true">&lt;</span>
-              목록으로
+              {backButtonLabel}
             </button>
           </header>
         ) : null}
@@ -454,7 +552,13 @@ export function DealerChatRoomPanel({
 
   if (roomQuery.isError || !roomQuery.data) {
     return (
-      <section className="rounded-[28px] border border-rose-200 bg-rose-50">
+      <section
+        className={
+          isFlatMobilePanel
+            ? "bg-rose-50"
+            : "rounded-[28px] border border-rose-200 bg-rose-50"
+        }
+      >
         {isRailMode && onBack ? (
           <header className="border-b border-rose-200 px-5 py-4">
             <button
@@ -463,7 +567,7 @@ export function DealerChatRoomPanel({
               onClick={onBack}
             >
               <span aria-hidden="true">&lt;</span>
-              목록으로
+              {backButtonLabel}
             </button>
           </header>
         ) : null}
@@ -479,6 +583,7 @@ export function DealerChatRoomPanel({
   const room = roomQuery.data;
   const currentStageIndex = getDealStageIndex(room.stageLabel);
   const contractEntrySource = allowPopout ? "deal" : "chat-window";
+  const canShowPopout = allowPopout && isXlUp;
 
   function openChatPopout(nextRoomId: string) {
     markPoppedOutModule();
@@ -526,17 +631,27 @@ export function DealerChatRoomPanel({
   }
 
   return (
-    <section className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-line bg-white">
+    <section
+      className={
+        isFlatMobilePanel
+          ? "relative flex h-full min-h-0 flex-col overflow-hidden bg-white"
+          : "relative flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-line bg-white"
+      }
+    >
       <header
         className={
-          isCompactDensity
+          isFlatMobilePanel
+            ? "border-b border-line px-4 py-2.5"
+            : isCompactDensity
             ? "border-b border-line px-4 py-3"
             : "border-b border-line px-5 py-4"
         }
       >
         <div
           className={
-            isCompactDensity
+            isFlatMobilePanel
+              ? "mb-1.5 flex items-center justify-between gap-2"
+              : isCompactDensity
               ? "mb-2 flex items-center justify-between gap-3"
               : "mb-4 flex items-center justify-between gap-3"
           }
@@ -549,11 +664,11 @@ export function DealerChatRoomPanel({
                 onClick={onBack}
               >
                 <span aria-hidden="true">&lt;</span>
-                목록으로
+                {backButtonLabel}
               </button>
             ) : null}
           </div>
-          {allowPopout ? (
+          {canShowPopout ? (
             <button
               aria-label="새 창으로 보기"
               className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
@@ -570,19 +685,27 @@ export function DealerChatRoomPanel({
           <div className="min-w-0 flex-1">
             <p
               className={
-                isCompactDensity
+                isFlatMobilePanel
+                  ? "truncate text-[15px] font-semibold text-slate-950"
+                  : isCompactDensity
                   ? "truncate text-base font-semibold text-slate-950"
                   : "truncate text-lg font-semibold text-slate-950"
               }
             >
               {room.customerName}
             </p>
-            <p className="mt-1 truncate text-sm text-slate-500">{room.vehicleLabel}</p>
+            <p className={isFlatMobilePanel ? "mt-0.5 truncate text-xs text-slate-500" : "mt-1 truncate text-sm text-slate-500"}>
+              {room.vehicleLabel}
+            </p>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className={isFlatMobilePanel ? "flex flex-wrap items-center justify-end gap-1.5" : "flex flex-wrap items-center justify-end gap-2"}>
             {!room.isClosed ? (
               <Link
-                className="rounded-full bg-violet-700 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_10px_20px_rgba(90,42,235,0.16)]"
+                className={
+                  isFlatMobilePanel
+                    ? "rounded-full bg-violet-700 px-2.5 py-1 text-[11px] font-semibold text-white"
+                    : "rounded-full bg-violet-700 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_10px_20px_rgba(90,42,235,0.16)]"
+                }
                 href={appRoutes.dealContract(room.dealId, {
                   roomId: room.id,
                   source: contractEntrySource,
@@ -592,7 +715,11 @@ export function DealerChatRoomPanel({
               </Link>
             ) : null}
             <Link
-              className="rounded-full border border-line px-3 py-1.5 text-xs font-medium text-slate-700"
+              className={
+                isFlatMobilePanel
+                  ? "rounded-full border border-line px-2.5 py-1 text-[11px] font-medium text-slate-700"
+                  : "rounded-full border border-line px-3 py-1.5 text-xs font-medium text-slate-700"
+              }
               href={appRoutes.dealDetail(room.dealId)}
             >
               거래 상세
@@ -601,22 +728,26 @@ export function DealerChatRoomPanel({
         </div>
         <div
           className={
-            isCompactDensity
+            isFlatMobilePanel
+              ? "mt-2 rounded-2xl border border-slate-200 bg-slate-50"
+              : isCompactDensity
               ? "mt-3 rounded-3xl border border-slate-200 bg-slate-50"
               : "mt-4 rounded-3xl border border-slate-200 bg-slate-50"
           }
         >
           <button
             className={
-              isCompactDensity
+              isFlatMobilePanel
+                ? "flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
+                : isCompactDensity
                 ? "flex w-full items-center justify-between gap-3 px-3 py-3 text-left"
                 : "flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
             }
             type="button"
             onClick={() => setIsStatusExpanded((current) => !current)}
           >
-            <div className="min-w-0">
-              <p className="text-sm text-slate-700">
+          <div className="min-w-0">
+              <p className={isFlatMobilePanel ? "text-[13px] text-slate-700" : "text-sm text-slate-700"}>
                 현재 <span className="font-semibold text-violet-700">{room.stageLabel}</span> 단계입니다.
               </p>
             </div>
@@ -624,24 +755,38 @@ export function DealerChatRoomPanel({
               <span
                 className={
                   room.isClosed
-                    ? "rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700"
-                    : "rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700"
+                    ? isFlatMobilePanel
+                      ? "rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700"
+                      : "rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-700"
+                    : isFlatMobilePanel
+                      ? "rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
+                      : "rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700"
                 }
               >
                 {room.isClosed ? "채팅 종료" : "진행 중"}
               </span>
-              <span className="text-slate-500">{isStatusExpanded ? "⌃" : "⌄"}</span>
+              <span className={isFlatMobilePanel ? "text-xs text-slate-500" : "text-slate-500"}>{isStatusExpanded ? "⌃" : "⌄"}</span>
             </div>
           </button>
           {isStatusExpanded ? (
             <div
               className={
-                isCompactDensity
+                isFlatMobilePanel
+                  ? "border-t border-slate-200 px-3 py-2.5"
+                  : isCompactDensity
                   ? "border-t border-slate-200 px-3 py-3"
                   : "border-t border-slate-200 px-4 py-4"
               }
             >
-              <div className={isCompactDensity ? "mb-3 flex items-start" : "mb-4 flex items-start"}>
+              <div
+                className={
+                  isFlatMobilePanel
+                    ? "mb-2.5 flex items-start"
+                    : isCompactDensity
+                      ? "mb-3 flex items-start"
+                      : "mb-4 flex items-start"
+                }
+              >
                 {DEAL_STAGE_STEPPER.map((stage, index) => {
                   const isActive = index === currentStageIndex;
                   const isPassed = index <= currentStageIndex;
@@ -711,7 +856,9 @@ export function DealerChatRoomPanel({
                   );
                 })}
               </div>
-              <p className="text-sm text-slate-600">{room.stageDescription}</p>
+              <p className={isFlatMobilePanel ? "text-[13px] text-slate-600" : "text-sm text-slate-600"}>
+                {room.stageDescription}
+              </p>
             </div>
           ) : null}
         </div>
@@ -724,6 +871,7 @@ export function DealerChatRoomPanel({
             ? "min-h-0 flex-1 overflow-y-auto px-5 py-5"
             : "min-h-0 flex-1 overflow-y-auto px-6 py-6"
         }
+        style={{ overflowAnchor: "none" }}
       >
         <div className="space-y-3" ref={messagesContentRef}>
           {room.messages.map((message) => (
@@ -734,6 +882,7 @@ export function DealerChatRoomPanel({
               })}
               detailHref={appRoutes.dealDetail(room.dealId)}
               key={message.id}
+              onMediaReady={handleMediaReady}
               message={message}
               room={room}
             />
@@ -752,17 +901,7 @@ export function DealerChatRoomPanel({
             출고 완료된 거래는 더 이상 채팅을 보낼 수 없습니다.
           </p>
         ) : (
-          <form className="space-y-3" onSubmit={handleSubmit}>
-            <textarea
-              className={
-                isCompactDensity
-                  ? "min-h-16 w-full rounded-3xl border border-line px-4 py-3 text-sm outline-none transition focus:border-slate-400"
-                  : "min-h-20 w-full rounded-3xl border border-line px-4 py-3 text-sm outline-none transition focus:border-slate-400"
-              }
-              placeholder="고객에게 보낼 메시지를 입력하세요."
-              value={messageInput}
-              onChange={(event) => setMessageInput(event.target.value)}
-            />
+          <form className="flex items-end gap-2" onSubmit={handleSubmit}>
             <input
               accept="image/*"
               className="hidden"
@@ -783,54 +922,62 @@ export function DealerChatRoomPanel({
               type="file"
               onChange={handleAttachmentSelection}
             />
-            <div className="flex items-center justify-between gap-3">
-              <div className="relative" ref={attachmentMenuRef}>
-                <button
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-line text-lg font-medium text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
-                  disabled={sendAttachmentMutation.isPending || pendingAttachment !== null}
-                  type="button"
-                  onClick={() => setIsAttachmentMenuOpen((current) => !current)}
-                >
-                  +
-                </button>
-                {isAttachmentMenuOpen ? (
-                  <div className="absolute bottom-14 left-0 z-10 flex min-w-[108px] flex-col rounded-2xl border border-line bg-white p-2 shadow-xl">
-                    <button
-                      className="rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                      type="button"
-                      onClick={() => imageInputRef.current?.click()}
-                    >
-                      사진
-                    </button>
-                    <button
-                      className="rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                      type="button"
-                      onClick={() => videoInputRef.current?.click()}
-                    >
-                      영상
-                    </button>
-                    <button
-                      className="rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      파일
-                    </button>
-                  </div>
-                ) : null}
-              </div>
+            <div className="relative" ref={attachmentMenuRef}>
               <button
-                className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300"
-                disabled={
-                  sendMessageMutation.isPending ||
-                  sendAttachmentMutation.isPending ||
-                  messageInput.trim().length === 0
-                }
-                type="submit"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-line text-lg font-medium text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+                disabled={sendAttachmentMutation.isPending || pendingAttachment !== null}
+                type="button"
+                onClick={() => setIsAttachmentMenuOpen((current) => !current)}
               >
-                {sendMessageMutation.isPending ? "전송 중..." : "보내기"}
+                +
               </button>
+              {isAttachmentMenuOpen ? (
+                <div className="absolute bottom-14 left-0 z-10 flex min-w-[108px] flex-col rounded-2xl border border-line bg-white p-2 shadow-xl">
+                  <button
+                    className="rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                  >
+                    사진
+                  </button>
+                  <button
+                    className="rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    type="button"
+                    onClick={() => videoInputRef.current?.click()}
+                  >
+                    영상
+                  </button>
+                  <button
+                    className="rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    파일
+                  </button>
+                </div>
+              ) : null}
             </div>
+            <div className="flex min-h-11 flex-1 items-end rounded-2xl border border-line bg-white px-3">
+              <textarea
+                ref={messageInputRef}
+                className="h-11 max-h-[104px] min-h-11 w-full resize-none bg-transparent py-3 text-sm leading-5 outline-none"
+                placeholder="메시지 입력"
+                rows={1}
+                value={messageInput}
+                onChange={(event) => setMessageInput(event.target.value)}
+              />
+            </div>
+            <button
+              className="h-11 shrink-0 rounded-2xl bg-slate-950 px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+              disabled={
+                sendMessageMutation.isPending ||
+                sendAttachmentMutation.isPending ||
+                messageInput.trim().length === 0
+              }
+              type="submit"
+            >
+              {sendMessageMutation.isPending ? "전송 중" : "전송"}
+            </button>
           </form>
         )}
       </footer>
@@ -902,10 +1049,17 @@ type MessageBubbleProps = {
   contractHref: string;
   detailHref: string;
   message: DealerChatMessage;
+  onMediaReady: () => void;
   room: Pick<DealerChatRoom, "dealId" | "id" | "vehicleLabel">;
 };
 
-function MessageBubble({ message, room, contractHref, detailHref }: MessageBubbleProps) {
+function MessageBubble({
+  message,
+  room,
+  contractHref,
+  detailHref,
+  onMediaReady,
+}: MessageBubbleProps) {
   if (message.senderRole === "system") {
     return (
       <div className="flex justify-center">
@@ -917,6 +1071,7 @@ function MessageBubble({ message, room, contractHref, detailHref }: MessageBubbl
   }
 
   const isDealer = message.senderRole === "dealer";
+  const bubbleWidthClass = message.attachment ? "w-[70%] max-w-[70%]" : "max-w-[82%]";
 
   if (message.kind === "custom" && message.customPayload) {
     return (
@@ -936,8 +1091,8 @@ function MessageBubble({ message, room, contractHref, detailHref }: MessageBubbl
       <div
         className={
           isDealer
-            ? "max-w-[82%] rounded-[24px] rounded-br-md bg-slate-950 px-4 py-3 text-sm text-white"
-            : "max-w-[82%] rounded-[24px] rounded-bl-md bg-slate-100 px-4 py-3 text-sm text-slate-800"
+            ? `${bubbleWidthClass} rounded-[24px] rounded-br-md bg-slate-950 px-4 py-3 text-sm text-white`
+            : `${bubbleWidthClass} rounded-[24px] rounded-bl-md bg-slate-100 px-4 py-3 text-sm text-slate-800`
         }
       >
         {(message.kind === "text" || message.kind === "system") && message.body ? (
@@ -945,7 +1100,11 @@ function MessageBubble({ message, room, contractHref, detailHref }: MessageBubbl
         ) : null}
 
         {message.attachment ? (
-          <AttachmentPreview attachment={message.attachment} isDealer={isDealer} />
+          <AttachmentPreview
+            attachment={message.attachment}
+            isDealer={isDealer}
+            onMediaReady={onMediaReady}
+          />
         ) : null}
 
         <p
@@ -963,31 +1122,180 @@ function MessageBubble({ message, room, contractHref, detailHref }: MessageBubbl
 type AttachmentPreviewProps = {
   attachment: NonNullable<DealerChatMessage["attachment"]>;
   isDealer: boolean;
+  onMediaReady: () => void;
 };
 
-function AttachmentPreview({ attachment, isDealer }: AttachmentPreviewProps) {
+function logVideoDebugEvent(
+  phase: string,
+  attachment: NonNullable<DealerChatMessage["attachment"]>,
+  event: React.SyntheticEvent<HTMLVideoElement>,
+) {
+  if (process.env.NODE_ENV === "production") {
+    return;
+  }
+
+  const target = event.currentTarget;
+  const mediaError = target.error;
+  const errorCode = mediaError?.code ?? null;
+
+  console.info("[chat-video]", {
+    phase,
+    fileName: attachment.fileName,
+    url: attachment.url,
+    mimeType: attachment.mimeType,
+    readyState: target.readyState,
+    networkState: target.networkState,
+    currentSrc: target.currentSrc,
+    errorCode,
+    errorMessage: mediaError?.message ?? null,
+  });
+}
+
+function getVideoPreviewUrl(url: string) {
+  return url.includes("#") ? url : `${url}#t=0.001`;
+}
+
+function getAspectRatio(width: number, height: number, fallback: string) {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return fallback;
+  }
+
+  return `${width} / ${height}`;
+}
+
+function AttachmentPreview({ attachment, isDealer, onMediaReady }: AttachmentPreviewProps) {
+  const [imageAspectRatio, setImageAspectRatio] = useState("4 / 3");
+  const [videoAspectRatio, setVideoAspectRatio] = useState("16 / 9");
+  const [canInlinePlayVideo, setCanInlinePlayVideo] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (attachment.kind !== "video") {
+      setCanInlinePlayVideo(null);
+      return;
+    }
+
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const video = document.createElement("video");
+    const mimeType = attachment.mimeType ?? "";
+    const supportLevel = mimeType ? video.canPlayType(mimeType) : "maybe";
+
+    setCanInlinePlayVideo(Boolean(supportLevel));
+  }, [attachment.kind, attachment.mimeType]);
+
   if (attachment.kind === "image") {
     return (
       <a
-        className="mt-2 inline-flex max-w-[70%] overflow-hidden rounded-2xl bg-slate-50"
+        className="mt-2 block w-full overflow-hidden rounded-2xl bg-slate-50"
         href={attachment.url}
         rel="noreferrer"
         target="_blank"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          alt={attachment.fileName ?? "첨부 이미지"}
-          className="block max-h-[360px] w-auto max-w-full object-contain"
-          src={attachment.url}
-        />
+        <div
+          className="relative w-full bg-slate-100"
+          style={{ aspectRatio: imageAspectRatio }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt={attachment.fileName ?? "첨부 이미지"}
+            className="absolute inset-0 h-full w-full object-contain"
+            loading="lazy"
+            src={attachment.url}
+            onLoad={(event) => {
+              setImageAspectRatio(
+                getAspectRatio(
+                  event.currentTarget.naturalWidth,
+                  event.currentTarget.naturalHeight,
+                  "4 / 3",
+                ),
+              );
+              onMediaReady();
+            }}
+          />
+        </div>
       </a>
     );
   }
 
   if (attachment.kind === "video") {
+    if (canInlinePlayVideo === false) {
+      return (
+        <a
+          className={
+            isDealer
+              ? "mt-2 flex items-center gap-3 rounded-2xl bg-white/10 px-3 py-3"
+              : "mt-2 flex items-center gap-3 rounded-2xl bg-white px-3 py-3"
+          }
+          href={attachment.url}
+          rel="noreferrer"
+          target="_blank"
+        >
+          <span className="text-lg">▶</span>
+          <span className="min-w-0">
+            <span className="block truncate font-medium">
+              {attachment.fileName ?? "동영상 파일"}
+            </span>
+            <span className={isDealer ? "text-xs text-slate-300" : "text-xs text-slate-500"}>
+              브라우저 미리보기 제한 · 새 창으로 열기
+            </span>
+          </span>
+        </a>
+      );
+    }
+
+    const videoPreviewUrl = getVideoPreviewUrl(attachment.url);
+
     return (
-      <div className="mt-2 overflow-hidden rounded-2xl bg-black">
-        <video className="max-h-72 w-full" controls preload="metadata" src={attachment.url} />
+      <div className="mt-2 w-full overflow-hidden rounded-2xl bg-black">
+        <div
+          className="relative w-full bg-black"
+          style={{ aspectRatio: videoAspectRatio }}
+        >
+          <video
+            className="absolute inset-0 h-full w-full object-contain"
+            controls
+            poster={attachment.thumbnailUrl ?? undefined}
+            playsInline
+            preload="metadata"
+            onAbort={(event) => logVideoDebugEvent("abort", attachment, event)}
+            onCanPlay={(event) => {
+              logVideoDebugEvent("canplay", attachment, event);
+              onMediaReady();
+            }}
+            onError={(event) => logVideoDebugEvent("error", attachment, event)}
+            onLoadStart={(event) => logVideoDebugEvent("loadstart", attachment, event)}
+            onLoadedData={onMediaReady}
+            onLoadedMetadata={(event) => {
+              logVideoDebugEvent("loadedmetadata", attachment, event);
+              setVideoAspectRatio(
+                getAspectRatio(
+                  event.currentTarget.videoWidth,
+                  event.currentTarget.videoHeight,
+                  "16 / 9",
+                ),
+              );
+              onMediaReady();
+            }}
+            onStalled={(event) => logVideoDebugEvent("stalled", attachment, event)}
+            onSuspend={(event) => logVideoDebugEvent("suspend", attachment, event)}
+            onWaiting={(event) => logVideoDebugEvent("waiting", attachment, event)}
+          >
+            <source
+              src={videoPreviewUrl}
+              type={attachment.mimeType ?? undefined}
+            />
+          </video>
+        </div>
+        <a
+          className="flex items-center justify-end border-t border-white/10 px-3 py-2 text-xs font-medium text-white/80"
+          href={attachment.url}
+          rel="noreferrer"
+          target="_blank"
+        >
+          새 창으로 열기
+        </a>
       </div>
     );
   }
